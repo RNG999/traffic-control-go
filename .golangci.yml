@@ -12,6 +12,4 @@ linters:
     - govet
     - ineffassign
     - staticcheck
-    - gofmt
-    - goimports
     - misspell

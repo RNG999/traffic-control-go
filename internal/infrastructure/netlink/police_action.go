@@ -49,8 +49,13 @@ func (a *RealNetlinkAdapter) AddPoliceFilter(device valueobjects.DeviceName, par
 	}
 
 	// Create police action
+	rateBytes := police.Rate.BitsPerSecond() / 8
+	if rateBytes > 0xFFFFFFFF {
+		return types.Failure[Unit](fmt.Errorf("rate %d bytes/sec exceeds maximum uint32 value", rateBytes))
+	}
+	
 	policeAction := &nl.PoliceAction{
-		Rate:  uint32(police.Rate.BitsPerSecond() / 8), // Convert to bytes per second
+		Rate:  uint32(rateBytes), // Convert to bytes per second
 		Burst: police.Burst,
 		Mtu:   police.MTU,
 	}
@@ -71,7 +76,11 @@ func (a *RealNetlinkAdapter) AddPoliceFilter(device valueobjects.DeviceName, par
 
 	// Set peak rate if specified
 	if police.PeakRate != nil {
-		policeAction.PeakRate = uint32(police.PeakRate.BitsPerSecond() / 8)
+		peakRateBytes := police.PeakRate.BitsPerSecond() / 8
+		if peakRateBytes > 0xFFFFFFFF {
+			return types.Failure[Unit](fmt.Errorf("peak rate %d bytes/sec exceeds maximum uint32 value", peakRateBytes))
+		}
+		policeAction.PeakRate = uint32(peakRateBytes)
 	}
 
 	// Add action to filter

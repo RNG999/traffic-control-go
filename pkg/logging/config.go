@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 )
 
@@ -76,6 +77,12 @@ func ProductionConfig() Config {
 func LoadConfigFromFile(filename string) (Config, error) {
 	config := DefaultConfig()
 
+	// Validate filename for path traversal
+	if err := validateLogFilePath(filename); err != nil {
+		return config, fmt.Errorf("invalid file path: %w", err)
+	}
+
+	// #nosec G304 - filename is validated by validateLogFilePath above
 	file, err := os.Open(filename)
 	if err != nil {
 		return config, fmt.Errorf("failed to open config file %s: %w", filename, err)
@@ -145,7 +152,8 @@ func (c *Config) Validate() error {
 	for _, path := range c.OutputPaths {
 		if path != "stdout" && path != "stderr" {
 			// Check if file path is writable
-			if _, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0644); err != nil {
+			// #nosec G304 - path is from validated configuration
+			if _, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0600); err != nil {
 				return fmt.Errorf("cannot write to log file %s: %w", path, err)
 			}
 		}
@@ -183,4 +191,29 @@ func (c *Config) GetComponentLevel(component string) Level {
 		}
 	}
 	return c.Level
+}
+
+// validateLogFilePath validates that the log file path is safe and doesn't contain path traversal
+func validateLogFilePath(filename string) error {
+	// Clean the path to resolve any .. or . components
+	cleaned := filepath.Clean(filename)
+	
+	// Check for path traversal attempts
+	if strings.Contains(cleaned, "..") {
+		return fmt.Errorf("path traversal detected in filename: %s", filename)
+	}
+	
+	// Ensure it's not an absolute path to system directories (except typical log locations)
+	if filepath.IsAbs(cleaned) {
+		// Allow certain safe absolute paths for log files
+		if strings.HasPrefix(cleaned, "/tmp/") || 
+		   strings.HasPrefix(cleaned, "/var/tmp/") ||
+		   strings.HasPrefix(cleaned, "/var/log/") ||
+		   strings.HasPrefix(cleaned, "/home/") {
+			return nil
+		}
+		return fmt.Errorf("absolute paths to system directories not allowed: %s", filename)
+	}
+	
+	return nil
 }

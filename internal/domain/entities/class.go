@@ -136,7 +136,11 @@ func (h *HTBClass) CalculateBurst() uint32 {
 	// Multiply by 10 for safety margin
 	bytesPerSecond := h.rate.BitsPerSecond() / 8
 	// Avoid floating point: 0.01 * 10 = 0.1 = 1/10
-	return uint32(bytesPerSecond / 10)
+	burstValue := bytesPerSecond / 10
+	if burstValue > 0xFFFFFFFF {
+		return 0xFFFFFFFF // Cap at maximum uint32 value
+	}
+	return uint32(burstValue)
 }
 
 // CalculateCburst calculates appropriate cburst size based on ceil
@@ -149,5 +153,9 @@ func (h *HTBClass) CalculateCburst() uint32 {
 
 	bytesPerSecond := bandwidth.BitsPerSecond() / 8
 	// Avoid floating point: 0.01 * 10 = 0.1 = 1/10
-	return uint32(bytesPerSecond / 10)
+	cburstValue := bytesPerSecond / 10
+	if cburstValue > 0xFFFFFFFF {
+		return 0xFFFFFFFF // Cap at maximum uint32 value
+	}
+	return uint32(cburstValue)
 }

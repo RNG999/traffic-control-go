@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
+	"strings"
 
 	yaml "gopkg.in/yaml.v3"
 
@@ -56,6 +58,12 @@ type MatchConfig struct {
 
 // LoadConfigFromYAML loads configuration from a YAML file
 func LoadConfigFromYAML(filename string) (*TrafficControlConfig, error) {
+	// Validate filename for path traversal
+	if err := validateFilePath(filename); err != nil {
+		return nil, fmt.Errorf("invalid file path: %w", err)
+	}
+	
+	// #nosec G304 - filename is validated by validateFilePath above
 	data, err := os.ReadFile(filename)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read config file: %w", err)
@@ -75,6 +83,12 @@ func LoadConfigFromYAML(filename string) (*TrafficControlConfig, error) {
 
 // LoadConfigFromJSON loads configuration from a JSON file
 func LoadConfigFromJSON(filename string) (*TrafficControlConfig, error) {
+	// Validate filename for path traversal
+	if err := validateFilePath(filename); err != nil {
+		return nil, fmt.Errorf("invalid file path: %w", err)
+	}
+	
+	// #nosec G304 - filename is validated by validateFilePath above
 	data, err := os.ReadFile(filename)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read config file: %w", err)
@@ -325,4 +339,28 @@ func LoadAndApplyJSON(filename string, device string) error {
 
 	tc := New(config.Device)
 	return tc.ApplyConfig(config)
+}
+
+// validateFilePath validates that the file path is safe and doesn't contain path traversal
+func validateFilePath(filename string) error {
+	// Clean the path to resolve any .. or . components
+	cleaned := filepath.Clean(filename)
+	
+	// Check for path traversal attempts
+	if strings.Contains(cleaned, "..") {
+		return fmt.Errorf("path traversal detected in filename: %s", filename)
+	}
+	
+	// Ensure it's not an absolute path to system directories
+	if filepath.IsAbs(cleaned) {
+		// Allow certain safe absolute paths (you may want to customize this)
+		if strings.HasPrefix(cleaned, "/tmp/") || 
+		   strings.HasPrefix(cleaned, "/var/tmp/") ||
+		   strings.HasPrefix(cleaned, "/home/") {
+			return nil
+		}
+		return fmt.Errorf("absolute paths to system directories not allowed: %s", filename)
+	}
+	
+	return nil
 }

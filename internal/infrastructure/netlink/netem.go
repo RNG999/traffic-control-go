@@ -43,9 +43,18 @@ func (a *RealNetlinkAdapter) AddNetemQdisc(device valueobjects.DeviceName, handl
 
 	// Set delay parameters
 	if config.Delay != nil {
-		netem.Latency = uint32(config.Delay.Nanoseconds() / 1000) // Convert to microseconds
+		delayMicros := config.Delay.Nanoseconds() / 1000 // Convert to microseconds
+		if delayMicros > 0x7FFFFFFF { // Use signed max to avoid potential issues
+			return types.Failure[Unit](fmt.Errorf("delay %v exceeds maximum value", config.Delay))
+		}
+		netem.Latency = uint32(delayMicros) // #nosec G115 - range checked above
+		
 		if config.DelayJitter != nil {
-			netem.Jitter = uint32(config.DelayJitter.Nanoseconds() / 1000)
+			jitterMicros := config.DelayJitter.Nanoseconds() / 1000
+			if jitterMicros > 0x7FFFFFFF {
+				return types.Failure[Unit](fmt.Errorf("jitter %v exceeds maximum value", config.DelayJitter))
+			}
+			netem.Jitter = uint32(jitterMicros) // #nosec G115 - range checked above
 		}
 	}
 
@@ -97,10 +106,18 @@ func _addNetemToSwitch(config QdiscConfig) (nl.Qdisc, error) {
 
 	// Parse NETEM-specific parameters from config.Parameters
 	if delay, ok := config.Parameters["delay"].(time.Duration); ok {
-		netem.Latency = uint32(delay.Nanoseconds() / 1000)
+		delayMicros := delay.Nanoseconds() / 1000
+		if delayMicros > 0x7FFFFFFF { // Use signed max to avoid potential issues
+			return nil, fmt.Errorf("delay %v exceeds maximum value", delay)
+		}
+		netem.Latency = uint32(delayMicros) // #nosec G115 - range checked above
 	}
 	if jitter, ok := config.Parameters["jitter"].(time.Duration); ok {
-		netem.Jitter = uint32(jitter.Nanoseconds() / 1000)
+		jitterMicros := jitter.Nanoseconds() / 1000
+		if jitterMicros > 0x7FFFFFFF {
+			return nil, fmt.Errorf("jitter %v exceeds maximum value", jitter)
+		}
+		netem.Jitter = uint32(jitterMicros) // #nosec G115 - range checked above
 	}
 	if loss, ok := config.Parameters["loss"].(float32); ok {
 		// Convert percentage to kernel's representation

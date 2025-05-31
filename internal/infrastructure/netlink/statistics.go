@@ -68,16 +68,20 @@ func (a *RealNetlinkAdapter) GetDetailedQdiscStats(device valueobjects.DeviceNam
 			
 			// Get basic statistics if available
 			if qdisc.Attrs().Statistics != nil {
-				if bs, ok := qdisc.Attrs().Statistics.(*nl.QdiscStatistics); ok {
+				qs := qdisc.Attrs().Statistics
+				if qs.Basic != nil {
 					stats.BasicStats = QdiscStats{
-						BytesSent:    bs.Bytes,
-						PacketsSent:  bs.Packets,
-						BytesDropped: bs.Drops,
-						Overlimits:   bs.Overlimits,
-						Requeues:     bs.Requeues,
+						BytesSent:   qs.Basic.Bytes,
+						PacketsSent: uint64(qs.Basic.Packets),
+						// Note: Drops, Overlimits, and Requeues are not available in GnetStatsBasic
+						BytesDropped: 0,
+						Overlimits:   0,
+						Requeues:     0,
 					}
-					stats.Backlog = bs.Backlog
-					stats.QueueLength = bs.Qlen
+				}
+				if qs.Queue != nil {
+					stats.Backlog = qs.Queue.Backlog
+					stats.QueueLength = qs.Queue.Qlen
 				}
 			}
 			
@@ -123,27 +127,36 @@ func (a *RealNetlinkAdapter) GetDetailedClassStats(device valueobjects.DeviceNam
 				
 				// Get basic statistics
 				if class.Attrs().Statistics != nil {
-					if cs, ok := class.Attrs().Statistics.(*nl.ClassStatistics); ok {
+					cs := class.Attrs().Statistics
+					if cs.Basic != nil {
 						stats.BasicStats = ClassStats{
 							BytesSent:      cs.Basic.Bytes,
-							PacketsSent:    cs.Basic.Packets,
-							BytesDropped:   cs.Basic.Drops,
-							Overlimits:     cs.Basic.Overlimits,
-							RateBPS:        cs.RateEst.Bps,
-							BacklogBytes:   cs.Queue.Backlog,
-							BacklogPackets: cs.Queue.Qlen,
+							PacketsSent:    uint64(cs.Basic.Packets),
+							BytesDropped:   0, // Not available in GnetStatsBasic
+							Overlimits:     0, // Not available in GnetStatsBasic
 						}
+					}
+					if cs.RateEst != nil {
+						stats.BasicStats.RateBPS = uint64(cs.RateEst.Bps)
+					}
+					if cs.Queue != nil {
+						stats.BasicStats.BacklogBytes = uint64(cs.Queue.Backlog)
+						stats.BasicStats.BacklogPackets = uint64(cs.Queue.Qlen)
 					}
 				}
 				
 				// Get HTB-specific stats if applicable
 				if htbClass, ok := class.(*nl.HtbClass); ok {
+					// NOTE: HTB-specific statistics are not available in the current version
+					// of vishvananda/netlink. The HtbClass struct doesn't have a Stats field.
+					// To get detailed HTB statistics, you would need to use tc command or
+					// update the netlink library to a version that supports these statistics.
 					stats.HTBStats = &HTBClassStats{
-						Lends:   htbClass.Stats.Lends,
-						Borrows: htbClass.Stats.Borrows,
-						Giants:  htbClass.Stats.Giants,
-						Tokens:  htbClass.Stats.Tokens,
-						CTokens: htbClass.Stats.Ctokens,
+						Lends:   0,
+						Borrows: 0,
+						Giants:  0,
+						Tokens:  0,
+						CTokens: 0,
 						Rate:    htbClass.Rate,
 						Ceil:    htbClass.Ceil,
 						Level:   htbClass.Level,

@@ -26,6 +26,9 @@ func (a *RealNetlinkAdapter) AddFwFilter(device valueobjects.DeviceName, config 
 	}
 	
 	// Create FW filter
+	// NOTE: The current version of vishvananda/netlink doesn't support Mark field in FwFilter.
+	// FwFilter is primarily for classifying based on firewall marks that are already set on packets.
+	// For mark-based filtering, consider using U32 filter or updating the netlink library.
 	filter := &nl.FwFilter{
 		FilterAttrs: nl.FilterAttrs{
 			LinkIndex: link.Attrs().Index,
@@ -34,7 +37,6 @@ func (a *RealNetlinkAdapter) AddFwFilter(device valueobjects.DeviceName, config 
 			Protocol:  0x0300, // ETH_P_ALL
 		},
 		ClassId: nl.MakeHandle(config.FlowID.Major(), config.FlowID.Minor()),
-		Mark:    config.Mark,
 	}
 	
 	// Set mask if provided
@@ -43,6 +45,9 @@ func (a *RealNetlinkAdapter) AddFwFilter(device valueobjects.DeviceName, config 
 	} else {
 		filter.Mask = 0xffffffff // Default to exact match
 	}
+	
+	// TODO: Implement mark-based filtering using U32 filter or alternative approach
+	_ = config.Mark // Mark field is not used in current implementation
 	
 	// Add the filter
 	if err := nl.FilterAdd(filter); err != nil {

@@ -29,7 +29,7 @@ func NewRealNetlinkAdapter() *RealNetlinkAdapter {
 func (a *RealNetlinkAdapter) AddQdisc(device valueobjects.DeviceName, config QdiscConfig) types.Result[Unit] {
 	logger := a.logger.WithDevice(device.String()).WithOperation(logging.OperationCreateQdisc)
 	logger.Info("Adding qdisc", 
-		logging.String("qdisc_type", string(config.Type)),
+		logging.String("qdisc_type", config.Type.String()),
 		logging.String("handle", config.Handle.String()),
 	)
 	

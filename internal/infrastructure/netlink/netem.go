@@ -5,7 +5,6 @@ import (
 	"time"
 	
 	nl "github.com/vishvananda/netlink"
-	"github.com/rng999/traffic-control-go/internal/domain/entities"
 	"github.com/rng999/traffic-control-go/internal/domain/valueobjects"
 	"github.com/rng999/traffic-control-go/pkg/types"
 )
@@ -49,24 +48,29 @@ func (a *RealNetlinkAdapter) AddNetemQdisc(device valueobjects.DeviceName, handl
 		}
 	}
 	
-	// Set loss parameters
+	// Set loss parameters (convert percentage to fixed point: 0-100% -> 0-UINT32_MAX)
 	if config.Loss != nil {
-		netem.Loss = *config.Loss
+		// Convert percentage (0-100) to kernel's representation
+		// Kernel uses: 0 = 0%, UINT32_MAX = 100%
+		netem.Loss = uint32((*config.Loss / 100.0) * float32(^uint32(0)))
 	}
 	
 	// Set duplicate parameters
 	if config.Duplicate != nil {
-		netem.Duplicate = *config.Duplicate
+		// Convert percentage to kernel's representation
+		netem.Duplicate = uint32((*config.Duplicate / 100.0) * float32(^uint32(0)))
 	}
 	
 	// Set corrupt parameters
 	if config.Corrupt != nil {
-		netem.Corrupt = *config.Corrupt
+		// Convert percentage to kernel's representation
+		netem.CorruptProb = uint32((*config.Corrupt / 100.0) * float32(^uint32(0)))
 	}
 	
 	// Set reorder parameters
 	if config.Reorder != nil {
-		netem.Reorder = *config.Reorder
+		// Convert percentage to kernel's representation
+		netem.ReorderProb = uint32((*config.Reorder / 100.0) * float32(^uint32(0)))
 		if config.Gap != nil {
 			netem.Gap = *config.Gap
 		}
@@ -98,16 +102,20 @@ func addNetemToSwitch(config QdiscConfig) (nl.Qdisc, error) {
 		netem.Jitter = uint32(jitter.Nanoseconds() / 1000)
 	}
 	if loss, ok := config.Parameters["loss"].(float32); ok {
-		netem.Loss = loss
+		// Convert percentage to kernel's representation
+		netem.Loss = uint32((loss / 100.0) * float32(^uint32(0)))
 	}
 	if duplicate, ok := config.Parameters["duplicate"].(float32); ok {
-		netem.Duplicate = duplicate
+		// Convert percentage to kernel's representation
+		netem.Duplicate = uint32((duplicate / 100.0) * float32(^uint32(0)))
 	}
 	if corrupt, ok := config.Parameters["corrupt"].(float32); ok {
-		netem.Corrupt = corrupt
+		// Convert percentage to kernel's representation
+		netem.CorruptProb = uint32((corrupt / 100.0) * float32(^uint32(0)))
 	}
 	if reorder, ok := config.Parameters["reorder"].(float32); ok {
-		netem.Reorder = reorder
+		// Convert percentage to kernel's representation
+		netem.ReorderProb = uint32((reorder / 100.0) * float32(^uint32(0)))
 	}
 	if limit, ok := config.Parameters["limit"].(uint32); ok {
 		netem.Limit = limit

@@ -21,7 +21,7 @@ func NewMemoryEventStore() *MemoryEventStore {
 }
 
 // Save saves events for an aggregate
-func (m *MemoryEventStore) Save(aggregateID string, events []events.DomainEvent, expectedVersion int) error {
+func (m *MemoryEventStore) Save(aggregateID string, domainEvents []events.DomainEvent, expectedVersion int) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	
@@ -39,9 +39,9 @@ func (m *MemoryEventStore) Save(aggregateID string, events []events.DomainEvent,
 	
 	// Append new events
 	if !exists {
-		m.events[aggregateID] = make([]events.DomainEvent, 0)
+		m.events[aggregateID] = make([]events.DomainEvent, 0, len(domainEvents))
 	}
-	m.events[aggregateID] = append(m.events[aggregateID], events...)
+	m.events[aggregateID] = append(m.events[aggregateID], domainEvents...)
 	
 	return nil
 }
@@ -51,14 +51,14 @@ func (m *MemoryEventStore) GetEvents(aggregateID string) ([]events.DomainEvent, 
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 	
-	events, exists := m.events[aggregateID]
+	domainEvents, exists := m.events[aggregateID]
 	if !exists {
 		return []events.DomainEvent{}, nil
 	}
 	
 	// Return a copy to prevent external modification
-	result := make([]events.DomainEvent, len(events))
-	copy(result, events)
+	result := make([]events.DomainEvent, len(domainEvents))
+	copy(result, domainEvents)
 	
 	return result, nil
 }

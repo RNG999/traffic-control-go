@@ -225,7 +225,7 @@ func TestGlobalSync(t *testing.T) {
 
 	// Test that Sync doesn't panic
 	assert.NotPanics(t, func() {
-		Sync()
+		_ = Sync()
 	})
 }
 

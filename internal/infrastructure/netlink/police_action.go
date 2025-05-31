@@ -3,9 +3,10 @@ package netlink
 import (
 	"fmt"
 
+	nl "github.com/vishvananda/netlink"
+
 	"github.com/rng999/traffic-control-go/internal/domain/valueobjects"
 	"github.com/rng999/traffic-control-go/pkg/types"
-	nl "github.com/vishvananda/netlink"
 )
 
 // PoliceAction represents a policing action

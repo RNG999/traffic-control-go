@@ -4,8 +4,9 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/rng999/traffic-control-go/api"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/rng999/traffic-control-go/api"
 )
 
 func TestPrioritySettings(t *testing.T) {

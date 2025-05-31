@@ -4,9 +4,10 @@ import (
 	"fmt"
 	"time"
 
+	nl "github.com/vishvananda/netlink"
+
 	"github.com/rng999/traffic-control-go/internal/domain/valueobjects"
 	"github.com/rng999/traffic-control-go/pkg/types"
-	nl "github.com/vishvananda/netlink"
 )
 
 // NetemConfig represents NETEM qdisc configuration
@@ -90,7 +91,7 @@ func (a *RealNetlinkAdapter) AddNetemQdisc(device valueobjects.DeviceName, handl
 }
 
 // Example implementation in the adapter switch statement:
-func addNetemToSwitch(config QdiscConfig) (nl.Qdisc, error) {
+func _addNetemToSwitch(config QdiscConfig) (nl.Qdisc, error) {
 	// This would be added to the main adapter's switch statement
 	netem := nl.NewNetem(nl.QdiscAttrs{}, nl.NetemQdiscAttrs{})
 

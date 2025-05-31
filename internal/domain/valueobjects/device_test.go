@@ -4,9 +4,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/rng999/traffic-control-go/internal/domain/valueobjects"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/rng999/traffic-control-go/internal/domain/valueobjects"
 )
 
 func TestNewDeviceName(t *testing.T) {
@@ -129,7 +130,7 @@ func TestDeviceNameImmutability(t *testing.T) {
 	// Even if we modify the original string variable,
 	// the DeviceName should remain unchanged
 	originalStr := d.String()
-	name = "modified"
+	_ = "modified" // This assignment demonstrates that DeviceName is immutable
 
 	assert.Equal(t, originalStr, d.String())
 	assert.Equal(t, "eth0", d.String())

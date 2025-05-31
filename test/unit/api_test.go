@@ -3,9 +3,10 @@ package unit
 import (
 	"testing"
 
-	"github.com/rng999/traffic-control-go/api"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/rng999/traffic-control-go/api"
 )
 
 func TestTrafficControllerValidation(t *testing.T) {

@@ -190,14 +190,7 @@ func (m *MockAdapter) AddFilter(device valueobjects.DeviceName, config FilterCon
 	}
 
 	// Add the filter
-	m.filters[deviceStr] = append(m.filters[deviceStr], FilterInfo{
-		Parent:   config.Parent,
-		Priority: config.Priority,
-		Handle:   config.Handle,
-		Protocol: config.Protocol,
-		FlowID:   config.FlowID,
-		Matches:  config.Matches,
-	})
+	m.filters[deviceStr] = append(m.filters[deviceStr], FilterInfo(config))
 
 	return types.Success(Unit{})
 }

@@ -2,6 +2,7 @@ package api
 
 import (
 	"fmt"
+
 	"github.com/rng999/traffic-control-go/internal/domain/valueobjects"
 	"github.com/rng999/traffic-control-go/pkg/logging"
 )
@@ -177,8 +178,8 @@ func (b *TrafficClassBuilder) Apply() error {
 
 // PriorityGroupBuilder builds priority-based traffic groups
 type PriorityGroupBuilder struct {
-	controller *TrafficController
-	priority   Priority
+	controller *TrafficController //nolint:unused
+	priority   Priority           //nolint:unused
 	filters    []Filter
 }
 

@@ -3,11 +3,12 @@ package netlink
 import (
 	"fmt"
 
+	nl "github.com/vishvananda/netlink"
+
 	"github.com/rng999/traffic-control-go/internal/domain/entities"
 	"github.com/rng999/traffic-control-go/internal/domain/valueobjects"
 	"github.com/rng999/traffic-control-go/pkg/logging"
 	"github.com/rng999/traffic-control-go/pkg/types"
-	nl "github.com/vishvananda/netlink"
 )
 
 // RealNetlinkAdapter is the real implementation using netlink library

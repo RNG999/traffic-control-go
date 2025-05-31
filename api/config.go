@@ -3,9 +3,10 @@ package api
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
-	
+	"os"
+
 	yaml "gopkg.in/yaml.v3"
+
 	"github.com/rng999/traffic-control-go/internal/domain/valueobjects"
 )
 
@@ -55,7 +56,7 @@ type MatchConfig struct {
 
 // LoadConfigFromYAML loads configuration from a YAML file
 func LoadConfigFromYAML(filename string) (*TrafficControlConfig, error) {
-	data, err := ioutil.ReadFile(filename)
+	data, err := os.ReadFile(filename)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read config file: %w", err)
 	}
@@ -74,7 +75,7 @@ func LoadConfigFromYAML(filename string) (*TrafficControlConfig, error) {
 
 // LoadConfigFromJSON loads configuration from a JSON file
 func LoadConfigFromJSON(filename string) (*TrafficControlConfig, error) {
-	data, err := ioutil.ReadFile(filename)
+	data, err := os.ReadFile(filename)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read config file: %w", err)
 	}

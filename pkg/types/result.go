@@ -32,7 +32,7 @@ func (r Result[T]) Value() T {
 	if r.err != nil {
 		panic("attempted to get value from failed Result")
 	}
-	
+
 	return r.value
 }
 
@@ -46,7 +46,7 @@ func (r Result[T]) Map(f func(T) T) Result[T] {
 	if r.err != nil {
 		return r
 	}
-	
+
 	return Success(f(r.value))
 }
 
@@ -55,7 +55,7 @@ func (r Result[T]) FlatMap(f func(T) Result[T]) Result[T] {
 	if r.err != nil {
 		return r
 	}
-	
+
 	return f(r.value)
 }
 
@@ -73,6 +73,6 @@ func (r Result[T]) OrElse(defaultValue T) T {
 	if r.err != nil {
 		return defaultValue
 	}
-	
+
 	return r.value
 }

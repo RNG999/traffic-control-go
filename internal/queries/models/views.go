@@ -2,6 +2,7 @@ package models
 
 import (
 	"fmt"
+
 	"github.com/rng999/traffic-control-go/internal/domain/entities"
 	"github.com/rng999/traffic-control-go/internal/domain/valueobjects"
 )

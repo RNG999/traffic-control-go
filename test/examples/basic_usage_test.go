@@ -3,8 +3,9 @@ package examples
 import (
 	"testing"
 
-	"github.com/rng999/traffic-control-go/api"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/rng999/traffic-control-go/api"
 )
 
 // TestBasicTrafficControlUsage demonstrates the human-readable API

@@ -254,7 +254,7 @@ func TestLoggerSync(t *testing.T) {
 	require.NoError(t, err)
 
 	// Test that Sync doesn't panic and returns no error for stdout
-	err = logger.Sync()
+	_ = logger.Sync()
 	// Note: Sync might return an error for stdout on some systems, which is expected
 	// We just verify it doesn't panic
 	assert.NotPanics(t, func() {

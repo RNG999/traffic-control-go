@@ -3,9 +3,10 @@ package valueobjects_test
 import (
 	"testing"
 
-	"github.com/rng999/traffic-control-go/internal/domain/valueobjects"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/rng999/traffic-control-go/internal/domain/valueobjects"
 )
 
 func TestNewHandle(t *testing.T) {

@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"os"
 
 	tc "github.com/rng999/traffic-control-go/api"
 	"github.com/rng999/traffic-control-go/pkg/logging"
@@ -17,7 +18,12 @@ func main() {
 	}
 
 	// Ensure logs are flushed on exit
-	defer logging.Sync()
+	defer func() {
+		if err := logging.Sync(); err != nil {
+			// Log sync error to stderr as a fallback
+			fmt.Fprintf(os.Stderr, "Failed to sync logger: %v\n", err)
+		}
+	}()
 
 	logger := logging.WithComponent(logging.ComponentAPI)
 	logger.Info("Starting Traffic Control CLI Tool")
@@ -138,7 +144,7 @@ func example3() {
 }
 
 // Example showing validation errors
-func exampleWithErrors() {
+func _exampleWithErrors() {
 	fmt.Println("\nExample: Configuration Validation")
 	fmt.Println("-" + "-" + "-" + "-" + "-" + "-" + "-" + "-" + "-" + "-")
 

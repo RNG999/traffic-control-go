@@ -161,5 +161,5 @@ func (h *GetTrafficControlConfigHandler) Handle(query *models.GetTrafficControlC
 		view.Filters = append(view.Filters, filterView)
 	}
 
-	return types.Success(view)
+	return types.Success[models.TrafficControlConfigView](view)
 }

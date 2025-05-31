@@ -2,6 +2,7 @@ package entities
 
 import (
 	"fmt"
+
 	"github.com/rng999/traffic-control-go/internal/domain/valueobjects"
 )
 

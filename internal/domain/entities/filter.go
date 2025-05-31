@@ -2,8 +2,9 @@ package entities
 
 import (
 	"fmt"
-	"github.com/rng999/traffic-control-go/internal/domain/valueobjects"
 	"net"
+
+	"github.com/rng999/traffic-control-go/internal/domain/valueobjects"
 )
 
 // FilterID represents a unique identifier for a filter

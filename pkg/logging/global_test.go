@@ -70,7 +70,7 @@ func TestInitializeFromEnv(t *testing.T) {
 		}
 	}()
 
-	os.Setenv("TC_LOG_LEVEL", "debug")
+	_ = os.Setenv("TC_LOG_LEVEL", "debug")
 
 	err := InitializeFromEnv()
 	assert.NoError(t, err)

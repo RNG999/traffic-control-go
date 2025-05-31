@@ -89,7 +89,9 @@ func LoadConfigFromFile(filename string) (Config, error) {
 	}
 	defer func() {
 		if closeErr := file.Close(); closeErr != nil {
-			// Log the error but don't override the main return error
+			// Note: file.Close() error is intentionally ignored in defer
+			// to avoid overriding the main function's return error
+			_ = closeErr
 		}
 	}()
 

@@ -64,9 +64,9 @@ func TestInitializeFromEnv(t *testing.T) {
 	originalLevel := os.Getenv("TC_LOG_LEVEL")
 	defer func() {
 		if originalLevel == "" {
-			os.Unsetenv("TC_LOG_LEVEL")
+			_ = os.Unsetenv("TC_LOG_LEVEL")
 		} else {
-			os.Setenv("TC_LOG_LEVEL", originalLevel)
+			_ = os.Setenv("TC_LOG_LEVEL", originalLevel)
 		}
 	}()
 

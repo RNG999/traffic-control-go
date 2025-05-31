@@ -100,7 +100,8 @@ func (a *RealNetlinkAdapter) AddNetemQdisc(device valueobjects.DeviceName, handl
 }
 
 // Example implementation in the adapter switch statement:
-func _addNetemToSwitch(config QdiscConfig) (nl.Qdisc, error) {
+// This function shows how NETEM would be integrated, kept for reference
+func _addNetemToSwitch(config QdiscConfig) (nl.Qdisc, error) { //nolint:unused
 	// This would be added to the main adapter's switch statement
 	netem := nl.NewNetem(nl.QdiscAttrs{}, nl.NetemQdiscAttrs{})
 

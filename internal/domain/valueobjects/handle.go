@@ -23,13 +23,13 @@ func ParseHandle(s string) (Handle, error) {
 	if len(parts) != 2 {
 		return Handle{}, fmt.Errorf("invalid handle format: %s (expected 'major:minor')", s)
 	}
-	
+
 	// Parse major (required)
 	major, err := strconv.ParseUint(parts[0], 16, 16)
 	if err != nil {
 		return Handle{}, fmt.Errorf("invalid major number: %s", parts[0])
 	}
-	
+
 	// Parse minor (optional, can be empty)
 	var minor uint64
 	if parts[1] != "" {
@@ -38,7 +38,7 @@ func ParseHandle(s string) (Handle, error) {
 			return Handle{}, fmt.Errorf("invalid minor number: %s", parts[1])
 		}
 	}
-	
+
 	return Handle{
 		major: uint16(major),
 		minor: uint16(minor),

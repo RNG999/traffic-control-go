@@ -150,7 +150,7 @@ func TestFieldConstructors(t *testing.T) {
 			assert.Equal(t, tt.expected, tt.field)
 		})
 	}
-	
+
 	// Test error field separately since we can't easily compare errors
 	t.Run("error field", func(t *testing.T) {
 		testErr := errors.New("test error")
@@ -258,27 +258,27 @@ func TestLoggerSync(t *testing.T) {
 	// Note: Sync might return an error for stdout on some systems, which is expected
 	// We just verify it doesn't panic
 	assert.NotPanics(t, func() {
-		logger.Sync()
+		_ = logger.Sync()
 	})
 }
 
 // TestMockLogger tests the logger interface with a mock implementation
 func TestMockLogger(t *testing.T) {
 	mock := &MockLogger{}
-	
+
 	// Test that mock implements the interface
 	var _ Logger = (*MockLogger)(nil)
-	
+
 	// Test basic operations
 	mock.Info("test message")
 	mock.Debug("debug message")
 	mock.Warn("warn message")
 	mock.Error("error message")
-	
+
 	// Test context methods
 	deviceLogger := mock.WithDevice("eth0")
 	assert.NotNil(t, deviceLogger)
-	
+
 	classLogger := mock.WithClass("test-class")
 	assert.NotNil(t, classLogger)
 }

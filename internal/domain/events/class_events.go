@@ -84,7 +84,7 @@ func NewClassModifiedEvent(aggregateID string, version int, device valueobjects.
 	for k, v := range changes {
 		changesCopy[k] = v
 	}
-	
+
 	return &ClassModifiedEvent{
 		BaseEvent:  NewBaseEvent(aggregateID, "ClassModified", version),
 		DeviceName: device,

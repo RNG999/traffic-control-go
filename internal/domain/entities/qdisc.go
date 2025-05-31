@@ -13,7 +13,7 @@ const (
 	QdiscTypePRIO
 	QdiscTypeTBF
 	QdiscTypeSFQ
-	QdiscTypeFQ_CODEL
+	QdiscTypeFQCODEL
 	QdiscTypeCAKE
 	QdiscTypeCBQ
 	QdiscTypeHFSC
@@ -30,7 +30,7 @@ func (q QdiscType) String() string {
 		return "tbf"
 	case QdiscTypeSFQ:
 		return "sfq"
-	case QdiscTypeFQ_CODEL:
+	case QdiscTypeFQCODEL:
 		return "fq_codel"
 	case QdiscTypeCAKE:
 		return "cake"

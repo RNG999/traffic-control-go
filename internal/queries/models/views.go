@@ -67,24 +67,24 @@ func NewQdiscView(device valueobjects.DeviceName, qdisc interface{}) QdiscView {
 			return QdiscView{}
 		}
 	}
-	
+
 	view := QdiscView{
 		DeviceName: device.String(),
 		Handle:     basicQdisc.Handle().String(),
 		Type:       basicQdisc.Type().String(),
 		Parameters: make(map[string]interface{}),
 	}
-	
+
 	if basicQdisc.Parent() != nil {
 		view.Parent = basicQdisc.Parent().String()
 	}
-	
+
 	// Add HTB-specific parameters
 	if htb, ok := qdisc.(*entities.HTBQdisc); ok {
 		view.DefaultClass = htb.DefaultClass().String()
 		view.Parameters["r2q"] = htb.R2Q()
 	}
-	
+
 	return view
 }
 
@@ -101,23 +101,23 @@ func NewClassView(device valueobjects.DeviceName, class interface{}) ClassView {
 			return ClassView{}
 		}
 	}
-	
+
 	view := ClassView{
 		DeviceName: device.String(),
 		Handle:     basicClass.Handle().String(),
 		Parent:     basicClass.Parent().String(),
 		Name:       basicClass.Name(),
 	}
-	
+
 	// Convert priority to string
 	view.Priority = fmt.Sprintf("%d", basicClass.Priority())
-	
+
 	// Add HTB-specific parameters
 	if htb, ok := class.(*entities.HTBClass); ok {
 		view.GuaranteedBandwidth = htb.Rate().HumanReadable()
 		view.MaxBandwidth = htb.Ceil().HumanReadable()
 	}
-	
+
 	return view
 }
 
@@ -131,7 +131,7 @@ func NewFilterView(device valueobjects.DeviceName, filter *entities.Filter) Filt
 		FlowID:     filter.FlowID().String(),
 		Matches:    make([]MatchView, 0),
 	}
-	
+
 	// Convert protocol
 	switch filter.Protocol() {
 	case entities.ProtocolAll:
@@ -141,7 +141,7 @@ func NewFilterView(device valueobjects.DeviceName, filter *entities.Filter) Filt
 	case entities.ProtocolIPv6:
 		view.Protocol = "ipv6"
 	}
-	
+
 	// Convert matches
 	for _, match := range filter.Matches() {
 		view.Matches = append(view.Matches, MatchView{
@@ -149,7 +149,7 @@ func NewFilterView(device valueobjects.DeviceName, filter *entities.Filter) Filt
 			Value: match.String(),
 		})
 	}
-	
+
 	return view
 }
 

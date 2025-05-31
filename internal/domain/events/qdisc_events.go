@@ -76,7 +76,7 @@ func NewQdiscModifiedEvent(aggregateID string, version int, device valueobjects.
 	for k, v := range parameters {
 		paramsCopy[k] = v
 	}
-	
+
 	return &QdiscModifiedEvent{
 		BaseEvent:  NewBaseEvent(aggregateID, "QdiscModified", version),
 		DeviceName: device,

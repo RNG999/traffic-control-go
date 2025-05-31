@@ -11,7 +11,6 @@ type TrafficController struct {
 	deviceName     string
 	totalBandwidth valueobjects.Bandwidth
 	classes        []*TrafficClass
-	defaultClass   string
 	logger         logging.Logger
 }
 
@@ -22,7 +21,6 @@ type TrafficClass struct {
 	maxBandwidth        valueobjects.Bandwidth
 	priority            *Priority // Priority is now required and must be explicitly set
 	filters             []Filter
-	parent              *TrafficClass
 }
 
 // Priority represents the priority level of traffic (0-7, where 0 is highest priority)
@@ -49,10 +47,10 @@ const (
 // New creates a new traffic controller for a network interface
 func New(deviceName string) *TrafficController {
 	logger := logging.WithComponent(logging.ComponentAPI).WithDevice(deviceName)
-	logger.Info("Creating new traffic controller", 
+	logger.Info("Creating new traffic controller",
 		logging.String("device", deviceName),
 	)
-	
+
 	return &TrafficController{
 		deviceName: deviceName,
 		classes:    make([]*TrafficClass, 0),
@@ -62,27 +60,27 @@ func New(deviceName string) *TrafficController {
 
 // SetTotalBandwidth sets the total available bandwidth for the interface
 func (tc *TrafficController) SetTotalBandwidth(bandwidth string) *TrafficController {
-	tc.logger.Info("Setting total bandwidth", 
+	tc.logger.Info("Setting total bandwidth",
 		logging.String("bandwidth", bandwidth),
 		logging.String("operation", logging.OperationConfigLoad),
 	)
-	
+
 	tc.totalBandwidth = valueobjects.MustParseBandwidth(bandwidth)
 	return tc
 }
 
 // CreateTrafficClass creates a new traffic class with a human-readable name
 func (tc *TrafficController) CreateTrafficClass(name string) *TrafficClassBuilder {
-	tc.logger.Info("Creating traffic class", 
+	tc.logger.Info("Creating traffic class",
 		logging.String("class_name", name),
 		logging.String("operation", logging.OperationCreateClass),
 	)
-	
+
 	class := &TrafficClass{
-		name:     name,
+		name: name,
 		// priority is nil by default - must be set explicitly
 	}
-	
+
 	return &TrafficClassBuilder{
 		controller: tc,
 		class:      class,
@@ -111,7 +109,6 @@ func (b *TrafficClassBuilder) WithMaxBandwidth(bandwidth string) *TrafficClassBu
 func (b *TrafficClassBuilder) WithBurstableTo(bandwidth string) *TrafficClassBuilder {
 	return b.WithMaxBandwidth(bandwidth)
 }
-
 
 // WithPriority sets the traffic class to a specific priority level (0-7)
 func (b *TrafficClassBuilder) WithPriority(priority int) *TrafficClassBuilder {
@@ -178,7 +175,6 @@ func (b *TrafficClassBuilder) Apply() error {
 	return b.controller.Apply()
 }
 
-
 // PriorityGroupBuilder builds priority-based traffic groups
 type PriorityGroupBuilder struct {
 	controller *TrafficController
@@ -219,7 +215,7 @@ func (tc *TrafficController) Apply() error {
 		logging.String("operation", logging.OperationApplyConfig),
 		logging.Int("class_count", len(tc.classes)),
 	)
-	
+
 	// Validation
 	if err := tc.validate(); err != nil {
 		tc.logger.Error("Configuration validation failed",
@@ -228,26 +224,26 @@ func (tc *TrafficController) Apply() error {
 		)
 		return err
 	}
-	
+
 	tc.logger.Info("Configuration validation successful")
-	
+
 	// TODO: Implement actual TC commands via netlink
 	fmt.Printf("Applying traffic control configuration to %s\n", tc.deviceName)
 	fmt.Printf("Total bandwidth: %s\n", tc.totalBandwidth)
-	
+
 	for _, class := range tc.classes {
 		priority := "<not set>"
 		if class.priority != nil {
 			priority = fmt.Sprintf("%d", *class.priority)
 		}
-		
+
 		tc.logger.Debug("Applying traffic class configuration",
 			logging.String("class_name", class.name),
 			logging.String("guaranteed_bandwidth", class.guaranteedBandwidth.String()),
 			logging.String("max_bandwidth", class.maxBandwidth.String()),
 			logging.String("priority", priority),
 		)
-		
+
 		fmt.Printf("  Class '%s': guaranteed=%s, max=%s, priority=%s\n",
 			class.name,
 			class.guaranteedBandwidth,
@@ -255,13 +251,13 @@ func (tc *TrafficController) Apply() error {
 			priority,
 		)
 	}
-	
+
 	tc.logger.Info("Traffic control configuration applied successfully",
 		logging.String("device", tc.deviceName),
 		logging.String("total_bandwidth", tc.totalBandwidth.String()),
 		logging.Int("classes_applied", len(tc.classes)),
 	)
-	
+
 	return nil
 }
 
@@ -271,14 +267,14 @@ func (tc *TrafficController) validate() error {
 		logging.String("operation", logging.OperationValidation),
 		logging.Int("class_count", len(tc.classes)),
 	)
-	
+
 	if tc.totalBandwidth.BitsPerSecond() == 0 {
 		tc.logger.Warn("Total bandwidth not set",
 			logging.String("validation_error", "missing_total_bandwidth"),
 		)
 		return fmt.Errorf("total bandwidth not set. Use SetTotalBandwidth() to specify the interface bandwidth")
 	}
-	
+
 	// Check if all classes have priority set
 	for _, class := range tc.classes {
 		if class.priority == nil {
@@ -293,19 +289,19 @@ func (tc *TrafficController) validate() error {
 			)
 		}
 	}
-	
+
 	// Check if guaranteed bandwidth sum doesn't exceed total
 	var totalGuaranteed valueobjects.Bandwidth
 	for _, class := range tc.classes {
 		totalGuaranteed = totalGuaranteed.Add(class.guaranteedBandwidth)
-		
+
 		tc.logger.Debug("Validating traffic class",
 			logging.String("class_name", class.name),
 			logging.String("guaranteed_bandwidth", class.guaranteedBandwidth.String()),
 			logging.String("max_bandwidth", class.maxBandwidth.String()),
 			logging.Int("priority", int(*class.priority)),
 		)
-		
+
 		// Check if max bandwidth exceeds total
 		if class.maxBandwidth.GreaterThan(tc.totalBandwidth) {
 			tc.logger.Warn("Class max bandwidth exceeds total bandwidth",
@@ -322,7 +318,7 @@ func (tc *TrafficController) validate() error {
 				tc.totalBandwidth,
 			)
 		}
-		
+
 		// Check if guaranteed > max
 		if class.guaranteedBandwidth.GreaterThan(class.maxBandwidth) && class.maxBandwidth.BitsPerSecond() > 0 {
 			tc.logger.Warn("Class guaranteed bandwidth exceeds max bandwidth",
@@ -340,7 +336,7 @@ func (tc *TrafficController) validate() error {
 			)
 		}
 	}
-	
+
 	if totalGuaranteed.GreaterThan(tc.totalBandwidth) {
 		tc.logger.Warn("Total guaranteed bandwidth exceeds interface bandwidth",
 			logging.String("total_guaranteed", totalGuaranteed.String()),
@@ -354,11 +350,11 @@ func (tc *TrafficController) validate() error {
 			tc.totalBandwidth,
 		)
 	}
-	
+
 	tc.logger.Debug("Configuration validation completed successfully",
 		logging.String("total_guaranteed", totalGuaranteed.String()),
 		logging.String("total_bandwidth", tc.totalBandwidth.String()),
 	)
-	
+
 	return nil
 }

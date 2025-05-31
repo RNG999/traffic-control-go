@@ -12,7 +12,7 @@ import (
 
 func TestDefaultConfig(t *testing.T) {
 	config := DefaultConfig()
-	
+
 	assert.Equal(t, LevelInfo, config.Level)
 	assert.Equal(t, "console", config.Format)
 	assert.Equal(t, []string{"stdout"}, config.OutputPaths)
@@ -22,7 +22,7 @@ func TestDefaultConfig(t *testing.T) {
 
 func TestDevelopmentConfig(t *testing.T) {
 	config := DevelopmentConfig()
-	
+
 	assert.Equal(t, LevelDebug, config.Level)
 	assert.Equal(t, "console", config.Format)
 	assert.Equal(t, []string{"stdout"}, config.OutputPaths)
@@ -32,7 +32,7 @@ func TestDevelopmentConfig(t *testing.T) {
 
 func TestProductionConfig(t *testing.T) {
 	config := ProductionConfig()
-	
+
 	assert.Equal(t, LevelInfo, config.Level)
 	assert.Equal(t, "json", config.Format)
 	assert.Equal(t, []string{"stdout"}, config.OutputPaths)
@@ -125,7 +125,7 @@ func TestLoadConfigFromFile(t *testing.T) {
 	// Create a temporary config file
 	tmpDir := t.TempDir()
 	configFile := filepath.Join(tmpDir, "logging.json")
-	
+
 	config := Config{
 		Level:       LevelDebug,
 		Format:      "json",
@@ -136,18 +136,18 @@ func TestLoadConfigFromFile(t *testing.T) {
 			"domain": LevelDebug,
 		},
 	}
-	
+
 	// Write config to file
 	data, err := json.MarshalIndent(config, "", "  ")
 	require.NoError(t, err)
-	
+
 	err = os.WriteFile(configFile, data, 0644)
 	require.NoError(t, err)
-	
+
 	// Load config from file
 	loadedConfig, err := LoadConfigFromFile(configFile)
 	require.NoError(t, err)
-	
+
 	assert.Equal(t, config.Level, loadedConfig.Level)
 	assert.Equal(t, config.Format, loadedConfig.Format)
 	assert.Equal(t, config.OutputPaths, loadedConfig.OutputPaths)
@@ -184,7 +184,7 @@ func TestLoadConfigFromFileErrors(t *testing.T) {
 				require.NoError(t, err)
 				tt.filename = filename
 			}
-			
+
 			_, err := LoadConfigFromFile(tt.filename)
 			if tt.wantErr {
 				assert.Error(t, err)
@@ -204,7 +204,7 @@ func TestLoadConfigFromEnv(t *testing.T) {
 		"TC_LOG_DEVELOPMENT": os.Getenv("TC_LOG_DEVELOPMENT"),
 		"TC_LOG_SAMPLING":    os.Getenv("TC_LOG_SAMPLING"),
 	}
-	
+
 	// Clean up after test
 	defer func() {
 		for key, value := range originalVars {
@@ -265,14 +265,14 @@ func TestLoadConfigFromEnv(t *testing.T) {
 			for key := range originalVars {
 				os.Unsetenv(key)
 			}
-			
+
 			// Set test env vars
 			for key, value := range tt.envVars {
 				os.Setenv(key, value)
 			}
-			
+
 			config := LoadConfigFromEnv()
-			
+
 			assert.Equal(t, tt.expected.Level, config.Level)
 			assert.Equal(t, tt.expected.Format, config.Format)
 			assert.Equal(t, tt.expected.OutputPaths, config.OutputPaths)
@@ -290,7 +290,7 @@ func TestConfigString(t *testing.T) {
 		Development:     false,
 		SamplingEnabled: true,
 	}
-	
+
 	str := config.String()
 	assert.Contains(t, str, "Level=info")
 	assert.Contains(t, str, "Format=json")
@@ -301,16 +301,16 @@ func TestConfigString(t *testing.T) {
 
 func TestConfigComponentLevels(t *testing.T) {
 	config := DefaultConfig()
-	
+
 	// Test setting component level
 	config.SetComponentLevel("api", LevelDebug)
 	config.SetComponentLevel("domain", LevelWarn)
-	
+
 	// Test getting component levels
 	assert.Equal(t, LevelDebug, config.GetComponentLevel("api"))
 	assert.Equal(t, LevelWarn, config.GetComponentLevel("domain"))
 	assert.Equal(t, config.Level, config.GetComponentLevel("nonexistent"))
-	
+
 	// Test validation with component levels
 	err := config.Validate()
 	assert.NoError(t, err)
@@ -324,7 +324,7 @@ func TestLevelConstants(t *testing.T) {
 		LevelError,
 		LevelFatal,
 	}
-	
+
 	for _, level := range levels {
 		assert.NotEmpty(t, level)
 		assert.IsType(t, Level(""), level)

@@ -12,12 +12,12 @@ type TrafficControlAggregate struct {
 	// Aggregate identity
 	id         string
 	deviceName valueobjects.DeviceName
-	
+
 	// Current state
 	qdiscs  map[valueobjects.Handle]*entities.Qdisc
 	classes map[valueobjects.Handle]*entities.Class
 	filters []*entities.Filter
-	
+
 	// Event sourcing
 	version int
 	changes []events.DomainEvent
@@ -39,15 +39,15 @@ func NewTrafficControlAggregate(deviceName valueobjects.DeviceName) *TrafficCont
 // FromEvents reconstructs an aggregate from events
 func FromEvents(deviceName valueobjects.DeviceName, eventList []events.DomainEvent) *TrafficControlAggregate {
 	aggregate := NewTrafficControlAggregate(deviceName)
-	
+
 	for _, event := range eventList {
 		aggregate.ApplyEvent(event)
 		aggregate.version++
 	}
-	
+
 	// Clear changes as these are already committed events
 	aggregate.changes = make([]events.DomainEvent, 0)
-	
+
 	return aggregate
 }
 
@@ -72,12 +72,12 @@ func (tc *TrafficControlAggregate) AddHTBQdisc(handle valueobjects.Handle, defau
 	if _, exists := tc.qdiscs[handle]; exists {
 		return fmt.Errorf("qdisc with handle %s already exists", handle)
 	}
-	
+
 	// Business rule: Root qdisc must have minor = 0
 	if !handle.IsRoot() {
 		return fmt.Errorf("root qdisc handle must have minor = 0, got %s", handle)
 	}
-	
+
 	// Create and apply event
 	event := events.NewHTBQdiscCreatedEvent(
 		tc.id,
@@ -86,11 +86,11 @@ func (tc *TrafficControlAggregate) AddHTBQdisc(handle valueobjects.Handle, defau
 		handle,
 		defaultClass,
 	)
-	
+
 	tc.ApplyEvent(event)
 	tc.changes = append(tc.changes, event)
 	tc.version++
-	
+
 	return nil
 }
 
@@ -104,22 +104,22 @@ func (tc *TrafficControlAggregate) AddHTBClass(parent valueobjects.Handle, class
 			return fmt.Errorf("parent %s does not exist", parent)
 		}
 	}
-	
+
 	// Business rule: Class handle must not already exist
 	if _, exists := tc.classes[classHandle]; exists {
 		return fmt.Errorf("class with handle %s already exists", classHandle)
 	}
-	
+
 	// Business rule: HTB specific - parent must be HTB
 	if parentExists && parentQdisc.Type() != entities.QdiscTypeHTB {
 		return fmt.Errorf("parent qdisc must be HTB type")
 	}
-	
+
 	// Business rule: Ceil must be >= Rate
 	if ceil.BitsPerSecond() > 0 && ceil.LessThan(rate) {
 		return fmt.Errorf("ceil (%s) cannot be less than rate (%s)", ceil, rate)
 	}
-	
+
 	// Create and apply event
 	event := events.NewHTBClassCreatedEvent(
 		tc.id,
@@ -131,11 +131,11 @@ func (tc *TrafficControlAggregate) AddHTBClass(parent valueobjects.Handle, class
 		rate,
 		ceil,
 	)
-	
+
 	tc.ApplyEvent(event)
 	tc.changes = append(tc.changes, event)
 	tc.version++
-	
+
 	return nil
 }
 
@@ -147,12 +147,12 @@ func (tc *TrafficControlAggregate) AddFilter(parent valueobjects.Handle, priorit
 	if !qdiscExists && !classExists {
 		return fmt.Errorf("parent %s does not exist", parent)
 	}
-	
+
 	// Business rule: Target class (flowID) must exist
 	if _, exists := tc.classes[flowID]; !exists {
 		return fmt.Errorf("target class %s does not exist", flowID)
 	}
-	
+
 	// Create event
 	event := events.NewFilterCreatedEvent(
 		tc.id,
@@ -163,16 +163,16 @@ func (tc *TrafficControlAggregate) AddFilter(parent valueobjects.Handle, priorit
 		handle,
 		flowID,
 	)
-	
+
 	// Add matches to event
 	for _, match := range matches {
 		event.AddMatch(match.Type(), match.String())
 	}
-	
+
 	tc.ApplyEvent(event)
 	tc.changes = append(tc.changes, event)
 	tc.version++
-	
+
 	return nil
 }
 
@@ -182,19 +182,19 @@ func (tc *TrafficControlAggregate) ApplyEvent(event events.DomainEvent) {
 	case *events.HTBQdiscCreatedEvent:
 		qdisc := entities.NewHTBQdisc(e.DeviceName, e.Handle, e.DefaultClass)
 		tc.qdiscs[e.Handle] = qdisc.Qdisc
-		
+
 	case *events.HTBClassCreatedEvent:
 		// Use a default priority of 4 for event reconstruction
 		class := entities.NewHTBClass(e.DeviceName, e.Handle, e.Parent, e.Name, entities.Priority(4))
 		class.SetRate(e.Rate)
 		class.SetCeil(e.Ceil)
 		tc.classes[e.Handle] = class.Class
-		
+
 	case *events.FilterCreatedEvent:
 		filter := entities.NewFilter(e.DeviceName, e.Parent, e.Priority, e.Handle)
 		filter.SetFlowID(e.FlowID)
 		filter.SetProtocol(e.Protocol)
-		
+
 		// Reconstruct matches from event data
 		for _, matchData := range e.Matches {
 			// This is simplified - in real implementation, we'd deserialize properly
@@ -208,12 +208,12 @@ func (tc *TrafficControlAggregate) ApplyEvent(event events.DomainEvent) {
 				// In real implementation, store structured data in events
 			}
 		}
-		
+
 		tc.filters = append(tc.filters, filter)
-		
+
 	case *events.QdiscDeletedEvent:
 		delete(tc.qdiscs, e.Handle)
-		
+
 	case *events.ClassDeletedEvent:
 		delete(tc.classes, e.Handle)
 	}

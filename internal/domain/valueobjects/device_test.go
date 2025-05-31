@@ -3,7 +3,7 @@ package valueobjects_test
 import (
 	"strings"
 	"testing"
-	
+
 	"github.com/rng999/traffic-control-go/internal/domain/valueobjects"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -75,11 +75,11 @@ func TestNewDeviceName(t *testing.T) {
 			errMsg:  "invalid device name format",
 		},
 	}
-	
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			d, err := valueobjects.NewDeviceName(tt.input)
-			
+
 			if tt.wantErr {
 				require.Error(t, err)
 				if tt.errMsg != "" {
@@ -87,7 +87,7 @@ func TestNewDeviceName(t *testing.T) {
 				}
 				return
 			}
-			
+
 			require.NoError(t, err)
 			assert.Equal(t, tt.input, d.String())
 		})
@@ -99,7 +99,7 @@ func TestMustNewDeviceName(t *testing.T) {
 		d := valueobjects.MustNewDeviceName("eth0")
 		assert.Equal(t, "eth0", d.String())
 	})
-	
+
 	t.Run("Invalid input panics", func(t *testing.T) {
 		assert.Panics(t, func() {
 			valueobjects.MustNewDeviceName("")
@@ -111,7 +111,7 @@ func TestDeviceNameEquals(t *testing.T) {
 	d1 := valueobjects.MustNewDeviceName("eth0")
 	d2 := valueobjects.MustNewDeviceName("eth0")
 	d3 := valueobjects.MustNewDeviceName("eth1")
-	
+
 	assert.True(t, d1.Equals(d2))
 	assert.False(t, d1.Equals(d3))
 }
@@ -125,12 +125,12 @@ func TestDeviceNameImmutability(t *testing.T) {
 	// DeviceName should be immutable
 	name := "eth0"
 	d := valueobjects.MustNewDeviceName(name)
-	
+
 	// Even if we modify the original string variable,
 	// the DeviceName should remain unchanged
 	originalStr := d.String()
 	name = "modified"
-	
+
 	assert.Equal(t, originalStr, d.String())
 	assert.Equal(t, "eth0", d.String())
 }
@@ -159,7 +159,7 @@ func TestDeviceNameValidPatterns(t *testing.T) {
 		"dummy0", "gre0", "sit0",
 		"ppp0", "slip0",
 	}
-	
+
 	for _, name := range validNames {
 		t.Run(name, func(t *testing.T) {
 			_, err := valueobjects.NewDeviceName(name)
@@ -171,9 +171,9 @@ func TestDeviceNameValidPatterns(t *testing.T) {
 func TestDeviceNameBoundaryLengths(t *testing.T) {
 	// Test boundary conditions for name length
 	tests := []struct {
-		name    string
-		length  int
-		valid   bool
+		name   string
+		length int
+		valid  bool
 	}{
 		{"1 char", 1, true},
 		{"2 chars", 2, true},
@@ -182,14 +182,14 @@ func TestDeviceNameBoundaryLengths(t *testing.T) {
 		{"16 chars (too long)", 16, false},
 		{"20 chars (too long)", 20, false},
 	}
-	
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Generate a name of the specified length
 			name := strings.Repeat("a", tt.length)
-			
+
 			_, err := valueobjects.NewDeviceName(name)
-			
+
 			if tt.valid {
 				assert.NoError(t, err)
 			} else {

@@ -2,7 +2,7 @@ package handlers
 
 import (
 	"fmt"
-	
+
 	"github.com/rng999/traffic-control-go/internal/domain/aggregates"
 	"github.com/rng999/traffic-control-go/internal/infrastructure/eventstore"
 	"github.com/rng999/traffic-control-go/internal/queries/models"
@@ -29,17 +29,17 @@ func (h *GetQdiscByDeviceHandler) Handle(query *models.GetQdiscByDeviceQuery) ty
 	if err != nil {
 		return types.Failure[[]models.QdiscView](fmt.Errorf("failed to load events: %w", err))
 	}
-	
+
 	// Reconstruct aggregate from events
 	aggregate := aggregates.FromEvents(query.DeviceName(), events)
-	
+
 	// Convert to view models
 	var views []models.QdiscView
 	for _, qdisc := range aggregate.GetQdiscs() {
 		view := models.NewQdiscView(query.DeviceName(), qdisc)
 		views = append(views, view)
 	}
-	
+
 	return types.Success(views)
 }
 
@@ -63,17 +63,17 @@ func (h *GetClassesByDeviceHandler) Handle(query *models.GetClassesByDeviceQuery
 	if err != nil {
 		return types.Failure[[]models.ClassView](fmt.Errorf("failed to load events: %w", err))
 	}
-	
+
 	// Reconstruct aggregate from events
 	aggregate := aggregates.FromEvents(query.DeviceName(), events)
-	
+
 	// Convert to view models
 	var views []models.ClassView
 	for _, class := range aggregate.GetClasses() {
 		view := models.NewClassView(query.DeviceName(), class)
 		views = append(views, view)
 	}
-	
+
 	return types.Success(views)
 }
 
@@ -97,17 +97,17 @@ func (h *GetFiltersByDeviceHandler) Handle(query *models.GetFiltersByDeviceQuery
 	if err != nil {
 		return types.Failure[[]models.FilterView](fmt.Errorf("failed to load events: %w", err))
 	}
-	
+
 	// Reconstruct aggregate from events
 	aggregate := aggregates.FromEvents(query.DeviceName(), events)
-	
+
 	// Convert to view models
 	var views []models.FilterView
 	for _, filter := range aggregate.GetFilters() {
 		view := models.NewFilterView(query.DeviceName(), filter)
 		views = append(views, view)
 	}
-	
+
 	return types.Success(views)
 }
 
@@ -131,10 +131,10 @@ func (h *GetTrafficControlConfigHandler) Handle(query *models.GetTrafficControlC
 	if err != nil {
 		return types.Failure[models.TrafficControlConfigView](fmt.Errorf("failed to load events: %w", err))
 	}
-	
+
 	// Reconstruct aggregate from events
 	aggregate := aggregates.FromEvents(query.DeviceName(), events)
-	
+
 	// Build complete view
 	view := models.TrafficControlConfigView{
 		DeviceName: query.DeviceName().String(),
@@ -142,24 +142,24 @@ func (h *GetTrafficControlConfigHandler) Handle(query *models.GetTrafficControlC
 		Classes:    make([]models.ClassView, 0),
 		Filters:    make([]models.FilterView, 0),
 	}
-	
+
 	// Convert qdiscs
 	for _, qdisc := range aggregate.GetQdiscs() {
 		qdiscView := models.NewQdiscView(query.DeviceName(), qdisc)
 		view.Qdiscs = append(view.Qdiscs, qdiscView)
 	}
-	
+
 	// Convert classes
 	for _, class := range aggregate.GetClasses() {
 		classView := models.NewClassView(query.DeviceName(), class)
 		view.Classes = append(view.Classes, classView)
 	}
-	
+
 	// Convert filters
 	for _, filter := range aggregate.GetFilters() {
 		filterView := models.NewFilterView(query.DeviceName(), filter)
 		view.Filters = append(view.Filters, filterView)
 	}
-	
+
 	return types.Success(view)
 }

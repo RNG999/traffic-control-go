@@ -42,18 +42,18 @@ func ParseBandwidth(s string) (Bandwidth, error) {
 	// Regular expression to match number + unit
 	re := regexp.MustCompile(`^(\d+(?:\.\d+)?)\s*(bps|kbps|mbps|gbps|Bps|Kbps|Mbps|Gbps)$`)
 	matches := re.FindStringSubmatch(strings.TrimSpace(s))
-	
+
 	if len(matches) != 3 {
 		return Bandwidth{}, fmt.Errorf("invalid bandwidth format: %s (expected format: '100Mbps')", s)
 	}
-	
+
 	value, err := strconv.ParseFloat(matches[1], 64)
 	if err != nil {
 		return Bandwidth{}, fmt.Errorf("invalid numeric value: %s", matches[1])
 	}
-	
+
 	unit := strings.ToLower(matches[2])
-	
+
 	switch unit {
 	case "bps":
 		return Bps(uint64(value)), nil

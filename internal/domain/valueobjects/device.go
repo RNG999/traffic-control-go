@@ -32,17 +32,17 @@ func validateDeviceName(name string) error {
 	if name == "" {
 		return fmt.Errorf("device name cannot be empty")
 	}
-	
+
 	if len(name) > 15 { // Linux IFNAMSIZ limit
 		return fmt.Errorf("device name too long (max 15 characters): %s", name)
 	}
-	
+
 	// Valid characters: alphanumeric, dash, dot, @
 	validName := regexp.MustCompile(`^[a-zA-Z0-9\-\.@]+$`)
 	if !validName.MatchString(name) {
 		return fmt.Errorf("invalid device name format: %s", name)
 	}
-	
+
 	return nil
 }
 

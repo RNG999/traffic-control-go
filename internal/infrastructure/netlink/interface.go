@@ -6,18 +6,18 @@ import (
 	"github.com/rng999/traffic-control-go/pkg/types"
 )
 
-// NetlinkAdapter defines the interface for netlink operations
-type NetlinkAdapter interface {
+// Adapter defines the interface for netlink operations
+type Adapter interface {
 	// Qdisc operations
 	AddQdisc(device valueobjects.DeviceName, qdisc QdiscConfig) types.Result[Unit]
 	DeleteQdisc(device valueobjects.DeviceName, handle valueobjects.Handle) types.Result[Unit]
 	GetQdiscs(device valueobjects.DeviceName) types.Result[[]QdiscInfo]
-	
+
 	// Class operations
 	AddClass(device valueobjects.DeviceName, class ClassConfig) types.Result[Unit]
 	DeleteClass(device valueobjects.DeviceName, handle valueobjects.Handle) types.Result[Unit]
 	GetClasses(device valueobjects.DeviceName) types.Result[[]ClassInfo]
-	
+
 	// Filter operations
 	AddFilter(device valueobjects.DeviceName, filter FilterConfig) types.Result[Unit]
 	DeleteFilter(device valueobjects.DeviceName, parent valueobjects.Handle, priority uint16, handle valueobjects.Handle) types.Result[Unit]
@@ -29,18 +29,18 @@ type Unit struct{}
 
 // QdiscConfig represents configuration for creating a qdisc
 type QdiscConfig struct {
-	Handle      valueobjects.Handle
-	Parent      *valueobjects.Handle
-	Type        entities.QdiscType
-	Parameters  map[string]interface{}
+	Handle     valueobjects.Handle
+	Parent     *valueobjects.Handle
+	Type       entities.QdiscType
+	Parameters map[string]interface{}
 }
 
 // QdiscInfo represents information about an existing qdisc
 type QdiscInfo struct {
-	Handle      valueobjects.Handle
-	Parent      *valueobjects.Handle
-	Type        entities.QdiscType
-	Statistics  QdiscStats
+	Handle     valueobjects.Handle
+	Parent     *valueobjects.Handle
+	Type       entities.QdiscType
+	Statistics QdiscStats
 }
 
 // QdiscStats represents qdisc statistics

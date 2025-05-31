@@ -22,19 +22,19 @@ const (
 type Config struct {
 	// Level specifies the minimum log level
 	Level Level `json:"level" yaml:"level"`
-	
+
 	// Format specifies the log format ("json" or "console")
 	Format string `json:"format" yaml:"format"`
-	
+
 	// OutputPaths specifies where to write logs (files or "stdout", "stderr")
 	OutputPaths []string `json:"output_paths" yaml:"output_paths"`
-	
+
 	// Development mode enables more verbose logging and stack traces
 	Development bool `json:"development" yaml:"development"`
-	
+
 	// SamplingEnabled enables log sampling for high-volume scenarios
 	SamplingEnabled bool `json:"sampling_enabled" yaml:"sampling_enabled"`
-	
+
 	// Component-specific log levels (optional)
 	ComponentLevels map[string]Level `json:"component_levels,omitempty" yaml:"component_levels,omitempty"`
 }
@@ -75,45 +75,45 @@ func ProductionConfig() Config {
 // LoadConfigFromFile loads logging configuration from a JSON or YAML file
 func LoadConfigFromFile(filename string) (Config, error) {
 	config := DefaultConfig()
-	
+
 	file, err := os.Open(filename)
 	if err != nil {
 		return config, fmt.Errorf("failed to open config file %s: %w", filename, err)
 	}
 	defer file.Close()
-	
+
 	decoder := json.NewDecoder(file)
 	if err := decoder.Decode(&config); err != nil {
 		return config, fmt.Errorf("failed to decode config file %s: %w", filename, err)
 	}
-	
+
 	return config, config.Validate()
 }
 
 // LoadConfigFromEnv loads logging configuration from environment variables
 func LoadConfigFromEnv() Config {
 	config := DefaultConfig()
-	
+
 	if level := os.Getenv("TC_LOG_LEVEL"); level != "" {
 		config.Level = Level(strings.ToLower(level))
 	}
-	
+
 	if format := os.Getenv("TC_LOG_FORMAT"); format != "" {
 		config.Format = strings.ToLower(format)
 	}
-	
+
 	if outputs := os.Getenv("TC_LOG_OUTPUTS"); outputs != "" {
 		config.OutputPaths = strings.Split(outputs, ",")
 	}
-	
+
 	if dev := os.Getenv("TC_LOG_DEVELOPMENT"); dev == "true" {
 		config.Development = true
 	}
-	
+
 	if sampling := os.Getenv("TC_LOG_SAMPLING"); sampling == "true" {
 		config.SamplingEnabled = true
 	}
-	
+
 	return config
 }
 
@@ -127,21 +127,21 @@ func (c *Config) Validate() error {
 		LevelError: true,
 		LevelFatal: true,
 	}
-	
+
 	if !validLevels[c.Level] {
 		return fmt.Errorf("invalid log level: %s (valid levels: debug, info, warn, error, fatal)", c.Level)
 	}
-	
+
 	// Validate format
 	if c.Format != "json" && c.Format != "console" {
 		return fmt.Errorf("invalid log format: %s (valid formats: json, console)", c.Format)
 	}
-	
+
 	// Validate output paths
 	if len(c.OutputPaths) == 0 {
 		return fmt.Errorf("at least one output path must be specified")
 	}
-	
+
 	for _, path := range c.OutputPaths {
 		if path != "stdout" && path != "stderr" {
 			// Check if file path is writable
@@ -150,14 +150,14 @@ func (c *Config) Validate() error {
 			}
 		}
 	}
-	
+
 	// Validate component levels
 	for component, level := range c.ComponentLevels {
 		if !validLevels[level] {
 			return fmt.Errorf("invalid log level for component %s: %s", component, level)
 		}
 	}
-	
+
 	return nil
 }
 

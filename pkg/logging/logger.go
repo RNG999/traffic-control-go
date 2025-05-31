@@ -20,17 +20,17 @@ type Logger interface {
 	// Context-aware logging
 	WithContext(ctx context.Context) Logger
 	WithFields(fields ...Field) Logger
-	
+
 	// Traffic Control specific context methods
 	WithDevice(deviceName string) Logger
 	WithClass(className string) Logger
 	WithOperation(operation string) Logger
 	WithBandwidth(bandwidth string) Logger
 	WithPriority(priority int) Logger
-	
+
 	// Component-specific loggers
 	WithComponent(component string) Logger
-	
+
 	// Sync flushes any buffered log entries
 	Sync() error
 }
@@ -72,32 +72,32 @@ func Duration(key string, value interface{}) Field {
 
 // Component constants for structured logging
 const (
-	ComponentAPI           = "api"
-	ComponentDomain        = "domain"
+	ComponentAPI            = "api"
+	ComponentDomain         = "domain"
 	ComponentInfrastructure = "infrastructure"
-	ComponentCommands      = "commands"
-	ComponentQueries       = "queries"
-	ComponentNetlink       = "netlink"
-	ComponentEventStore    = "eventstore"
-	ComponentValidation    = "validation"
-	ComponentConfig        = "config"
+	ComponentCommands       = "commands"
+	ComponentQueries        = "queries"
+	ComponentNetlink        = "netlink"
+	ComponentEventStore     = "eventstore"
+	ComponentValidation     = "validation"
+	ComponentConfig         = "config"
 )
 
 // Operation constants for traffic control operations
 const (
-	OperationCreateClass   = "create_class"
-	OperationDeleteClass   = "delete_class"
-	OperationUpdateClass   = "update_class"
-	OperationCreateQdisc   = "create_qdisc"
-	OperationDeleteQdisc   = "delete_qdisc"
-	OperationCreateFilter  = "create_filter"
-	OperationDeleteFilter  = "delete_filter"
-	OperationValidation    = "validation"
-	OperationConfigLoad    = "config_load"
-	OperationConfigSave    = "config_save"
-	OperationApplyConfig   = "apply_config"
-	OperationNetlinkCall   = "netlink_call"
-	OperationEventStore    = "event_store"
+	OperationCreateClass  = "create_class"
+	OperationDeleteClass  = "delete_class"
+	OperationUpdateClass  = "update_class"
+	OperationCreateQdisc  = "create_qdisc"
+	OperationDeleteQdisc  = "delete_qdisc"
+	OperationCreateFilter = "create_filter"
+	OperationDeleteFilter = "delete_filter"
+	OperationValidation   = "validation"
+	OperationConfigLoad   = "config_load"
+	OperationConfigSave   = "config_save"
+	OperationApplyConfig  = "apply_config"
+	OperationNetlinkCall  = "netlink_call"
+	OperationEventStore   = "event_store"
 )
 
 // zapLogger implements the Logger interface using Uber's zap library
@@ -113,12 +113,12 @@ func NewLogger(config Config) (Logger, error) {
 	if err != nil {
 		return nil, err
 	}
-	
+
 	logger, err := zapConfig.Build()
 	if err != nil {
 		return nil, err
 	}
-	
+
 	return &zapLogger{
 		zap:   logger,
 		sugar: logger.Sugar(),
@@ -142,7 +142,7 @@ func buildZapConfig(config Config) (zap.Config, error) {
 	default:
 		level = zapcore.InfoLevel
 	}
-	
+
 	zapConfig := zap.Config{
 		Level:       zap.NewAtomicLevelAt(level),
 		Development: config.Development,
@@ -168,7 +168,7 @@ func buildZapConfig(config Config) (zap.Config, error) {
 		OutputPaths:      config.OutputPaths,
 		ErrorOutputPaths: []string{"stderr"},
 	}
-	
+
 	return zapConfig, nil
 }
 
@@ -222,7 +222,7 @@ func (l *zapLogger) WithFields(fields ...Field) Logger {
 	newFields := make([]Field, len(l.fields)+len(fields))
 	copy(newFields, l.fields)
 	copy(newFields[len(l.fields):], fields)
-	
+
 	return &zapLogger{
 		zap:    l.zap,
 		sugar:  l.sugar,

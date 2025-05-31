@@ -2,7 +2,7 @@ package handlers
 
 import (
 	"fmt"
-	
+
 	"github.com/rng999/traffic-control-go/internal/commands/models"
 	"github.com/rng999/traffic-control-go/internal/domain/aggregates"
 	"github.com/rng999/traffic-control-go/internal/infrastructure/eventstore"
@@ -29,21 +29,21 @@ func (h *CreateHTBQdiscHandler) Handle(cmd *models.CreateHTBQdiscCommand) types.
 	if err != nil {
 		return types.Failure[struct{}](fmt.Errorf("failed to load events: %w", err))
 	}
-	
+
 	// Reconstruct aggregate from events
 	aggregate := aggregates.FromEvents(cmd.DeviceName(), events)
-	
+
 	// Execute business logic
 	if err := aggregate.AddHTBQdisc(cmd.Handle(), cmd.DefaultClass()); err != nil {
 		return types.Failure[struct{}](err)
 	}
-	
+
 	// Save uncommitted events
 	uncommitted := aggregate.GetUncommittedChanges()
 	if err := h.eventStore.Save(aggregateID, uncommitted, aggregate.Version()-len(uncommitted)); err != nil {
 		return types.Failure[struct{}](fmt.Errorf("failed to save events: %w", err))
 	}
-	
+
 	return types.Success(struct{}{})
 }
 
@@ -67,10 +67,10 @@ func (h *CreateHTBClassHandler) Handle(cmd *models.CreateHTBClassCommand) types.
 	if err != nil {
 		return types.Failure[struct{}](fmt.Errorf("failed to load events: %w", err))
 	}
-	
+
 	// Reconstruct aggregate from events
 	aggregate := aggregates.FromEvents(cmd.DeviceName(), events)
-	
+
 	// Execute business logic
 	if err := aggregate.AddHTBClass(
 		cmd.Parent(),
@@ -81,13 +81,13 @@ func (h *CreateHTBClassHandler) Handle(cmd *models.CreateHTBClassCommand) types.
 	); err != nil {
 		return types.Failure[struct{}](err)
 	}
-	
+
 	// Save uncommitted events
 	uncommitted := aggregate.GetUncommittedChanges()
 	if err := h.eventStore.Save(aggregateID, uncommitted, aggregate.Version()-len(uncommitted)); err != nil {
 		return types.Failure[struct{}](fmt.Errorf("failed to save events: %w", err))
 	}
-	
+
 	return types.Success(struct{}{})
 }
 
@@ -111,10 +111,10 @@ func (h *CreateFilterHandler) Handle(cmd *models.CreateFilterCommand) types.Resu
 	if err != nil {
 		return types.Failure[struct{}](fmt.Errorf("failed to load events: %w", err))
 	}
-	
+
 	// Reconstruct aggregate from events
 	aggregate := aggregates.FromEvents(cmd.DeviceName(), events)
-	
+
 	// Execute business logic
 	if err := aggregate.AddFilter(
 		cmd.Parent(),
@@ -125,12 +125,12 @@ func (h *CreateFilterHandler) Handle(cmd *models.CreateFilterCommand) types.Resu
 	); err != nil {
 		return types.Failure[struct{}](err)
 	}
-	
+
 	// Save uncommitted events
 	uncommitted := aggregate.GetUncommittedChanges()
 	if err := h.eventStore.Save(aggregateID, uncommitted, aggregate.Version()-len(uncommitted)); err != nil {
 		return types.Failure[struct{}](fmt.Errorf("failed to save events: %w", err))
 	}
-	
+
 	return types.Success(struct{}{})
 }

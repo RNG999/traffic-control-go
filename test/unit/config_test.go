@@ -2,7 +2,7 @@ package unit
 
 import (
 	"testing"
-	
+
 	"github.com/rng999/traffic-control-go/api"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -22,11 +22,11 @@ func TestConfigValidation(t *testing.T) {
 				},
 			},
 		}
-		
+
 		err := config.Validate()
 		assert.NoError(t, err)
 	})
-	
+
 	t.Run("MissingDevice", func(t *testing.T) {
 		config := &api.TrafficControlConfig{
 			Version:   "1.0",
@@ -35,12 +35,12 @@ func TestConfigValidation(t *testing.T) {
 				{Name: "test", Guaranteed: "100Mbps", Priority: &[]int{4}[0]},
 			},
 		}
-		
+
 		err := config.Validate()
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "device is required")
 	})
-	
+
 	t.Run("MissingBandwidth", func(t *testing.T) {
 		config := &api.TrafficControlConfig{
 			Version: "1.0",
@@ -49,12 +49,12 @@ func TestConfigValidation(t *testing.T) {
 				{Name: "test", Guaranteed: "100Mbps", Priority: &[]int{4}[0]},
 			},
 		}
-		
+
 		err := config.Validate()
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "bandwidth is required")
 	})
-	
+
 	t.Run("NoClasses", func(t *testing.T) {
 		config := &api.TrafficControlConfig{
 			Version:   "1.0",
@@ -62,12 +62,12 @@ func TestConfigValidation(t *testing.T) {
 			Bandwidth: "1Gbps",
 			Classes:   []api.TrafficClassConfig{},
 		}
-		
+
 		err := config.Validate()
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "at least one class")
 	})
-	
+
 	t.Run("DuplicateClassName", func(t *testing.T) {
 		config := &api.TrafficControlConfig{
 			Version:   "1.0",
@@ -78,12 +78,12 @@ func TestConfigValidation(t *testing.T) {
 				{Name: "test", Guaranteed: "200Mbps", Priority: &[]int{4}[0]},
 			},
 		}
-		
+
 		err := config.Validate()
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "duplicate class name")
 	})
-	
+
 	t.Run("InvalidRuleTarget", func(t *testing.T) {
 		config := &api.TrafficControlConfig{
 			Version:   "1.0",
@@ -100,7 +100,7 @@ func TestConfigValidation(t *testing.T) {
 				},
 			},
 		}
-		
+
 		err := config.Validate()
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "target class")
@@ -156,10 +156,10 @@ func TestConfigHierarchy(t *testing.T) {
 			},
 		},
 	}
-	
+
 	err := config.Validate()
 	assert.NoError(t, err)
-	
+
 	// Test that hierarchical names are properly recognized
 	classNames := make(map[string]bool)
 	var collectClassNames func(class *api.TrafficClassConfig, parentPath string)
@@ -169,16 +169,16 @@ func TestConfigHierarchy(t *testing.T) {
 			fullName = parentPath + "." + class.Name
 		}
 		classNames[fullName] = true
-		
+
 		for i := range class.Children {
 			collectClassNames(&class.Children[i], fullName)
 		}
 	}
-	
+
 	for i := range config.Classes {
 		collectClassNames(&config.Classes[i], "")
 	}
-	
+
 	assert.True(t, classNames["parent"])
 	assert.True(t, classNames["parent.child1"])
 	assert.True(t, classNames["parent.child2"])
@@ -210,12 +210,12 @@ func TestApplyConfig(t *testing.T) {
 				},
 			},
 		}
-		
+
 		controller := api.New("eth0")
 		err := controller.ApplyConfig(config)
 		assert.NoError(t, err)
 	})
-	
+
 	t.Run("WithDefaults", func(t *testing.T) {
 		config := &api.TrafficControlConfig{
 			Version:   "1.0",
@@ -234,17 +234,17 @@ func TestApplyConfig(t *testing.T) {
 				{
 					Name:       "test2",
 					Guaranteed: "200Mbps",
-					Maximum:    "300Mbps", // Explicit maximum overrides burst ratio
-					Priority:   &[]int{6}[0],     // Explicit priority overrides default
+					Maximum:    "300Mbps",    // Explicit maximum overrides burst ratio
+					Priority:   &[]int{6}[0], // Explicit priority overrides default
 				},
 			},
 		}
-		
+
 		controller := api.New("eth0")
 		err := controller.ApplyConfig(config)
 		assert.NoError(t, err)
 	})
-	
+
 	t.Run("WithRules", func(t *testing.T) {
 		config := &api.TrafficControlConfig{
 			Version:   "1.0",
@@ -282,7 +282,7 @@ func TestApplyConfig(t *testing.T) {
 				},
 			},
 		}
-		
+
 		controller := api.New("eth0")
 		err := controller.ApplyConfig(config)
 		assert.NoError(t, err)
@@ -303,10 +303,10 @@ func TestConfigurationExamples(t *testing.T) {
 				{Name: "iot", Guaranteed: "10Mbps", Priority: &[]int{6}[0]},
 			},
 		}
-		
+
 		require.NoError(t, config.Validate())
 	})
-	
+
 	t.Run("EnterpriseMultiTier", func(t *testing.T) {
 		config := &api.TrafficControlConfig{
 			Version:   "1.0",
@@ -336,7 +336,7 @@ func TestConfigurationExamples(t *testing.T) {
 				},
 			},
 		}
-		
+
 		require.NoError(t, config.Validate())
 	})
 }

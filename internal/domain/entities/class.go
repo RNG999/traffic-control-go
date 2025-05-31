@@ -25,7 +25,7 @@ func (id ClassID) String() string {
 type Class struct {
 	id       ClassID
 	parent   valueobjects.Handle
-	name     string // Human-readable name
+	name     string    // Human-readable name
 	priority *Priority // Priority must be explicitly set
 }
 
@@ -75,11 +75,10 @@ func (c *Class) SetPriority(p Priority) {
 // HTBClass represents an HTB-specific traffic class
 type HTBClass struct {
 	*Class
-	rate     valueobjects.Bandwidth
-	ceil     valueobjects.Bandwidth
-	burst    uint32
-	cburst   uint32
-	quantum  uint32
+	rate   valueobjects.Bandwidth
+	ceil   valueobjects.Bandwidth
+	burst  uint32
+	cburst uint32
 }
 
 // NewHTBClass creates a new HTB class
@@ -146,7 +145,7 @@ func (h *HTBClass) CalculateCburst() uint32 {
 	if bandwidth.BitsPerSecond() == 0 {
 		bandwidth = h.rate
 	}
-	
+
 	bytesPerSecond := bandwidth.BitsPerSecond() / 8
 	// Avoid floating point: 0.01 * 10 = 0.1 = 1/10
 	return uint32(bytesPerSecond / 10)

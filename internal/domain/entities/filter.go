@@ -140,7 +140,7 @@ func NewIPSourceMatch(cidr string) (*IPMatch, error) {
 			network = &net.IPNet{IP: ip, Mask: net.CIDRMask(128, 128)}
 		}
 	}
-	
+
 	return &IPMatch{
 		matchType: MatchTypeIPSource,
 		network:   network,
@@ -229,8 +229,8 @@ type ProtocolMatch struct {
 type TransportProtocol int
 
 const (
-	TransportProtocolTCP TransportProtocol = 6
-	TransportProtocolUDP TransportProtocol = 17
+	TransportProtocolTCP  TransportProtocol = 6
+	TransportProtocolUDP  TransportProtocol = 17
 	TransportProtocolICMP TransportProtocol = 1
 )
 

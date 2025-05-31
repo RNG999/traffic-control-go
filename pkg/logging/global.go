@@ -19,7 +19,7 @@ func Initialize(config Config) error {
 	initOnce.Do(func() {
 		mutex.Lock()
 		defer mutex.Unlock()
-		
+
 		globalLogger, err = NewLogger(config)
 	})
 	return err
@@ -62,7 +62,7 @@ func InitializeProduction() error {
 func GetLogger() Logger {
 	mutex.RLock()
 	defer mutex.RUnlock()
-	
+
 	if globalLogger == nil {
 		// Auto-initialize with default config if not already initialized
 		mutex.RUnlock()
@@ -78,7 +78,7 @@ func GetLogger() Logger {
 		mutex.Unlock()
 		mutex.RLock()
 	}
-	
+
 	return globalLogger
 }
 

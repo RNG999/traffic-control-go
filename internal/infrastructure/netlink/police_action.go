@@ -2,19 +2,19 @@ package netlink
 
 import (
 	"fmt"
-	
-	nl "github.com/vishvananda/netlink"
+
 	"github.com/rng999/traffic-control-go/internal/domain/valueobjects"
 	"github.com/rng999/traffic-control-go/pkg/types"
+	nl "github.com/vishvananda/netlink"
 )
 
 // PoliceAction represents a policing action
 type PoliceAction struct {
-	Rate       valueobjects.Bandwidth // Rate limit
-	Burst      uint32                 // Burst size in bytes
-	MTU        uint32                 // MTU
-	Action     PoliceActionType       // Action when exceeded
-	PeakRate   *valueobjects.Bandwidth // Optional peak rate
+	Rate     valueobjects.Bandwidth  // Rate limit
+	Burst    uint32                  // Burst size in bytes
+	MTU      uint32                  // MTU
+	Action   PoliceActionType        // Action when exceeded
+	PeakRate *valueobjects.Bandwidth // Optional peak rate
 }
 
 // PoliceActionType represents the action to take when rate is exceeded
@@ -35,7 +35,7 @@ func (a *RealNetlinkAdapter) AddPoliceFilter(device valueobjects.DeviceName, par
 	if err != nil {
 		return types.Failure[Unit](fmt.Errorf("failed to find device %s: %w", device, err))
 	}
-	
+
 	// Create basic filter with police action
 	filter := &nl.U32{
 		FilterAttrs: nl.FilterAttrs{
@@ -46,14 +46,14 @@ func (a *RealNetlinkAdapter) AddPoliceFilter(device valueobjects.DeviceName, par
 		},
 		Actions: []nl.Action{},
 	}
-	
+
 	// Create police action
 	policeAction := &nl.PoliceAction{
-		Rate:    uint32(police.Rate.BitsPerSecond() / 8), // Convert to bytes per second
-		Burst:   police.Burst,
-		Mtu:     police.MTU,
+		Rate:  uint32(police.Rate.BitsPerSecond() / 8), // Convert to bytes per second
+		Burst: police.Burst,
+		Mtu:   police.MTU,
 	}
-	
+
 	// Set action type
 	switch police.Action {
 	case PoliceActionDrop:
@@ -67,15 +67,15 @@ func (a *RealNetlinkAdapter) AddPoliceFilter(device valueobjects.DeviceName, par
 	case PoliceActionPipe:
 		policeAction.ExceedAction = nl.TC_POLICE_PIPE
 	}
-	
+
 	// Set peak rate if specified
 	if police.PeakRate != nil {
 		policeAction.PeakRate = uint32(police.PeakRate.BitsPerSecond() / 8)
 	}
-	
+
 	// Add action to filter
 	filter.Actions = append(filter.Actions, policeAction)
-	
+
 	// Match all traffic (simplified - in practice you'd add specific matches)
 	filter.Sel = &nl.TcU32Sel{
 		Flags: 0,
@@ -89,11 +89,11 @@ func (a *RealNetlinkAdapter) AddPoliceFilter(device valueobjects.DeviceName, par
 			},
 		},
 	}
-	
+
 	// Add the filter
 	if err := nl.FilterAdd(filter); err != nil {
 		return types.Failure[Unit](fmt.Errorf("failed to add police filter: %w", err))
 	}
-	
+
 	return types.Success(Unit{})
 }

@@ -2,7 +2,7 @@ package valueobjects_test
 
 import (
 	"testing"
-	
+
 	"github.com/rng999/traffic-control-go/internal/domain/valueobjects"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -10,7 +10,7 @@ import (
 
 func TestNewHandle(t *testing.T) {
 	h := valueobjects.NewHandle(1, 10)
-	
+
 	assert.Equal(t, uint16(1), h.Major())
 	assert.Equal(t, uint16(10), h.Minor())
 	assert.Equal(t, "1:a", h.String())
@@ -18,11 +18,11 @@ func TestNewHandle(t *testing.T) {
 
 func TestParseHandle(t *testing.T) {
 	tests := []struct {
-		name     string
-		input    string
+		name      string
+		input     string
 		wantMajor uint16
 		wantMinor uint16
-		wantErr  bool
+		wantErr   bool
 	}{
 		{
 			name:      "Parse simple handle",
@@ -74,16 +74,16 @@ func TestParseHandle(t *testing.T) {
 			wantErr: true,
 		},
 	}
-	
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			h, err := valueobjects.ParseHandle(tt.input)
-			
+
 			if tt.wantErr {
 				require.Error(t, err)
 				return
 			}
-			
+
 			require.NoError(t, err)
 			assert.Equal(t, tt.wantMajor, h.Major())
 			assert.Equal(t, tt.wantMinor, h.Minor())
@@ -97,7 +97,7 @@ func TestMustParseHandle(t *testing.T) {
 		assert.Equal(t, uint16(1), h.Major())
 		assert.Equal(t, uint16(16), h.Minor())
 	})
-	
+
 	t.Run("Invalid input panics", func(t *testing.T) {
 		assert.Panics(t, func() {
 			valueobjects.MustParseHandle("invalid")
@@ -127,7 +127,7 @@ func TestHandleString(t *testing.T) {
 			expected: "ff:ffff",
 		},
 	}
-	
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			assert.Equal(t, tt.expected, tt.handle.String())
@@ -138,7 +138,7 @@ func TestHandleString(t *testing.T) {
 func TestHandleIsRoot(t *testing.T) {
 	root := valueobjects.NewHandle(1, 0)
 	nonRoot := valueobjects.NewHandle(1, 10)
-	
+
 	assert.True(t, root.IsRoot())
 	assert.False(t, nonRoot.IsRoot())
 }
@@ -148,7 +148,7 @@ func TestHandleEquals(t *testing.T) {
 	h2 := valueobjects.NewHandle(1, 10)
 	h3 := valueobjects.NewHandle(1, 20)
 	h4 := valueobjects.NewHandle(2, 10)
-	
+
 	assert.True(t, h1.Equals(h2))
 	assert.False(t, h1.Equals(h3))
 	assert.False(t, h1.Equals(h4))
@@ -176,7 +176,7 @@ func TestHandleUint32Conversion(t *testing.T) {
 			expected: 0xFFFFFFFF,
 		},
 	}
-	
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			assert.Equal(t, tt.expected, tt.handle.ToUint32())
@@ -210,7 +210,7 @@ func TestHandleFromUint32(t *testing.T) {
 			wantMinor: 0xFFFF,
 		},
 	}
-	
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			h := valueobjects.HandleFromUint32(tt.input)
@@ -225,6 +225,6 @@ func TestHandleRoundTripConversion(t *testing.T) {
 	original := valueobjects.NewHandle(123, 456)
 	uint32Val := original.ToUint32()
 	restored := valueobjects.HandleFromUint32(uint32Val)
-	
+
 	assert.True(t, original.Equals(restored))
 }

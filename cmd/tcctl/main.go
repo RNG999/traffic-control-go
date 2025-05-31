@@ -144,7 +144,8 @@ func example3() {
 }
 
 // Example showing validation errors
-func _exampleWithErrors() {
+// This function is kept for reference but not currently used
+func _exampleWithErrors() { //nolint:unused
 	fmt.Println("\nExample: Configuration Validation")
 	fmt.Println("-" + "-" + "-" + "-" + "-" + "-" + "-" + "-" + "-" + "-")
 

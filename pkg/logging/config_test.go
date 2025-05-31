@@ -209,9 +209,9 @@ func TestLoadConfigFromEnv(t *testing.T) {
 	defer func() {
 		for key, value := range originalVars {
 			if value == "" {
-				os.Unsetenv(key)
+				_ = os.Unsetenv(key)
 			} else {
-				os.Setenv(key, value)
+				_ = os.Setenv(key, value)
 			}
 		}
 	}()
@@ -263,12 +263,12 @@ func TestLoadConfigFromEnv(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// Clear all env vars first
 			for key := range originalVars {
-				os.Unsetenv(key)
+				_ = os.Unsetenv(key)
 			}
 
 			// Set test env vars
 			for key, value := range tt.envVars {
-				os.Setenv(key, value)
+				_ = os.Setenv(key, value)
 			}
 
 			config := LoadConfigFromEnv()

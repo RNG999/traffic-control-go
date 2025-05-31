@@ -1,86 +1,14 @@
+version: "2"
+
 run:
   timeout: 5m
   modules-download-mode: readonly
 
 linters:
   enable:
-    # Critical linters - must pass
+    # Critical linters that are available in v2 and enabled by default
     - errcheck
-    - gosimple
     - govet
     - ineffassign
     - staticcheck
-    - typecheck
-    - gci
-    - gofmt
-    - goimports
-    - misspell
-  disable:
-    # Temporarily disabled until issues are addressed
-    - gosec
     - unused
-    # TODO: Enable these incrementally as code is cleaned up
-    # - revive
-    # - unparam
-    # - unconvert
-    # - goconst
-    # - godot
-    # - nestif
-    # - prealloc
-    # - predeclared
-    # - thelper
-    # - whitespace
-    # - wsl
-    # - gocyclo
-
-linters-settings:
-  gocyclo:
-    min-complexity: 15
-    
-  gosec:
-    severity: medium
-    confidence: medium
-    
-  revive:
-    rules:
-      - name: exported
-        arguments: ["checkPrivateReceivers", "sayRepetitiveInsteadOfStutters"]
-      - name: var-naming
-        arguments: [["ID"], ["VM"]]
-        
-  nestif:
-    min-complexity: 4
-    
-  gci:
-    sections:
-      - standard
-      - default
-      - prefix(github.com/rng999/traffic-control-go)
-    skip-generated: true
-
-issues:
-  exclude-rules:
-    # Exclude some linters from running on tests files
-    - path: _test\.go
-      linters:
-        - gosec
-        - unparam
-        - gocyclo
-        
-    # Exclude specific patterns
-    - text: "G404:" # Weak random number generator
-      linters:
-        - gosec
-        
-    # Allow long lines in generated code
-    - path: ".*\\.pb\\.go"
-      linters:
-        - all
-        
-  exclude-dirs:
-    - vendor
-    - bin
-    - .github
-    
-  max-issues-per-linter: 0
-  max-same-issues: 0

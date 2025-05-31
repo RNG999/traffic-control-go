@@ -87,7 +87,13 @@ func LoadConfigFromFile(filename string) (Config, error) {
 	if err != nil {
 		return config, fmt.Errorf("failed to open config file %s: %w", filename, err)
 	}
-	defer file.Close()
+	defer func() {
+		if closeErr := file.Close(); closeErr != nil {
+			// Note: file.Close() error is intentionally ignored in defer
+			// to avoid overriding the main function's return error
+			_ = closeErr
+		}
+	}()
 
 	decoder := json.NewDecoder(file)
 	if err := decoder.Decode(&config); err != nil {

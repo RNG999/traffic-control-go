@@ -1,0 +1,128 @@
+{
+  "version": "1.0",
+  "device": "eth0",
+  "bandwidth": "1Gbps",
+  "defaults": {
+    "burst_ratio": 1.5
+  },
+  "classes": [
+    {
+      "name": "business_critical",
+      "guaranteed": "400Mbps",
+      "maximum": "800Mbps",
+      "priority": 1,
+      "children": [
+        {
+          "name": "voip",
+          "guaranteed": "100Mbps",
+          "maximum": "150Mbps",
+          "priority": 0
+        },
+        {
+          "name": "database",
+          "guaranteed": "300Mbps",
+          "maximum": "650Mbps",
+          "children": [
+            {
+              "name": "primary",
+              "guaranteed": "200Mbps",
+              "maximum": "400Mbps",
+              "priority": 2
+            },
+            {
+              "name": "replica",
+              "guaranteed": "100Mbps",
+              "maximum": "250Mbps",
+              "priority": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "standard",
+      "guaranteed": "300Mbps",
+      "maximum": "600Mbps",
+      "priority": 4,
+      "children": [
+        {
+          "name": "web",
+          "guaranteed": "150Mbps",
+          "priority": 3
+        },
+        {
+          "name": "email",
+          "guaranteed": "100Mbps",
+          "priority": 3
+        },
+        {
+          "name": "file_transfer",
+          "guaranteed": "50Mbps",
+          "priority": 4
+        }
+      ]
+    },
+    {
+      "name": "bulk",
+      "guaranteed": "200Mbps",
+      "maximum": "400Mbps",
+      "priority": 6,
+      "children": [
+        {
+          "name": "backup",
+          "guaranteed": "100Mbps",
+          "maximum": "200Mbps",
+          "priority": 6
+        },
+        {
+          "name": "updates",
+          "guaranteed": "100Mbps",
+          "maximum": "200Mbps",
+          "priority": 6
+        }
+      ]
+    },
+    {
+      "name": "guest",
+      "guaranteed": "100Mbps",
+      "maximum": "200Mbps",
+      "priority": 6
+    }
+  ],
+  "rules": [
+    {
+      "name": "sip_signaling",
+      "match": {
+        "dest_port": [5060, 5061],
+        "protocol": "udp"
+      },
+      "target": "business_critical.voip",
+      "priority": 1
+    },
+    {
+      "name": "primary_db",
+      "match": {
+        "destination_ip": "10.0.1.10",
+        "dest_port": [3306, 5432]
+      },
+      "target": "business_critical.database.primary",
+      "priority": 2
+    },
+    {
+      "name": "http_traffic",
+      "match": {
+        "dest_port": [80, 443]
+      },
+      "target": "standard.web",
+      "priority": 3
+    },
+    {
+      "name": "guest_network",
+      "match": {
+        "source_ip": "192.168.100.0/24"
+      },
+      "target": "guest",
+      "priority": 10
+    }
+  ]
+}

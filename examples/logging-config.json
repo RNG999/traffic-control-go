@@ -1,0 +1,14 @@
+{
+  "level": "info",
+  "format": "json",
+  "output_paths": ["stdout", "/var/log/traffic-control.log"],
+  "development": false,
+  "sampling_enabled": true,
+  "component_levels": {
+    "api": "info",
+    "domain": "info",
+    "infrastructure": "warn",
+    "netlink": "debug",
+    "validation": "info"
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "level": "debug",
+  "format": "console",
+  "output_paths": ["stdout"],
+  "development": true,
+  "sampling_enabled": false,
+  "component_levels": {
+    "api": "debug",
+    "domain": "debug",
+    "infrastructure": "debug",
+    "netlink": "debug",
+    "validation": "debug"
+  }
+}

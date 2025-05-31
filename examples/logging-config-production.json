@@ -1,0 +1,14 @@
+{
+  "level": "info",
+  "format": "json",
+  "output_paths": ["stdout"],
+  "development": false,
+  "sampling_enabled": true,
+  "component_levels": {
+    "api": "info",
+    "domain": "warn",
+    "infrastructure": "error",
+    "netlink": "warn",
+    "validation": "warn"
+  }
+}

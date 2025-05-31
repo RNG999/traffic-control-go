@@ -62,7 +62,7 @@ func LoadConfigFromYAML(filename string) (*TrafficControlConfig, error) {
 	if err := validateFilePath(filename); err != nil {
 		return nil, fmt.Errorf("invalid file path: %w", err)
 	}
-	
+
 	// #nosec G304 - filename is validated by validateFilePath above
 	data, err := os.ReadFile(filename)
 	if err != nil {
@@ -87,7 +87,7 @@ func LoadConfigFromJSON(filename string) (*TrafficControlConfig, error) {
 	if err := validateFilePath(filename); err != nil {
 		return nil, fmt.Errorf("invalid file path: %w", err)
 	}
-	
+
 	// #nosec G304 - filename is validated by validateFilePath above
 	data, err := os.ReadFile(filename)
 	if err != nil {
@@ -345,22 +345,22 @@ func LoadAndApplyJSON(filename string, device string) error {
 func validateFilePath(filename string) error {
 	// Clean the path to resolve any .. or . components
 	cleaned := filepath.Clean(filename)
-	
+
 	// Check for path traversal attempts
 	if strings.Contains(cleaned, "..") {
 		return fmt.Errorf("path traversal detected in filename: %s", filename)
 	}
-	
+
 	// Ensure it's not an absolute path to system directories
 	if filepath.IsAbs(cleaned) {
 		// Allow certain safe absolute paths (you may want to customize this)
-		if strings.HasPrefix(cleaned, "/tmp/") || 
-		   strings.HasPrefix(cleaned, "/var/tmp/") ||
-		   strings.HasPrefix(cleaned, "/home/") {
+		if strings.HasPrefix(cleaned, "/tmp/") ||
+			strings.HasPrefix(cleaned, "/var/tmp/") ||
+			strings.HasPrefix(cleaned, "/home/") {
 			return nil
 		}
 		return fmt.Errorf("absolute paths to system directories not allowed: %s", filename)
 	}
-	
+
 	return nil
 }

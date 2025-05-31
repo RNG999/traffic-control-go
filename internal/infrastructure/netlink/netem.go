@@ -44,11 +44,11 @@ func (a *RealNetlinkAdapter) AddNetemQdisc(device valueobjects.DeviceName, handl
 	// Set delay parameters
 	if config.Delay != nil {
 		delayMicros := config.Delay.Nanoseconds() / 1000 // Convert to microseconds
-		if delayMicros > 0x7FFFFFFF { // Use signed max to avoid potential issues
+		if delayMicros > 0x7FFFFFFF {                    // Use signed max to avoid potential issues
 			return types.Failure[Unit](fmt.Errorf("delay %v exceeds maximum value", config.Delay))
 		}
 		netem.Latency = uint32(delayMicros) // #nosec G115 - range checked above
-		
+
 		if config.DelayJitter != nil {
 			jitterMicros := config.DelayJitter.Nanoseconds() / 1000
 			if jitterMicros > 0x7FFFFFFF {

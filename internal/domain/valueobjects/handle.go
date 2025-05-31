@@ -91,7 +91,7 @@ func (h Handle) ToUint32() uint32 {
 // HandleFromUint32 creates a Handle from a 32-bit netlink representation
 func HandleFromUint32(u uint32) Handle {
 	return Handle{
-		major: uint16(u >> 16),        // #nosec G115 - safe conversion from high 16 bits
-		minor: uint16(u & 0xFFFF),     // #nosec G115 - safe conversion masked to 16 bits
+		major: uint16(u >> 16),    // #nosec G115 - safe conversion from high 16 bits
+		minor: uint16(u & 0xFFFF), // #nosec G115 - safe conversion masked to 16 bits
 	}
 }

@@ -197,23 +197,23 @@ func (c *Config) GetComponentLevel(component string) Level {
 func validateLogFilePath(filename string) error {
 	// Clean the path to resolve any .. or . components
 	cleaned := filepath.Clean(filename)
-	
+
 	// Check for path traversal attempts
 	if strings.Contains(cleaned, "..") {
 		return fmt.Errorf("path traversal detected in filename: %s", filename)
 	}
-	
+
 	// Ensure it's not an absolute path to system directories (except typical log locations)
 	if filepath.IsAbs(cleaned) {
 		// Allow certain safe absolute paths for log files
-		if strings.HasPrefix(cleaned, "/tmp/") || 
-		   strings.HasPrefix(cleaned, "/var/tmp/") ||
-		   strings.HasPrefix(cleaned, "/var/log/") ||
-		   strings.HasPrefix(cleaned, "/home/") {
+		if strings.HasPrefix(cleaned, "/tmp/") ||
+			strings.HasPrefix(cleaned, "/var/tmp/") ||
+			strings.HasPrefix(cleaned, "/var/log/") ||
+			strings.HasPrefix(cleaned, "/home/") {
 			return nil
 		}
 		return fmt.Errorf("absolute paths to system directories not allowed: %s", filename)
 	}
-	
+
 	return nil
 }

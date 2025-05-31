@@ -53,7 +53,7 @@ func (a *RealNetlinkAdapter) AddPoliceFilter(device valueobjects.DeviceName, par
 	if rateBytes > 0xFFFFFFFF {
 		return types.Failure[Unit](fmt.Errorf("rate %d bytes/sec exceeds maximum uint32 value", rateBytes))
 	}
-	
+
 	policeAction := &nl.PoliceAction{
 		Rate:  uint32(rateBytes), // Convert to bytes per second
 		Burst: police.Burst,

@@ -6,10 +6,9 @@ run:
 
 linters:
   enable:
-    # Critical linters - must pass
+    # Critical linters that are available in v2 and enabled by default
     - errcheck
-    - gosimple
     - govet
     - ineffassign
     - staticcheck
-    - misspell
+    - unused

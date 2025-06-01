@@ -12,8 +12,3 @@ linters:
     - ineffassign
     - staticcheck
     - unused
-
-issues:
-  exclude:
-    # Exclude G104 (error handling) for deferred Close calls
-    - "G104"

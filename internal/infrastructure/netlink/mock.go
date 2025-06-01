@@ -32,7 +32,7 @@ func (m *MockAdapter) AddQdisc(ctx context.Context, qdisc *entities.Qdisc) error
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	deviceStr := qdisc.Device().String()
+	deviceStr := qdisc.ID().Device().String()
 
 	// Initialize device map if needed
 	if _, exists := m.qdiscs[deviceStr]; !exists {
@@ -41,14 +41,14 @@ func (m *MockAdapter) AddQdisc(ctx context.Context, qdisc *entities.Qdisc) error
 
 	// Check if qdisc already exists
 	if _, exists := m.qdiscs[deviceStr][qdisc.Handle()]; exists {
-		return fmt.Errorf("qdisc %s already exists on device %s", qdisc.Handle(), qdisc.Device())
+		return fmt.Errorf("qdisc %s already exists on device %s", qdisc.Handle(), qdisc.ID().Device())
 	}
 
 	// Add the qdisc
 	m.qdiscs[deviceStr][qdisc.Handle()] = QdiscInfo{
 		Handle:     qdisc.Handle(),
 		Parent:     qdisc.Parent(),
-		Type:       valueobjects.QdiscType(qdisc.Type()),
+		Type:       qdisc.Type(),
 		Statistics: QdiscStats{},
 	}
 
@@ -94,7 +94,7 @@ func (m *MockAdapter) AddClass(ctx context.Context, class *entities.Class) error
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	deviceStr := class.Device().String()
+	deviceStr := class.ID().Device().String()
 
 	// Initialize device map if needed
 	if _, exists := m.classes[deviceStr]; !exists {
@@ -103,14 +103,14 @@ func (m *MockAdapter) AddClass(ctx context.Context, class *entities.Class) error
 
 	// Check if class already exists
 	if _, exists := m.classes[deviceStr][class.Handle()]; exists {
-		return fmt.Errorf("class %s already exists on device %s", class.Handle(), class.Device())
+		return fmt.Errorf("class %s already exists on device %s", class.Handle(), class.ID().Device())
 	}
 
 	// Add the class
 	m.classes[deviceStr][class.Handle()] = ClassInfo{
 		Handle:     class.Handle(),
 		Parent:     class.Parent(),
-		Type:       valueobjects.QdiscType("htb"), // Default to HTB for classes
+		Type:       entities.QdiscTypeHTB, // Default to HTB for classes
 		Statistics: ClassStats{},
 	}
 
@@ -156,7 +156,7 @@ func (m *MockAdapter) AddFilter(ctx context.Context, filter *entities.Filter) er
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	deviceStr := filter.Device().String()
+	deviceStr := filter.ID().Device().String()
 
 	// Initialize device filter slice if needed
 	if _, exists := m.filters[deviceStr]; !exists {
@@ -165,17 +165,17 @@ func (m *MockAdapter) AddFilter(ctx context.Context, filter *entities.Filter) er
 
 	// Add the filter
 	filterInfo := FilterInfo{
-		Parent:   filter.Parent(),
+		Parent:   filter.ID().Parent(),
 		Priority: filter.ID().Priority(),
 		Protocol: filter.Protocol(),
 		Handle:   filter.ID().Handle(),
 		FlowID:   filter.FlowID(),
-		Matches:  make([]MatchInfo, 0),
+		Matches:  make([]FilterMatch, 0),
 	}
 
 	// Convert matches
 	for _, match := range filter.Matches() {
-		filterInfo.Matches = append(filterInfo.Matches, MatchInfo{
+		filterInfo.Matches = append(filterInfo.Matches, FilterMatch{
 			Type:  match.Type(),
 			Value: match.String(),
 		})
@@ -218,21 +218,6 @@ func (m *MockAdapter) GetFilters(device valueobjects.DeviceName) types.Result[[]
 	}
 
 	return types.Success(result)
-}
-
-// GetLinkStatistics returns link statistics for a device
-func (m *MockAdapter) GetLinkStatistics(device valueobjects.DeviceName) types.Result[LinkStats] {
-	// Return mock link statistics
-	return types.Success(LinkStats{
-		RxBytes:   1000000,
-		TxBytes:   2000000,
-		RxPackets: 10000,
-		TxPackets: 20000,
-		RxErrors:  0,
-		TxErrors:  0,
-		RxDropped: 5,
-		TxDropped: 3,
-	})
 }
 
 // SetQdiscStatistics sets mock statistics for a qdisc (for testing)

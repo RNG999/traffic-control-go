@@ -124,6 +124,7 @@ func TestStatisticsIntegration(t *testing.T) {
 	t.Run("MonitorStatistics", func(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.Background(), 200*time.Millisecond)
 		defer cancel()
+		_ = ctx  // Use ctx to avoid "declared and not used" error
 
 		callbackCount := 0
 		var lastStats *qmodels.DeviceStatisticsView

@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/vishvananda/netlink"
-	"github.com/vishvananda/netlink/nl"
 
 	"github.com/rng999/traffic-control-go/internal/domain/entities"
 	"github.com/rng999/traffic-control-go/internal/domain/valueobjects"

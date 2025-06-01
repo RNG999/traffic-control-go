@@ -10,9 +10,15 @@ import (
 	"github.com/rng999/traffic-control-go/api"
 )
 
+var (
+	// Version information (set by build flags)
+	version   = "dev"
+	buildTime = "unknown"
+	gitCommit = "unknown"
+)
+
 const (
-	version = "0.1.1"
-	usage   = `Traffic Control Go - Linux Traffic Control Management Tool
+	usage = `Traffic Control Go - Linux Traffic Control Management Tool
 
 USAGE:
     traffic-control [COMMAND] [OPTIONS]
@@ -122,6 +128,12 @@ func main() {
 		fmt.Print(usage)
 	case "version", "-v", "--version":
 		fmt.Printf("Traffic Control Go v%s\n", version)
+		if gitCommit != "unknown" {
+			fmt.Printf("Git Commit: %s\n", gitCommit)
+		}
+		if buildTime != "unknown" {
+			fmt.Printf("Build Time: %s\n", buildTime)
+		}
 	case "htb":
 		handleHTBCommand(os.Args[2:])
 	case "tbf":

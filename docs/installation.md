@@ -55,11 +55,11 @@ traffic-control version
 git clone https://github.com/YOUR_ORG/traffic-control-go.git
 cd traffic-control-go
 
-# Build using the provided script
-./scripts/build.sh
+# Build using make
+make build
 
 # Install to system path
-sudo cp bin/traffic-control /usr/local/bin/
+sudo make install
 
 # Verify installation
 traffic-control version

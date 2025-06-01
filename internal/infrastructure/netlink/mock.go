@@ -1,9 +1,11 @@
 package netlink
 
 import (
+	"context"
 	"fmt"
 	"sync"
 
+	"github.com/rng999/traffic-control-go/internal/domain/entities"
 	"github.com/rng999/traffic-control-go/internal/domain/valueobjects"
 	"github.com/rng999/traffic-control-go/pkg/types"
 )
@@ -25,12 +27,12 @@ func NewMockAdapter() *MockAdapter {
 	}
 }
 
-// AddQdisc adds a qdisc
-func (m *MockAdapter) AddQdisc(device valueobjects.DeviceName, config QdiscConfig) types.Result[Unit] {
+// AddQdisc adds a qdisc (new interface)
+func (m *MockAdapter) AddQdisc(ctx context.Context, qdisc *entities.Qdisc) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	deviceStr := device.String()
+	deviceStr := qdisc.ID().Device().String()
 
 	// Initialize device map if needed
 	if _, exists := m.qdiscs[deviceStr]; !exists {
@@ -38,19 +40,19 @@ func (m *MockAdapter) AddQdisc(device valueobjects.DeviceName, config QdiscConfi
 	}
 
 	// Check if qdisc already exists
-	if _, exists := m.qdiscs[deviceStr][config.Handle]; exists {
-		return types.Failure[Unit](fmt.Errorf("qdisc %s already exists on device %s", config.Handle, device))
+	if _, exists := m.qdiscs[deviceStr][qdisc.Handle()]; exists {
+		return fmt.Errorf("qdisc %s already exists on device %s", qdisc.Handle(), qdisc.ID().Device())
 	}
 
 	// Add the qdisc
-	m.qdiscs[deviceStr][config.Handle] = QdiscInfo{
-		Handle:     config.Handle,
-		Parent:     config.Parent,
-		Type:       config.Type,
+	m.qdiscs[deviceStr][qdisc.Handle()] = QdiscInfo{
+		Handle:     qdisc.Handle(),
+		Parent:     qdisc.Parent(),
+		Type:       qdisc.Type(),
 		Statistics: QdiscStats{},
 	}
 
-	return types.Success(Unit{})
+	return nil
 }
 
 // DeleteQdisc deletes a qdisc
@@ -87,12 +89,12 @@ func (m *MockAdapter) GetQdiscs(device valueobjects.DeviceName) types.Result[[]Q
 	return types.Success(result)
 }
 
-// AddClass adds a class
-func (m *MockAdapter) AddClass(device valueobjects.DeviceName, config ClassConfig) types.Result[Unit] {
+// AddClass adds a class (new interface)
+func (m *MockAdapter) AddClass(ctx context.Context, class *entities.Class) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	deviceStr := device.String()
+	deviceStr := class.ID().Device().String()
 
 	// Initialize device map if needed
 	if _, exists := m.classes[deviceStr]; !exists {
@@ -100,38 +102,19 @@ func (m *MockAdapter) AddClass(device valueobjects.DeviceName, config ClassConfi
 	}
 
 	// Check if class already exists
-	if _, exists := m.classes[deviceStr][config.Handle]; exists {
-		return types.Failure[Unit](fmt.Errorf("class %s already exists on device %s", config.Handle, device))
-	}
-
-	// Verify parent exists (either qdisc or class)
-	parentExists := false
-	if qdiscs, hasQdiscs := m.qdiscs[deviceStr]; hasQdiscs {
-		if _, exists := qdiscs[config.Parent]; exists {
-			parentExists = true
-		}
-	}
-	if !parentExists {
-		if classes, hasClasses := m.classes[deviceStr]; hasClasses {
-			if _, exists := classes[config.Parent]; exists {
-				parentExists = true
-			}
-		}
-	}
-
-	if !parentExists {
-		return types.Failure[Unit](fmt.Errorf("parent %s not found on device %s", config.Parent, device))
+	if _, exists := m.classes[deviceStr][class.Handle()]; exists {
+		return fmt.Errorf("class %s already exists on device %s", class.Handle(), class.ID().Device())
 	}
 
 	// Add the class
-	m.classes[deviceStr][config.Handle] = ClassInfo{
-		Handle:     config.Handle,
-		Parent:     config.Parent,
-		Type:       config.Type,
+	m.classes[deviceStr][class.Handle()] = ClassInfo{
+		Handle:     class.Handle(),
+		Parent:     class.Parent(),
+		Type:       entities.QdiscTypeHTB, // Default to HTB for classes
 		Statistics: ClassStats{},
 	}
 
-	return types.Success(Unit{})
+	return nil
 }
 
 // DeleteClass deletes a class
@@ -168,31 +151,38 @@ func (m *MockAdapter) GetClasses(device valueobjects.DeviceName) types.Result[[]
 	return types.Success(result)
 }
 
-// AddFilter adds a filter
-func (m *MockAdapter) AddFilter(device valueobjects.DeviceName, config FilterConfig) types.Result[Unit] {
+// AddFilter adds a filter (new interface)
+func (m *MockAdapter) AddFilter(ctx context.Context, filter *entities.Filter) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	deviceStr := device.String()
+	deviceStr := filter.ID().Device().String()
 
-	// Initialize device filters if needed
+	// Initialize device filter slice if needed
 	if _, exists := m.filters[deviceStr]; !exists {
 		m.filters[deviceStr] = make([]FilterInfo, 0)
 	}
 
-	// Check for duplicate
-	for _, existing := range m.filters[deviceStr] {
-		if existing.Parent.Equals(config.Parent) &&
-			existing.Priority == config.Priority &&
-			existing.Handle.Equals(config.Handle) {
-			return types.Failure[Unit](fmt.Errorf("filter already exists on device %s", device))
-		}
+	// Add the filter
+	filterInfo := FilterInfo{
+		Parent:   filter.ID().Parent(),
+		Priority: filter.ID().Priority(),
+		Protocol: filter.Protocol(),
+		Handle:   filter.ID().Handle(),
+		FlowID:   filter.FlowID(),
+		Matches:  make([]FilterMatch, 0),
 	}
 
-	// Add the filter
-	m.filters[deviceStr] = append(m.filters[deviceStr], FilterInfo(config))
+	// Convert matches
+	for _, match := range filter.Matches() {
+		filterInfo.Matches = append(filterInfo.Matches, FilterMatch{
+			Type:  match.Type(),
+			Value: match.String(),
+		})
+	}
 
-	return types.Success(Unit{})
+	m.filters[deviceStr] = append(m.filters[deviceStr], filterInfo)
+	return nil
 }
 
 // DeleteFilter deletes a filter
@@ -204,10 +194,8 @@ func (m *MockAdapter) DeleteFilter(device valueobjects.DeviceName, parent valueo
 
 	if filters, exists := m.filters[deviceStr]; exists {
 		for i, filter := range filters {
-			if filter.Parent.Equals(parent) &&
-				filter.Priority == priority &&
-				filter.Handle.Equals(handle) {
-				// Remove the filter
+			if filter.Parent == parent && filter.Priority == priority && filter.Handle == handle {
+				// Remove filter from slice
 				m.filters[deviceStr] = append(filters[:i], filters[i+1:]...)
 				return types.Success(Unit{})
 			}
@@ -224,10 +212,40 @@ func (m *MockAdapter) GetFilters(device valueobjects.DeviceName) types.Result[[]
 
 	deviceStr := device.String()
 
-	result := []FilterInfo{}
+	var result []FilterInfo
 	if filters, exists := m.filters[deviceStr]; exists {
 		result = append(result, filters...)
 	}
 
 	return types.Success(result)
+}
+
+// SetQdiscStatistics sets mock statistics for a qdisc (for testing)
+func (m *MockAdapter) SetQdiscStatistics(device valueobjects.DeviceName, handle valueobjects.Handle, stats QdiscStats) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	deviceStr := device.String()
+	
+	if qdiscs, exists := m.qdiscs[deviceStr]; exists {
+		if qdisc, qdiscExists := qdiscs[handle]; qdiscExists {
+			qdisc.Statistics = stats
+			qdiscs[handle] = qdisc
+		}
+	}
+}
+
+// SetClassStatistics sets mock statistics for a class (for testing)
+func (m *MockAdapter) SetClassStatistics(device valueobjects.DeviceName, handle valueobjects.Handle, stats ClassStats) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	deviceStr := device.String()
+	
+	if classes, exists := m.classes[deviceStr]; exists {
+		if class, classExists := classes[handle]; classExists {
+			class.Statistics = stats
+			classes[handle] = class
+		}
+	}
 }

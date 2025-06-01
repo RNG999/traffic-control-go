@@ -1,9 +1,12 @@
+//go:build linux
+// +build linux
+
 package netlink
 
 import (
 	"fmt"
 
-	nl "github.com/vishvananda/netlink"
+	"github.com/vishvananda/netlink"
 
 	"github.com/rng999/traffic-control-go/internal/domain/entities"
 	"github.com/rng999/traffic-control-go/internal/domain/valueobjects"
@@ -27,11 +30,11 @@ func NewRealNetlinkAdapter() *RealNetlinkAdapter {
 }
 
 // createHTBQdisc creates an HTB qdisc
-func (a *RealNetlinkAdapter) createHTBQdisc(link nl.Link, config QdiscConfig) nl.Qdisc {
-	htb := nl.NewHtb(nl.QdiscAttrs{
+func (a *RealNetlinkAdapter) createHTBQdisc(link netlink.Link, config QdiscConfig) netlink.Qdisc {
+	htb := netlink.NewHtb(netlink.QdiscAttrs{
 		LinkIndex: link.Attrs().Index,
-		Handle:    nl.MakeHandle(config.Handle.Major(), config.Handle.Minor()),
-		Parent:    nl.HANDLE_ROOT,
+		Handle:    netlink.MakeHandle(config.Handle.Major(), config.Handle.Minor()),
+		Parent:    netlink.HANDLE_ROOT,
 	})
 
 	// Set HTB-specific parameters
@@ -46,12 +49,12 @@ func (a *RealNetlinkAdapter) createHTBQdisc(link nl.Link, config QdiscConfig) nl
 }
 
 // createTBFQdisc creates a TBF qdisc
-func (a *RealNetlinkAdapter) createTBFQdisc(link nl.Link, config QdiscConfig) nl.Qdisc {
-	tbf := &nl.Tbf{
-		QdiscAttrs: nl.QdiscAttrs{
+func (a *RealNetlinkAdapter) createTBFQdisc(link netlink.Link, config QdiscConfig) netlink.Qdisc {
+	tbf := &netlink.Tbf{
+		QdiscAttrs: netlink.QdiscAttrs{
 			LinkIndex: link.Attrs().Index,
-			Handle:    nl.MakeHandle(config.Handle.Major(), config.Handle.Minor()),
-			Parent:    nl.HANDLE_ROOT,
+			Handle:    netlink.MakeHandle(config.Handle.Major(), config.Handle.Minor()),
+			Parent:    netlink.HANDLE_ROOT,
 		},
 	}
 
@@ -70,11 +73,11 @@ func (a *RealNetlinkAdapter) createTBFQdisc(link nl.Link, config QdiscConfig) nl
 }
 
 // createPRIOQdisc creates a PRIO qdisc
-func (a *RealNetlinkAdapter) createPRIOQdisc(link nl.Link, config QdiscConfig) nl.Qdisc {
-	prio := nl.NewPrio(nl.QdiscAttrs{
+func (a *RealNetlinkAdapter) createPRIOQdisc(link netlink.Link, config QdiscConfig) netlink.Qdisc {
+	prio := netlink.NewPrio(netlink.QdiscAttrs{
 		LinkIndex: link.Attrs().Index,
-		Handle:    nl.MakeHandle(config.Handle.Major(), config.Handle.Minor()),
-		Parent:    nl.HANDLE_ROOT,
+		Handle:    netlink.MakeHandle(config.Handle.Major(), config.Handle.Minor()),
+		Parent:    netlink.HANDLE_ROOT,
 	})
 
 	if bands, ok := config.Parameters["bands"].(uint8); ok {
@@ -85,11 +88,11 @@ func (a *RealNetlinkAdapter) createPRIOQdisc(link nl.Link, config QdiscConfig) n
 }
 
 // createFQCODELQdisc creates a FQ_CODEL qdisc
-func (a *RealNetlinkAdapter) createFQCODELQdisc(link nl.Link, config QdiscConfig) nl.Qdisc {
-	fqCodel := nl.NewFqCodel(nl.QdiscAttrs{
+func (a *RealNetlinkAdapter) createFQCODELQdisc(link netlink.Link, config QdiscConfig) netlink.Qdisc {
+	fqCodel := netlink.NewFqCodel(netlink.QdiscAttrs{
 		LinkIndex: link.Attrs().Index,
-		Handle:    nl.MakeHandle(config.Handle.Major(), config.Handle.Minor()),
-		Parent:    nl.HANDLE_ROOT,
+		Handle:    netlink.MakeHandle(config.Handle.Major(), config.Handle.Minor()),
+		Parent:    netlink.HANDLE_ROOT,
 	})
 
 	if limit, ok := config.Parameters["limit"].(uint32); ok {
@@ -114,14 +117,14 @@ func (a *RealNetlinkAdapter) AddQdisc(device valueobjects.DeviceName, config Qdi
 	)
 
 	// Get the network link
-	link, err := nl.LinkByName(device.String())
+	link, err := netlink.LinkByName(device.String())
 	if err != nil {
 		logger.Error("Failed to find network device", logging.Error(err))
 		return types.Failure[Unit](fmt.Errorf("failed to find device %s: %w", device, err))
 	}
 
 	// Create qdisc based on type
-	var qdisc nl.Qdisc
+	var qdisc netlink.Qdisc
 
 	switch config.Type {
 	case entities.QdiscTypeHTB:
@@ -139,11 +142,11 @@ func (a *RealNetlinkAdapter) AddQdisc(device valueobjects.DeviceName, config Qdi
 	// Handle parent if not root
 	if config.Parent != nil {
 		attrs := qdisc.Attrs()
-		attrs.Parent = nl.MakeHandle(config.Parent.Major(), config.Parent.Minor())
+		attrs.Parent = netlink.MakeHandle(config.Parent.Major(), config.Parent.Minor())
 	}
 
 	// Add the qdisc
-	if err := nl.QdiscAdd(qdisc); err != nil {
+	if err := netlink.QdiscAdd(qdisc); err != nil {
 		return types.Failure[Unit](fmt.Errorf("failed to add qdisc: %w", err))
 	}
 
@@ -153,22 +156,22 @@ func (a *RealNetlinkAdapter) AddQdisc(device valueobjects.DeviceName, config Qdi
 // DeleteQdisc deletes a qdisc using netlink
 func (a *RealNetlinkAdapter) DeleteQdisc(device valueobjects.DeviceName, handle valueobjects.Handle) types.Result[Unit] {
 	// Get the network link
-	link, err := nl.LinkByName(device.String())
+	link, err := netlink.LinkByName(device.String())
 	if err != nil {
 		return types.Failure[Unit](fmt.Errorf("failed to find device %s: %w", device, err))
 	}
 
 	// Create a generic qdisc with the handle to delete
-	qdisc := &nl.GenericQdisc{
+	qdisc := &netlink.GenericQdisc{
 		QdiscType: "htb", // Type doesn't matter for deletion
-		QdiscAttrs: nl.QdiscAttrs{
+		QdiscAttrs: netlink.QdiscAttrs{
 			LinkIndex: link.Attrs().Index,
-			Handle:    nl.MakeHandle(handle.Major(), handle.Minor()),
-			Parent:    nl.HANDLE_ROOT,
+			Handle:    netlink.MakeHandle(handle.Major(), handle.Minor()),
+			Parent:    netlink.HANDLE_ROOT,
 		},
 	}
 
-	if err := nl.QdiscDel(qdisc); err != nil {
+	if err := netlink.QdiscDel(qdisc); err != nil {
 		return types.Failure[Unit](fmt.Errorf("failed to delete qdisc: %w", err))
 	}
 
@@ -178,13 +181,13 @@ func (a *RealNetlinkAdapter) DeleteQdisc(device valueobjects.DeviceName, handle 
 // GetQdiscs returns all qdiscs for a device
 func (a *RealNetlinkAdapter) GetQdiscs(device valueobjects.DeviceName) types.Result[[]QdiscInfo] {
 	// Get the network link
-	link, err := nl.LinkByName(device.String())
+	link, err := netlink.LinkByName(device.String())
 	if err != nil {
 		return types.Failure[[]QdiscInfo](fmt.Errorf("failed to find device %s: %w", device, err))
 	}
 
 	// Get all qdiscs for the link
-	qdiscs, err := nl.QdiscList(link)
+	qdiscs, err := netlink.QdiscList(link)
 	if err != nil {
 		return types.Failure[[]QdiscInfo](fmt.Errorf("failed to list qdiscs: %w", err))
 	}
@@ -204,7 +207,7 @@ func (a *RealNetlinkAdapter) GetQdiscs(device valueobjects.DeviceName) types.Res
 		}
 
 		// Set parent if not root
-		if qdisc.Attrs().Parent != nl.HANDLE_ROOT {
+		if qdisc.Attrs().Parent != netlink.HANDLE_ROOT {
 			parent := valueobjects.HandleFromUint32(qdisc.Attrs().Parent)
 			info.Parent = &parent
 		}
@@ -234,7 +237,7 @@ func (a *RealNetlinkAdapter) GetQdiscs(device valueobjects.DeviceName) types.Res
 // AddClass adds a class using netlink
 func (a *RealNetlinkAdapter) AddClass(device valueobjects.DeviceName, config ClassConfig) types.Result[Unit] {
 	// Get the network link
-	link, err := nl.LinkByName(device.String())
+	link, err := netlink.LinkByName(device.String())
 	if err != nil {
 		return types.Failure[Unit](fmt.Errorf("failed to find device %s: %w", device, err))
 	}
@@ -242,11 +245,11 @@ func (a *RealNetlinkAdapter) AddClass(device valueobjects.DeviceName, config Cla
 	// Create class based on type
 	switch config.Type {
 	case entities.QdiscTypeHTB:
-		htbClass := nl.NewHtbClass(nl.ClassAttrs{
+		htbClass := netlink.NewHtbClass(netlink.ClassAttrs{
 			LinkIndex: link.Attrs().Index,
-			Handle:    nl.MakeHandle(config.Handle.Major(), config.Handle.Minor()),
-			Parent:    nl.MakeHandle(config.Parent.Major(), config.Parent.Minor()),
-		}, nl.HtbClassAttrs{})
+			Handle:    netlink.MakeHandle(config.Handle.Major(), config.Handle.Minor()),
+			Parent:    netlink.MakeHandle(config.Parent.Major(), config.Parent.Minor()),
+		}, netlink.HtbClassAttrs{})
 
 		// Set HTB class parameters
 		if rate, ok := config.Parameters["rate"].(valueobjects.Bandwidth); ok {
@@ -262,7 +265,7 @@ func (a *RealNetlinkAdapter) AddClass(device valueobjects.DeviceName, config Cla
 			htbClass.Cbuffer = cbuffer
 		}
 
-		if err := nl.ClassAdd(htbClass); err != nil {
+		if err := netlink.ClassAdd(htbClass); err != nil {
 			return types.Failure[Unit](fmt.Errorf("failed to add HTB class: %w", err))
 		}
 
@@ -276,21 +279,21 @@ func (a *RealNetlinkAdapter) AddClass(device valueobjects.DeviceName, config Cla
 // DeleteClass deletes a class using netlink
 func (a *RealNetlinkAdapter) DeleteClass(device valueobjects.DeviceName, handle valueobjects.Handle) types.Result[Unit] {
 	// Get the network link
-	link, err := nl.LinkByName(device.String())
+	link, err := netlink.LinkByName(device.String())
 	if err != nil {
 		return types.Failure[Unit](fmt.Errorf("failed to find device %s: %w", device, err))
 	}
 
 	// Create a generic class with the handle to delete
-	class := &nl.GenericClass{
+	class := &netlink.GenericClass{
 		ClassType: "htb", // Type doesn't matter for deletion
-		ClassAttrs: nl.ClassAttrs{
+		ClassAttrs: netlink.ClassAttrs{
 			LinkIndex: link.Attrs().Index,
-			Handle:    nl.MakeHandle(handle.Major(), handle.Minor()),
+			Handle:    netlink.MakeHandle(handle.Major(), handle.Minor()),
 		},
 	}
 
-	if err := nl.ClassDel(class); err != nil {
+	if err := netlink.ClassDel(class); err != nil {
 		return types.Failure[Unit](fmt.Errorf("failed to delete class: %w", err))
 	}
 
@@ -300,7 +303,7 @@ func (a *RealNetlinkAdapter) DeleteClass(device valueobjects.DeviceName, handle 
 // GetClasses returns all classes for a device
 func (a *RealNetlinkAdapter) GetClasses(device valueobjects.DeviceName) types.Result[[]ClassInfo] {
 	// Get the network link
-	link, err := nl.LinkByName(device.String())
+	link, err := netlink.LinkByName(device.String())
 	if err != nil {
 		return types.Failure[[]ClassInfo](fmt.Errorf("failed to find device %s: %w", device, err))
 	}
@@ -308,14 +311,14 @@ func (a *RealNetlinkAdapter) GetClasses(device valueobjects.DeviceName) types.Re
 	// Get all classes for the link
 	// Note: netlink library doesn't have a direct ClassList function
 	// We need to list qdiscs and then get classes for each
-	qdiscs, err := nl.QdiscList(link)
+	qdiscs, err := netlink.QdiscList(link)
 	if err != nil {
 		return types.Failure[[]ClassInfo](fmt.Errorf("failed to list qdiscs: %w", err))
 	}
 
 	var result []ClassInfo
 	for _, qdisc := range qdiscs {
-		classes, err := nl.ClassList(link, qdisc.Attrs().Handle)
+		classes, err := netlink.ClassList(link, qdisc.Attrs().Handle)
 		if err != nil {
 			continue // Skip if we can't get classes for this qdisc
 		}
@@ -351,21 +354,21 @@ func (a *RealNetlinkAdapter) GetClasses(device valueobjects.DeviceName) types.Re
 // AddFilter adds a filter using netlink
 func (a *RealNetlinkAdapter) AddFilter(device valueobjects.DeviceName, config FilterConfig) types.Result[Unit] {
 	// Get the network link
-	link, err := nl.LinkByName(device.String())
+	link, err := netlink.LinkByName(device.String())
 	if err != nil {
 		return types.Failure[Unit](fmt.Errorf("failed to find device %s: %w", device, err))
 	}
 
 	// Create u32 filter
-	filter := &nl.U32{
-		FilterAttrs: nl.FilterAttrs{
+	filter := &netlink.U32{
+		FilterAttrs: netlink.FilterAttrs{
 			LinkIndex: link.Attrs().Index,
-			Parent:    nl.MakeHandle(config.Parent.Major(), config.Parent.Minor()),
+			Parent:    netlink.MakeHandle(config.Parent.Major(), config.Parent.Minor()),
 			Priority:  config.Priority,
-			Handle:    nl.MakeHandle(config.Handle.Major(), config.Handle.Minor()),
+			Handle:    netlink.MakeHandle(config.Handle.Major(), config.Handle.Minor()),
 			Protocol:  convertProtocol(config.Protocol),
 		},
-		ClassId: nl.MakeHandle(config.FlowID.Major(), config.FlowID.Minor()),
+		ClassId: netlink.MakeHandle(config.FlowID.Major(), config.FlowID.Minor()),
 	}
 
 	// Add matches
@@ -375,7 +378,7 @@ func (a *RealNetlinkAdapter) AddFilter(device valueobjects.DeviceName, config Fi
 		}
 	}
 
-	if err := nl.FilterAdd(filter); err != nil {
+	if err := netlink.FilterAdd(filter); err != nil {
 		return types.Failure[Unit](fmt.Errorf("failed to add filter: %w", err))
 	}
 
@@ -385,22 +388,22 @@ func (a *RealNetlinkAdapter) AddFilter(device valueobjects.DeviceName, config Fi
 // DeleteFilter deletes a filter using netlink
 func (a *RealNetlinkAdapter) DeleteFilter(device valueobjects.DeviceName, parent valueobjects.Handle, priority uint16, handle valueobjects.Handle) types.Result[Unit] {
 	// Get the network link
-	link, err := nl.LinkByName(device.String())
+	link, err := netlink.LinkByName(device.String())
 	if err != nil {
 		return types.Failure[Unit](fmt.Errorf("failed to find device %s: %w", device, err))
 	}
 
 	// Create filter to delete
-	filter := &nl.U32{
-		FilterAttrs: nl.FilterAttrs{
+	filter := &netlink.U32{
+		FilterAttrs: netlink.FilterAttrs{
 			LinkIndex: link.Attrs().Index,
-			Parent:    nl.MakeHandle(parent.Major(), parent.Minor()),
+			Parent:    netlink.MakeHandle(parent.Major(), parent.Minor()),
 			Priority:  priority,
-			Handle:    nl.MakeHandle(handle.Major(), handle.Minor()),
+			Handle:    netlink.MakeHandle(handle.Major(), handle.Minor()),
 		},
 	}
 
-	if err := nl.FilterDel(filter); err != nil {
+	if err := netlink.FilterDel(filter); err != nil {
 		return types.Failure[Unit](fmt.Errorf("failed to delete filter: %w", err))
 	}
 
@@ -410,13 +413,13 @@ func (a *RealNetlinkAdapter) DeleteFilter(device valueobjects.DeviceName, parent
 // GetFilters returns all filters for a device
 func (a *RealNetlinkAdapter) GetFilters(device valueobjects.DeviceName) types.Result[[]FilterInfo] {
 	// Get the network link
-	link, err := nl.LinkByName(device.String())
+	link, err := netlink.LinkByName(device.String())
 	if err != nil {
 		return types.Failure[[]FilterInfo](fmt.Errorf("failed to find device %s: %w", device, err))
 	}
 
 	// Get all qdiscs first
-	qdiscs, err := nl.QdiscList(link)
+	qdiscs, err := netlink.QdiscList(link)
 	if err != nil {
 		return types.Failure[[]FilterInfo](fmt.Errorf("failed to list qdiscs: %w", err))
 	}
@@ -425,7 +428,7 @@ func (a *RealNetlinkAdapter) GetFilters(device valueobjects.DeviceName) types.Re
 
 	// Get filters for each qdisc
 	for _, qdisc := range qdiscs {
-		filters, err := nl.FilterList(link, qdisc.Attrs().Handle)
+		filters, err := netlink.FilterList(link, qdisc.Attrs().Handle)
 		if err != nil {
 			continue
 		}
@@ -439,7 +442,7 @@ func (a *RealNetlinkAdapter) GetFilters(device valueobjects.DeviceName) types.Re
 			}
 
 			// Handle U32 filters
-			if u32, ok := filter.(*nl.U32); ok {
+			if u32, ok := filter.(*netlink.U32); ok {
 				info.FlowID = valueobjects.HandleFromUint32(u32.ClassId)
 				// Extract matches - this is simplified
 				// Real implementation would need to parse U32 sel
@@ -480,7 +483,7 @@ func convertProtocolBack(p uint16) entities.Protocol {
 	}
 }
 
-func addU32Match(filter *nl.U32, match FilterMatch) error {
+func addU32Match(filter *netlink.U32, match FilterMatch) error {
 	// U32 filter selectors are complex but follow specific patterns
 	// Each selector matches specific bits at specific offsets in the packet
 
@@ -494,10 +497,10 @@ func addU32Match(filter *nl.U32, match FilterMatch) error {
 			}
 
 			// Create U32 selector for destination IP
-			selector := &nl.TcU32Sel{
+			selector := &netlink.TcU32Sel{
 				Flags: 0,
 				Nkeys: 1,
-				Keys: []nl.TcU32Key{
+				Keys: []netlink.TcU32Key{
 					{
 						Mask:    0xffffffff, // Match all 32 bits
 						Val:     ipAddr,     // IP address in network byte order
@@ -519,10 +522,10 @@ func addU32Match(filter *nl.U32, match FilterMatch) error {
 				return fmt.Errorf("invalid IP address: %w", err)
 			}
 
-			selector := &nl.TcU32Sel{
+			selector := &netlink.TcU32Sel{
 				Flags: 0,
 				Nkeys: 1,
-				Keys: []nl.TcU32Key{
+				Keys: []netlink.TcU32Key{
 					{
 						Mask:    0xffffffff,
 						Val:     ipAddr,
@@ -542,10 +545,10 @@ func addU32Match(filter *nl.U32, match FilterMatch) error {
 		if port, ok := match.Value.(uint16); ok {
 			// This is a simplified implementation for standard 20-byte IP header
 			// Real implementation would need to handle variable IP header length
-			selector := &nl.TcU32Sel{
+			selector := &netlink.TcU32Sel{
 				Flags: 0,
 				Nkeys: 1,
-				Keys: []nl.TcU32Key{
+				Keys: []netlink.TcU32Key{
 					{
 						Mask:    0x0000ffff,         // Match 16 bits for port
 						Val:     uint32(port) << 16, // Port in high 16 bits
@@ -562,10 +565,10 @@ func addU32Match(filter *nl.U32, match FilterMatch) error {
 	case entities.MatchTypePortSource:
 		// Match source port
 		if port, ok := match.Value.(uint16); ok {
-			selector := &nl.TcU32Sel{
+			selector := &netlink.TcU32Sel{
 				Flags: 0,
 				Nkeys: 1,
-				Keys: []nl.TcU32Key{
+				Keys: []netlink.TcU32Key{
 					{
 						Mask:    0xffff0000, // Match high 16 bits for source port
 						Val:     uint32(port) << 16,
@@ -582,10 +585,10 @@ func addU32Match(filter *nl.U32, match FilterMatch) error {
 	case entities.MatchTypeProtocol:
 		// Match IP protocol field at offset 9 in IP header
 		if protocol, ok := match.Value.(uint8); ok {
-			selector := &nl.TcU32Sel{
+			selector := &netlink.TcU32Sel{
 				Flags: 0,
 				Nkeys: 1,
-				Keys: []nl.TcU32Key{
+				Keys: []netlink.TcU32Key{
 					{
 						Mask:    0x000000ff, // Match 8 bits for protocol
 						Val:     uint32(protocol),

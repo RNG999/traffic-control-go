@@ -1,26 +1,32 @@
 # Active Context - 現在の作業フォーカス
 
 ## 現在のフェーズ
-機能拡張・安定化フェーズ - Priority System・Logging System実装完了、PR作成準備中
+プロジェクト最終調整フェーズ - 新qdiscタイプ・SQLite Event Store・CLIツール実装完了、v0.1.0リリース準備中
 
 ## 最新の作業完了
-1. **Priority System Refactoring** ✅
-   - 数値ベース優先度システム（0-7）に統一
-   - 名前付き優先度（High/Low等）完全廃止
-   - 必須フィールド化（デフォルト値廃止）
-   - 明示的設定の強制でより安全な設計
+1. **Extended Qdisc Support** ✅
+   - TBF (Token Bucket Filter) qdisc実装完了
+   - PRIO (Priority) qdisc実装完了
+   - FQ_CODEL qdisc実装完了
+   - 全てCQRSパターンに統合済み
 
-2. **Comprehensive Logging System** ✅
-   - Uber Zapベースの高性能構造化ログ実装
-   - コンポーネント別ログレベル管理
-   - コンテキスト対応ログ（デバイス、クラス、操作）
-   - 開発・本番環境設定テンプレート完備
+2. **SQLite Event Store** ✅
+   - 永続化イベントストア実装
+   - メモリベースからSQLiteへの移行
+   - トランザクション対応
+   - スキーママイグレーション機能
 
-3. **Structured Configuration API** ✅
-   - YAML/JSON設定ファイルサポート
-   - 階層クラス構造対応
-   - 設定ファイルから直接適用
-   - 包括的なバリデーション機能
+3. **Standalone CLI Binary** ✅
+   - traffic-controlコマンドラインツール
+   - HTB, TBF, PRIO, FQ_CODEL全ての操作対応
+   - バージョン管理 (v0.1.0)
+   - コマンドラインオプション完備
+
+4. **Statistics Collection** ✅
+   - リアルタイム統計情報収集
+   - qdisc/class別パフォーマンスメトリクス
+   - パケット数、バイト数、ドロップ数等
+   - コマンドラインからの統計表示
 
 ## 現在のタスク
 - [x] ~~systemPatterns.mdの作成~~
@@ -31,6 +37,13 @@
 - [x] ~~HTB Qdiscプロトタイプ実装~~
 - [x] ~~Priority system refactoring~~
 - [x] ~~Logging system implementation~~
+- [x] ~~TBF, PRIO, FQ_CODEL qdisc実装~~
+- [x] ~~SQLite Event Store実装~~
+- [x] ~~Standalone CLI Binary作成~~
+- [x] ~~Statistics Collection機能~~
+- [x] ~~GoReleaser & GitHub Actions設定~~
+- [x] ~~Makefile簡素化~~
+- [x] ~~プロジェクト構造最適化~~
 - [🔄] **Memory bank更新**
 - [⏳] **ドキュメント最終更新**
 - [⏳] **PR作成**
@@ -60,35 +73,38 @@
 6. ✅ Logging設計 → 構造化ログ完全実装
 
 ## 現在の検討事項
-1. **CI/CD最適化**: GitHub Actions workflow改善
-2. **TC機能拡張**: NETEM, FQ_CODEL, CAKE等の追加Qdisc
-3. **Filter拡張**: fw, flower filters実装
-4. **Statistics API**: リアルタイム監視機能
-5. **パフォーマンス最適化**: 大規模設定での動作改善
+1. **v0.1.0リリース準備**: Release Please設定完了
+2. **ドキュメント最終調整**: README、APIガイド更新
+3. **コードクリーンアップ**: .gitignore最適化完了
+4. **次期TC機能**: NETEM, fw/flower filters, police action
+5. **パフォーマンス測定**: ベンチマークテスト作成
 
 ## ブロッカー
 なし - 全ての依存関係解決済み
 
-## 次回のマイルストーン（今回PR後）
-1. **TC Feature Coverage拡張** (25% → 50%)
+## 次回のマイルストーン（v0.1.0リリース後）
+1. **TC Feature Coverage拡張** (65% → 80%)
    - NETEM qdisc実装
-   - fw filter実装
-   - police action実装
-2. **Statistics API実装**
-   - リアルタイム帯域使用量監視
-   - クラス別統計情報取得
-3. **パフォーマンス最適化**
-   - 大規模設定での高速化
-   - メモリ使用量最適化
+   - fw/flower filter実装
+   - police/mirred action実装
+2. **パフォーマンス測定**
+   - ベンチマークテストスイート
+   - 大規模設定での性能評価
+3. **ユーザーエクスペリエンス向上**
+   - インタラクティブCLIモード
+   - 設定ファイルジェネレータ
 
 ## 達成済み主要機能
-- ✅ Core Traffic Control API
-- ✅ HTB Qdisc with class management
+- ✅ Core Traffic Control API (CQRS + Event Sourcing)
+- ✅ Multiple Qdisc Support (HTB, TBF, PRIO, FQ_CODEL)
 - ✅ U32 filter with IP/port/protocol matching
+- ✅ SQLite Event Store (persistent storage)
+- ✅ Statistics collection and monitoring
+- ✅ Standalone CLI Binary (traffic-control)
 - ✅ Structured configuration (YAML/JSON)
 - ✅ Comprehensive logging system
 - ✅ Priority system (numeric 0-7)
 - ✅ Validation and error handling
-- ✅ CLI tool (tcctl)
+- ✅ GoReleaser & GitHub Actions CI/CD
 - ✅ Comprehensive testing suite
 - ✅ Complete documentation

@@ -76,3 +76,110 @@ func NewGetTrafficControlConfigQuery(deviceName valueobjects.DeviceName) *GetTra
 func (q *GetTrafficControlConfigQuery) DeviceName() valueobjects.DeviceName {
 	return q.deviceName
 }
+
+// GetQdiscQuery queries for a specific qdisc
+type GetQdiscQuery struct {
+	DeviceName string
+	Handle     string
+}
+
+// GetClassQuery queries for a specific class
+type GetClassQuery struct {
+	DeviceName string
+	ClassID    string
+}
+
+// GetFilterQuery queries for a specific filter
+type GetFilterQuery struct {
+	DeviceName string
+	Parent     string
+	Priority   uint16
+	Handle     string
+}
+
+// GetConfigurationQuery queries for the complete configuration
+type GetConfigurationQuery struct {
+	DeviceName string
+}
+
+// GetDeviceStatisticsQuery queries for device statistics
+type GetDeviceStatisticsQuery struct {
+	deviceName valueobjects.DeviceName
+}
+
+// NewGetDeviceStatisticsQuery creates a new query
+func NewGetDeviceStatisticsQuery(deviceName valueobjects.DeviceName) *GetDeviceStatisticsQuery {
+	return &GetDeviceStatisticsQuery{
+		deviceName: deviceName,
+	}
+}
+
+// DeviceName returns the device name
+func (q *GetDeviceStatisticsQuery) DeviceName() valueobjects.DeviceName {
+	return q.deviceName
+}
+
+// GetQdiscStatisticsQuery queries for qdisc statistics
+type GetQdiscStatisticsQuery struct {
+	deviceName valueobjects.DeviceName
+	handle     valueobjects.Handle
+}
+
+// NewGetQdiscStatisticsQuery creates a new query
+func NewGetQdiscStatisticsQuery(deviceName valueobjects.DeviceName, handle valueobjects.Handle) *GetQdiscStatisticsQuery {
+	return &GetQdiscStatisticsQuery{
+		deviceName: deviceName,
+		handle:     handle,
+	}
+}
+
+// DeviceName returns the device name
+func (q *GetQdiscStatisticsQuery) DeviceName() valueobjects.DeviceName {
+	return q.deviceName
+}
+
+// Handle returns the qdisc handle
+func (q *GetQdiscStatisticsQuery) Handle() valueobjects.Handle {
+	return q.handle
+}
+
+// GetClassStatisticsQuery queries for class statistics
+type GetClassStatisticsQuery struct {
+	deviceName valueobjects.DeviceName
+	handle     valueobjects.Handle
+}
+
+// NewGetClassStatisticsQuery creates a new query
+func NewGetClassStatisticsQuery(deviceName valueobjects.DeviceName, handle valueobjects.Handle) *GetClassStatisticsQuery {
+	return &GetClassStatisticsQuery{
+		deviceName: deviceName,
+		handle:     handle,
+	}
+}
+
+// DeviceName returns the device name
+func (q *GetClassStatisticsQuery) DeviceName() valueobjects.DeviceName {
+	return q.deviceName
+}
+
+// Handle returns the class handle
+func (q *GetClassStatisticsQuery) Handle() valueobjects.Handle {
+	return q.handle
+}
+
+// GetRealtimeStatisticsQuery queries for realtime statistics
+type GetRealtimeStatisticsQuery struct {
+	deviceName valueobjects.DeviceName
+}
+
+// NewGetRealtimeStatisticsQuery creates a new query
+func NewGetRealtimeStatisticsQuery(deviceName valueobjects.DeviceName) *GetRealtimeStatisticsQuery {
+	return &GetRealtimeStatisticsQuery{
+		deviceName: deviceName,
+	}
+}
+
+// DeviceName returns the device name
+func (q *GetRealtimeStatisticsQuery) DeviceName() valueobjects.DeviceName {
+	return q.deviceName
+}

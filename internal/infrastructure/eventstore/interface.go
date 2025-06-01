@@ -1,6 +1,8 @@
 package eventstore
 
 import (
+	"context"
+
 	"github.com/rng999/traffic-control-go/internal/domain/events"
 )
 
@@ -17,4 +19,24 @@ type EventStore interface {
 
 	// GetAllEvents returns all events in the store (for projections)
 	GetAllEvents() ([]events.DomainEvent, error)
+}
+
+// EventStoreWithContext extends EventStore with context support
+type EventStoreWithContext interface {
+	EventStore
+	// Load loads an aggregate from the event store
+	Load(ctx context.Context, aggregateID string, aggregate EventSourcedAggregate) error
+	// SaveAggregate saves an aggregate to the event store (renamed to avoid conflict)
+	SaveAggregate(ctx context.Context, aggregate EventSourcedAggregate) error
+	// GetEventsWithContext gets events with context (renamed to avoid conflict)
+	GetEventsWithContext(ctx context.Context, aggregateID string, fromVersion int, maxEvents int) ([]interface{}, error)
+}
+
+// EventSourcedAggregate is implemented by aggregates that use event sourcing
+type EventSourcedAggregate interface {
+	GetID() string
+	GetUncommittedEvents() []events.DomainEvent
+	MarkEventsAsCommitted()
+	LoadFromHistory(events []events.DomainEvent)
+	GetVersion() int
 }

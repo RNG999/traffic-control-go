@@ -22,6 +22,11 @@ func (id ClassID) String() string {
 	return fmt.Sprintf("%s:%s", id.device, id.handle)
 }
 
+// Device returns the device name
+func (id ClassID) Device() valueobjects.DeviceName {
+	return id.device
+}
+
 // Class represents a traffic class entity
 type Class struct {
 	id       ClassID

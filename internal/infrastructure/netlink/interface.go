@@ -1,6 +1,8 @@
 package netlink
 
 import (
+	"context"
+
 	"github.com/rng999/traffic-control-go/internal/domain/entities"
 	"github.com/rng999/traffic-control-go/internal/domain/valueobjects"
 	"github.com/rng999/traffic-control-go/pkg/types"
@@ -9,17 +11,17 @@ import (
 // Adapter defines the interface for netlink operations
 type Adapter interface {
 	// Qdisc operations
-	AddQdisc(device valueobjects.DeviceName, qdisc QdiscConfig) types.Result[Unit]
+	AddQdisc(ctx context.Context, qdisc *entities.Qdisc) error
 	DeleteQdisc(device valueobjects.DeviceName, handle valueobjects.Handle) types.Result[Unit]
 	GetQdiscs(device valueobjects.DeviceName) types.Result[[]QdiscInfo]
 
 	// Class operations
-	AddClass(device valueobjects.DeviceName, class ClassConfig) types.Result[Unit]
+	AddClass(ctx context.Context, class *entities.Class) error
 	DeleteClass(device valueobjects.DeviceName, handle valueobjects.Handle) types.Result[Unit]
 	GetClasses(device valueobjects.DeviceName) types.Result[[]ClassInfo]
 
 	// Filter operations
-	AddFilter(device valueobjects.DeviceName, filter FilterConfig) types.Result[Unit]
+	AddFilter(ctx context.Context, filter *entities.Filter) error
 	DeleteFilter(device valueobjects.DeviceName, parent valueobjects.Handle, priority uint16, handle valueobjects.Handle) types.Result[Unit]
 	GetFilters(device valueobjects.DeviceName) types.Result[[]FilterInfo]
 }

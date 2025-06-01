@@ -1,7 +1,6 @@
 package models
 
 import (
-	"github.com/rng999/traffic-control-go/internal/domain/entities"
 	"github.com/rng999/traffic-control-go/internal/domain/valueobjects"
 )
 
@@ -12,152 +11,62 @@ type Command interface {
 
 // CreateHTBQdiscCommand creates an HTB qdisc
 type CreateHTBQdiscCommand struct {
-	deviceName   valueobjects.DeviceName
-	handle       valueobjects.Handle
-	defaultClass valueobjects.Handle
+	DeviceName   string
+	Handle       string
+	DefaultClass string
 }
 
-// NewCreateHTBQdiscCommand creates a new CreateHTBQdiscCommand
-func NewCreateHTBQdiscCommand(deviceName valueobjects.DeviceName, handle valueobjects.Handle, defaultClass valueobjects.Handle) *CreateHTBQdiscCommand {
-	return &CreateHTBQdiscCommand{
-		deviceName:   deviceName,
-		handle:       handle,
-		defaultClass: defaultClass,
-	}
+// CreateTBFQdiscCommand creates a TBF qdisc
+type CreateTBFQdiscCommand struct {
+	DeviceName string
+	Handle     string
+	Rate       string // bandwidth string like "100Mbps"
+	Buffer     uint32
+	Limit      uint32
+	Burst      uint32
 }
 
-// DeviceName returns the device name
-func (c *CreateHTBQdiscCommand) DeviceName() valueobjects.DeviceName {
-	return c.deviceName
+// CreatePRIOQdiscCommand creates a PRIO qdisc
+type CreatePRIOQdiscCommand struct {
+	DeviceName string
+	Handle     string
+	Bands      uint8
+	Priomap    []uint8
 }
 
-// Handle returns the qdisc handle
-func (c *CreateHTBQdiscCommand) Handle() valueobjects.Handle {
-	return c.handle
+// CreateFQCODELQdiscCommand creates a FQ_CODEL qdisc
+type CreateFQCODELQdiscCommand struct {
+	DeviceName string
+	Handle     string
+	Limit      uint32
+	Flows      uint32
+	Target     uint32 // microseconds
+	Interval   uint32 // microseconds
+	Quantum    uint32
+	ECN        bool
 }
 
-// DefaultClass returns the default class handle
-func (c *CreateHTBQdiscCommand) DefaultClass() valueobjects.Handle {
-	return c.defaultClass
-}
 
 // CreateHTBClassCommand creates an HTB class
 type CreateHTBClassCommand struct {
-	deviceName valueobjects.DeviceName
-	parent     valueobjects.Handle
-	handle     valueobjects.Handle
-	name       string
-	rate       valueobjects.Bandwidth
-	ceil       valueobjects.Bandwidth
+	DeviceName string
+	Parent     string
+	ClassID    string
+	Rate       string
+	Ceil       string
 }
 
-// NewCreateHTBClassCommand creates a new CreateHTBClassCommand
-func NewCreateHTBClassCommand(
-	deviceName valueobjects.DeviceName,
-	parent valueobjects.Handle,
-	handle valueobjects.Handle,
-	name string,
-	rate valueobjects.Bandwidth,
-	ceil valueobjects.Bandwidth,
-) *CreateHTBClassCommand {
-	return &CreateHTBClassCommand{
-		deviceName: deviceName,
-		parent:     parent,
-		handle:     handle,
-		name:       name,
-		rate:       rate,
-		ceil:       ceil,
-	}
-}
-
-// DeviceName returns the device name
-func (c *CreateHTBClassCommand) DeviceName() valueobjects.DeviceName {
-	return c.deviceName
-}
-
-// Parent returns the parent handle
-func (c *CreateHTBClassCommand) Parent() valueobjects.Handle {
-	return c.parent
-}
-
-// Handle returns the class handle
-func (c *CreateHTBClassCommand) Handle() valueobjects.Handle {
-	return c.handle
-}
-
-// Name returns the class name
-func (c *CreateHTBClassCommand) Name() string {
-	return c.name
-}
-
-// Rate returns the guaranteed rate
-func (c *CreateHTBClassCommand) Rate() valueobjects.Bandwidth {
-	return c.rate
-}
-
-// Ceil returns the maximum rate
-func (c *CreateHTBClassCommand) Ceil() valueobjects.Bandwidth {
-	return c.ceil
-}
 
 // CreateFilterCommand creates a filter
 type CreateFilterCommand struct {
-	deviceName valueobjects.DeviceName
-	parent     valueobjects.Handle
-	priority   uint16
-	handle     valueobjects.Handle
-	flowID     valueobjects.Handle
-	matches    []entities.Match
+	DeviceName string
+	Parent     string
+	Priority   uint16
+	Protocol   string
+	FlowID     string
+	Match      map[string]string
 }
 
-// NewCreateFilterCommand creates a new CreateFilterCommand
-func NewCreateFilterCommand(
-	deviceName valueobjects.DeviceName,
-	parent valueobjects.Handle,
-	priority uint16,
-	handle valueobjects.Handle,
-	flowID valueobjects.Handle,
-	matches []entities.Match,
-) *CreateFilterCommand {
-	return &CreateFilterCommand{
-		deviceName: deviceName,
-		parent:     parent,
-		priority:   priority,
-		handle:     handle,
-		flowID:     flowID,
-		matches:    matches,
-	}
-}
-
-// DeviceName returns the device name
-func (c *CreateFilterCommand) DeviceName() valueobjects.DeviceName {
-	return c.deviceName
-}
-
-// Parent returns the parent handle
-func (c *CreateFilterCommand) Parent() valueobjects.Handle {
-	return c.parent
-}
-
-// Priority returns the filter priority
-func (c *CreateFilterCommand) Priority() uint16 {
-	return c.priority
-}
-
-// Handle returns the filter handle
-func (c *CreateFilterCommand) Handle() valueobjects.Handle {
-	return c.handle
-}
-
-// FlowID returns the target class handle
-func (c *CreateFilterCommand) FlowID() valueobjects.Handle {
-	return c.flowID
-}
-
-// Matches returns the filter matches
-func (c *CreateFilterCommand) Matches() []entities.Match {
-	return c.matches
-}
 
 // DeleteQdiscCommand deletes a qdisc
 type DeleteQdiscCommand struct {

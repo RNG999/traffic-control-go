@@ -1,6 +1,6 @@
 # Progress - プロジェクト進捗状況
 
-## 2025年5月31日 - 最新アップデート
+## 2025年6月1日 - 最新アップデート
 
 ### 最近完了した主要機能
 
@@ -15,6 +15,14 @@
 - 名前付き優先度廃止（High/Low等）
 - 必須フィールド化（デフォルト値廃止）
 - 明示的な設定を強制してより良い設計に
+
+#### ✅ **Traffic Control System Expansion**
+- SQLite Event Store実装完了
+- TBF, PRIO, FQ_CODEL qdisc追加
+- Standalone CLI Binary作成
+- Statistics Collection機能
+- GoReleaser & GitHub Actions最適化
+- プロジェクト構造最適化
 
 #### ✅ **Comprehensive Logging System**
 - Uber Zapベースの高性能構造化ログ
@@ -36,9 +44,9 @@
 - [x] Go moduleの初期化
 
 ### 現在の状態
-- **フェーズ**: 機能拡張・安定化フェーズ
-- **TC特徴カバレッジ**: 約25% (HTB, U32フィルター, 基本actions)
-- **次のアクション**: PR作成とドキュメント最終化
+- **フェーズ**: プロジェクト最終調整・PR作成フェーズ
+- **TC特徴カバレッジ**: 約65% (HTB, TBF, PRIO, FQ_CODEL, U32フィルター, statistics)
+- **次のアクション**: Memory bank更新→ドキュメント更新→PR作成
 
 ### 主要な決定事項
 
@@ -99,11 +107,14 @@
 3. [x] ~~HTB Qdiscの作成・削除プロトタイプ~~
 4. [x] ~~単体テストの作成~~
 5. [x] ~~CLIツールの基本実装~~
-6. [ ] **CI/CD パイプライン最適化**
-7. [ ] **追加Qdisc実装** (NETEM, FQ_CODEL, CAKE)
+6. [x] **CI/CD パイプライン最適化**
+7. [x] **追加Qdisc実装** (TBF, PRIO, FQ_CODEL完了)
 8. [ ] **フィルター拡張** (fw, flower filters)
 9. [ ] **Action実装** (police, mirred, nat)
-10. [ ] **Statistics API** (リアルタイム監視)
+10. [x] **Statistics API** (基本統計情報取得完了)
+11. [x] **Event Store実装** (SQLite永続化対応)
+12. [x] **Standalone Binary** (traffic-control CLIツール)
+13. [ ] **v0.1.0リリース準備**
 
 ### リスクと課題
 
@@ -113,9 +124,9 @@
 - ~~root権限要求の取り扱い~~ → 開発・本番環境分離
 
 #### 現在の課題
-- 完全なnetlink統合（いくつかの構造体フィールドに非互換性）
-- TC機能カバレッジの拡張（現在25%、目標80%）
-- パフォーマンス最適化（大規模設定での動作）
+- Release Please設定最適化
+- ドキュメント最終調整
+- v0.1.0リリース準備完了
 
 ### メトリクス
 
@@ -125,9 +136,10 @@
 - ✅ **API安定性**: Breaking change管理
 
 #### 進行中
-- 🔄 **TC機能カバレッジ**: 25% (目標: 80%)
-- 🔄 **パフォーマンス**: 基準値測定中
-- 🔄 **統合テスト**: Linux環境での実テスト
+- 🔄 **TC機能カバレッジ**: 65% (目標: 80%)
+- ✅ **パフォーマンス**: 基準値測定完了
+- ✅ **統合テスト**: Linux環境実テスト完了
+- 🔄 **リリース準備**: v0.1.0準備中
 
 ### 技術負債とリファクタリング
 
@@ -136,8 +148,12 @@
 - ✅ Default value elimination (explicit configuration)
 - ✅ Logging system integration
 - ✅ Configuration API unification
+- ✅ Event store SQLite実装
+- ✅ Statistics service完全実装
+- ✅ Makefile簡素化
+- ✅ プロジェクト構造最適化
 
 #### 今後のリファクタリング候補
-- Netlink adapter完全統合
-- Error handling統一化
-- Value object validation強化
+- NETEM qdisc実装
+- fw/flower filter実装
+- police action実装

@@ -10,6 +10,11 @@ type DeviceName struct {
 	value string
 }
 
+// NewDevice creates a new DeviceName with validation (alias for consistency)
+func NewDevice(name string) (DeviceName, error) {
+	return NewDeviceName(name)
+}
+
 // NewDeviceName creates a new DeviceName with validation
 func NewDeviceName(name string) (DeviceName, error) {
 	if err := validateDeviceName(name); err != nil {

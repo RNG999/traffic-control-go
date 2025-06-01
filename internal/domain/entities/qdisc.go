@@ -2,6 +2,7 @@ package entities
 
 import (
 	"fmt"
+	"math"
 
 	"github.com/rng999/traffic-control-go/internal/domain/valueobjects"
 )
@@ -58,6 +59,11 @@ func NewQdiscID(device valueobjects.DeviceName, handle valueobjects.Handle) Qdis
 // String returns the string representation of QdiscID
 func (id QdiscID) String() string {
 	return fmt.Sprintf("%s:%s", id.device, id.handle)
+}
+
+// Device returns the device name
+func (id QdiscID) Device() valueobjects.DeviceName {
+	return id.device
 }
 
 // Qdisc represents a queueing discipline entity
@@ -158,4 +164,196 @@ func (h *HTBQdisc) R2Q() uint32 {
 // SetR2Q sets the rate to quantum ratio
 func (h *HTBQdisc) SetR2Q(r2q uint32) {
 	h.r2q = r2q
+}
+
+// TBFQdisc represents a Token Bucket Filter qdisc
+type TBFQdisc struct {
+	*Qdisc
+	rate   valueobjects.Bandwidth
+	buffer uint32
+	limit  uint32
+	burst  uint32
+}
+
+// NewTBFQdisc creates a new TBF qdisc
+func NewTBFQdisc(device valueobjects.DeviceName, handle valueobjects.Handle, rate valueobjects.Bandwidth) *TBFQdisc {
+	qdisc := NewQdisc(device, handle, QdiscTypeTBF)
+	// Calculate burst with overflow protection
+	burstValue := rate.BitsPerSecond() / 8 / 250
+	if burstValue > math.MaxUint32 {
+		burstValue = math.MaxUint32
+	}
+	
+	return &TBFQdisc{
+		Qdisc:  qdisc,
+		rate:   rate,
+		buffer: 32768, // default buffer size
+		limit:  10000, // default limit
+		// #nosec G115 -- overflow check performed above
+		burst:  uint32(burstValue), // default burst (1/250th of rate)
+	}
+}
+
+// Rate returns the rate limit
+func (t *TBFQdisc) Rate() valueobjects.Bandwidth {
+	return t.rate
+}
+
+// SetRate sets the rate limit
+func (t *TBFQdisc) SetRate(rate valueobjects.Bandwidth) {
+	t.rate = rate
+}
+
+// Buffer returns the buffer size
+func (t *TBFQdisc) Buffer() uint32 {
+	return t.buffer
+}
+
+// SetBuffer sets the buffer size
+func (t *TBFQdisc) SetBuffer(buffer uint32) {
+	t.buffer = buffer
+}
+
+// Limit returns the packet limit
+func (t *TBFQdisc) Limit() uint32 {
+	return t.limit
+}
+
+// SetLimit sets the packet limit
+func (t *TBFQdisc) SetLimit(limit uint32) {
+	t.limit = limit
+}
+
+// Burst returns the burst size
+func (t *TBFQdisc) Burst() uint32 {
+	return t.burst
+}
+
+// SetBurst sets the burst size
+func (t *TBFQdisc) SetBurst(burst uint32) {
+	t.burst = burst
+}
+
+// PRIOQdisc represents a Priority qdisc
+type PRIOQdisc struct {
+	*Qdisc
+	bands    uint8
+	priomap  []uint8
+}
+
+// NewPRIOQdisc creates a new PRIO qdisc
+func NewPRIOQdisc(device valueobjects.DeviceName, handle valueobjects.Handle, bands uint8) *PRIOQdisc {
+	qdisc := NewQdisc(device, handle, QdiscTypePRIO)
+	// Default priomap for 3 bands (standard configuration)
+	defaultPriomap := []uint8{1, 2, 2, 2, 1, 2, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1}
+	return &PRIOQdisc{
+		Qdisc:   qdisc,
+		bands:   bands,
+		priomap: defaultPriomap,
+	}
+}
+
+// Bands returns the number of priority bands
+func (p *PRIOQdisc) Bands() uint8 {
+	return p.bands
+}
+
+// SetBands sets the number of priority bands
+func (p *PRIOQdisc) SetBands(bands uint8) {
+	p.bands = bands
+}
+
+// Priomap returns the priority map
+func (p *PRIOQdisc) Priomap() []uint8 {
+	return p.priomap
+}
+
+// SetPriomap sets the priority map
+func (p *PRIOQdisc) SetPriomap(priomap []uint8) {
+	p.priomap = priomap
+}
+
+// FQCODELQdisc represents a Fair Queue CoDel qdisc
+type FQCODELQdisc struct {
+	*Qdisc
+	limit    uint32 // packet limit
+	flows    uint32 // number of flows
+	target   uint32 // target delay in microseconds
+	interval uint32 // interval in microseconds
+	quantum  uint32 // quantum
+	ecn      bool   // ECN marking
+}
+
+// NewFQCODELQdisc creates a new FQ_CODEL qdisc
+func NewFQCODELQdisc(device valueobjects.DeviceName, handle valueobjects.Handle) *FQCODELQdisc {
+	qdisc := NewQdisc(device, handle, QdiscTypeFQCODEL)
+	return &FQCODELQdisc{
+		Qdisc:    qdisc,
+		limit:    10240,  // default packet limit
+		flows:    1024,   // default flow count
+		target:   5000,   // 5ms target delay
+		interval: 100000, // 100ms interval
+		quantum:  1518,   // default quantum (MTU + headers)
+		ecn:      false,  // ECN disabled by default
+	}
+}
+
+// Limit returns the packet limit
+func (f *FQCODELQdisc) Limit() uint32 {
+	return f.limit
+}
+
+// SetLimit sets the packet limit
+func (f *FQCODELQdisc) SetLimit(limit uint32) {
+	f.limit = limit
+}
+
+// Flows returns the number of flows
+func (f *FQCODELQdisc) Flows() uint32 {
+	return f.flows
+}
+
+// SetFlows sets the number of flows
+func (f *FQCODELQdisc) SetFlows(flows uint32) {
+	f.flows = flows
+}
+
+// Target returns the target delay in microseconds
+func (f *FQCODELQdisc) Target() uint32 {
+	return f.target
+}
+
+// SetTarget sets the target delay in microseconds
+func (f *FQCODELQdisc) SetTarget(target uint32) {
+	f.target = target
+}
+
+// Interval returns the interval in microseconds
+func (f *FQCODELQdisc) Interval() uint32 {
+	return f.interval
+}
+
+// SetInterval sets the interval in microseconds
+func (f *FQCODELQdisc) SetInterval(interval uint32) {
+	f.interval = interval
+}
+
+// Quantum returns the quantum
+func (f *FQCODELQdisc) Quantum() uint32 {
+	return f.quantum
+}
+
+// SetQuantum sets the quantum
+func (f *FQCODELQdisc) SetQuantum(quantum uint32) {
+	f.quantum = quantum
+}
+
+// ECN returns the ECN marking state
+func (f *FQCODELQdisc) ECN() bool {
+	return f.ecn
+}
+
+// SetECN sets the ECN marking state
+func (f *FQCODELQdisc) SetECN(ecn bool) {
+	f.ecn = ecn
 }

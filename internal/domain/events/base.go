@@ -8,8 +8,8 @@ import (
 type DomainEvent interface {
 	AggregateID() string
 	EventType() string
-	OccurredAt() time.Time
-	Version() int
+	Timestamp() time.Time
+	EventVersion() int
 }
 
 // BaseEvent contains common fields for all events
@@ -40,12 +40,12 @@ func (e BaseEvent) EventType() string {
 	return e.eventType
 }
 
-// OccurredAt returns when the event occurred
-func (e BaseEvent) OccurredAt() time.Time {
+// Timestamp returns when the event occurred
+func (e BaseEvent) Timestamp() time.Time {
 	return e.occurredAt
 }
 
-// Version returns the event version
-func (e BaseEvent) Version() int {
+// EventVersion returns the event version
+func (e BaseEvent) EventVersion() int {
 	return e.version
 }

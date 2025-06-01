@@ -84,3 +84,79 @@ func NewQdiscModifiedEvent(aggregateID string, version int, device valueobjects.
 		Parameters: paramsCopy,
 	}
 }
+
+// TBFQdiscCreatedEvent is emitted when a TBF qdisc is created
+type TBFQdiscCreatedEvent struct {
+	BaseEvent
+	DeviceName valueobjects.DeviceName
+	Handle     valueobjects.Handle
+	Rate       valueobjects.Bandwidth
+	Buffer     uint32
+	Limit      uint32
+	Burst      uint32
+}
+
+// NewTBFQdiscCreatedEvent creates a new TBFQdiscCreatedEvent
+func NewTBFQdiscCreatedEvent(aggregateID string, version int, device valueobjects.DeviceName, handle valueobjects.Handle, rate valueobjects.Bandwidth, buffer, limit, burst uint32) *TBFQdiscCreatedEvent {
+	return &TBFQdiscCreatedEvent{
+		BaseEvent:  NewBaseEvent(aggregateID, "TBFQdiscCreated", version),
+		DeviceName: device,
+		Handle:     handle,
+		Rate:       rate,
+		Buffer:     buffer,
+		Limit:      limit,
+		Burst:      burst,
+	}
+}
+
+// PRIOQdiscCreatedEvent is emitted when a PRIO qdisc is created
+type PRIOQdiscCreatedEvent struct {
+	BaseEvent
+	DeviceName valueobjects.DeviceName
+	Handle     valueobjects.Handle
+	Bands      uint8
+	Priomap    []uint8
+}
+
+// NewPRIOQdiscCreatedEvent creates a new PRIOQdiscCreatedEvent
+func NewPRIOQdiscCreatedEvent(aggregateID string, version int, device valueobjects.DeviceName, handle valueobjects.Handle, bands uint8, priomap []uint8) *PRIOQdiscCreatedEvent {
+	// Create a copy of priomap to ensure immutability
+	priomapCopy := make([]uint8, len(priomap))
+	copy(priomapCopy, priomap)
+
+	return &PRIOQdiscCreatedEvent{
+		BaseEvent:  NewBaseEvent(aggregateID, "PRIOQdiscCreated", version),
+		DeviceName: device,
+		Handle:     handle,
+		Bands:      bands,
+		Priomap:    priomapCopy,
+	}
+}
+
+// FQCODELQdiscCreatedEvent is emitted when a FQ_CODEL qdisc is created
+type FQCODELQdiscCreatedEvent struct {
+	BaseEvent
+	DeviceName valueobjects.DeviceName
+	Handle     valueobjects.Handle
+	Limit      uint32
+	Flows      uint32
+	Target     uint32
+	Interval   uint32
+	Quantum    uint32
+	ECN        bool
+}
+
+// NewFQCODELQdiscCreatedEvent creates a new FQCODELQdiscCreatedEvent
+func NewFQCODELQdiscCreatedEvent(aggregateID string, version int, device valueobjects.DeviceName, handle valueobjects.Handle, limit, flows, target, interval, quantum uint32, ecn bool) *FQCODELQdiscCreatedEvent {
+	return &FQCODELQdiscCreatedEvent{
+		BaseEvent:  NewBaseEvent(aggregateID, "FQCODELQdiscCreated", version),
+		DeviceName: device,
+		Handle:     handle,
+		Limit:      limit,
+		Flows:      flows,
+		Target:     target,
+		Interval:   interval,
+		Quantum:    quantum,
+		ECN:        ecn,
+	}
+}

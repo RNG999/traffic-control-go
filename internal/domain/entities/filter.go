@@ -30,6 +30,16 @@ func (id FilterID) String() string {
 	return fmt.Sprintf("%s:%s:prio%d:%s", id.device, id.parent, id.priority, id.handle)
 }
 
+// Device returns the device name
+func (id FilterID) Device() valueobjects.DeviceName {
+	return id.device
+}
+
+// Parent returns the parent handle
+func (id FilterID) Parent() valueobjects.Handle {
+	return id.parent
+}
+
 // Priority returns the filter priority
 func (id FilterID) Priority() uint16 {
 	return id.priority

@@ -5,6 +5,9 @@ on:
     branches:
       - main
 
+env:
+  GO_VERSION_DEFAULT: '1.23'
+
 permissions:
   contents: write
   pull-requests: write
@@ -38,7 +41,7 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v5
       with:
-        go-version: '1.23'
+        go-version: ${{ env.GO_VERSION_DEFAULT }}
         
     - name: Build CLI tool for multiple platforms
       run: |

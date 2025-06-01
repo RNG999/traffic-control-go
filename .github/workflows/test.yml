@@ -6,6 +6,10 @@ on:
   push:
     branches: [ main ]
 
+env:
+  GO_VERSION_DEFAULT: '1.23'
+  GO_VERSION_MATRIX: '["1.21", "1.22", "1.23"]'
+
 permissions:
   contents: read
   security-events: write
@@ -80,7 +84,7 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v5
       with:
-        go-version: '1.23'
+        go-version: ${{ env.GO_VERSION_DEFAULT }}
         
     - name: Run golangci-lint
       uses: golangci/golangci-lint-action@v8
@@ -99,7 +103,7 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v5
       with:
-        go-version: '1.23'
+        go-version: ${{ env.GO_VERSION_DEFAULT }}
         
     - name: Run Gosec Security Scanner
       uses: securego/gosec@master

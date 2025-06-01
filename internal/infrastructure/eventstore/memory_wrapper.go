@@ -54,10 +54,7 @@ func (m *MemoryEventStoreWrapper) SaveAggregate(ctx context.Context, aggregate E
 	// Publish events if publisher is set
 	if m.eventPublisher != nil {
 		for _, event := range uncommittedEvents {
-			if err := m.eventPublisher(ctx, event); err != nil {
-				// Log error but don't fail the save operation
-				// TODO: Add proper logging
-			}
+			_ = m.eventPublisher(ctx, event)
 		}
 	}
 

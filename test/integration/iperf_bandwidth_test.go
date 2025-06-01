@@ -8,8 +8,6 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"strconv"
-	"strings"
 	"testing"
 	"time"
 
@@ -36,21 +34,20 @@ func TestTrafficControlWithIperf3(t *testing.T) {
 	// Use loopback interface for testing
 	device := "lo"
 	
-	// Start iperf3 server in background
+	// Start iperf3 server in background for the entire test
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	
-	serverCmd := exec.CommandContext(ctx, "iperf3", "-s", "-p", "5201", "-1") // -1 for one connection then exit
-	serverErr := make(chan error, 1)
-	go func() {
-		err := serverCmd.Run()
-		if err != nil && ctx.Err() == nil {
-			serverErr <- err
-		}
+	serverCmd := exec.CommandContext(ctx, "iperf3", "-s", "-p", "5201")
+	err := serverCmd.Start()
+	require.NoError(t, err, "Failed to start iperf3 server")
+	defer func() {
+		cancel()
+		_ = serverCmd.Wait()
 	}()
 	
 	// Wait for server to start
-	time.Sleep(2 * time.Second)
+	time.Sleep(1 * time.Second)
 	
 	// Test different bandwidth limits
 	testCases := []struct {
@@ -88,7 +85,10 @@ func TestTrafficControlWithIperf3(t *testing.T) {
 			tcController := api.New(device)
 			err := tcController.
 				SetTotalBandwidth(fmt.Sprintf("%dmbit", tc.limitMbps)).
-				AddClass("test_limit", fmt.Sprintf("%dmbit", tc.limitMbps)).
+				CreateTrafficClass("test_limit").
+				WithGuaranteedBandwidth(fmt.Sprintf("%dmbit", tc.limitMbps)).
+				WithPriority(4). // Normal priority
+				And().
 				Apply()
 			require.NoError(t, err, "Failed to apply traffic control")
 			
@@ -97,6 +97,9 @@ func TestTrafficControlWithIperf3(t *testing.T) {
 			
 			// Run iperf client
 			output, err := runIperfClient()
+			if err != nil {
+				t.Logf("iperf3 output:\n%s", output)
+			}
 			require.NoError(t, err, "Failed to run iperf client")
 			
 			// Parse bandwidth from iperf3 output
@@ -143,8 +146,14 @@ func TestTrafficControlPriority(t *testing.T) {
 	tcController := api.New(device)
 	err := tcController.
 		SetTotalBandwidth("20mbit").
-		AddClass("high_priority", "15mbit").
-		AddClass("low_priority", "5mbit").
+		CreateTrafficClass("high_priority").
+		WithGuaranteedBandwidth("15mbit").
+		WithPriority(1).
+		And().
+		CreateTrafficClass("low_priority").
+		WithGuaranteedBandwidth("5mbit").
+		WithPriority(7).
+		And().
 		Apply()
 	require.NoError(t, err, "Failed to apply traffic control")
 	
@@ -170,23 +179,3 @@ func runIperfClient() (string, error) {
 	return string(output), err
 }
 
-func parseIperf3Bandwidth(t *testing.T, output string) float64 {
-	// Look for the sender summary line
-	// Example: "[  5]   0.00-5.00   sec  59.0 MBytes  99.0 Mbits/sec                  sender"
-	lines := strings.Split(output, "\n")
-	for _, line := range lines {
-		if strings.Contains(line, "sender") && strings.Contains(line, "Mbits/sec") {
-			fields := strings.Fields(line)
-			for i, field := range fields {
-				if field == "Mbits/sec" && i > 0 {
-					bandwidth, err := strconv.ParseFloat(fields[i-1], 64)
-					require.NoError(t, err, "Failed to parse bandwidth from: %s", line)
-					return bandwidth
-				}
-			}
-		}
-	}
-	
-	t.Fatalf("Could not find bandwidth in iperf3 output:\n%s", output)
-	return 0
-}

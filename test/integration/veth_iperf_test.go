@@ -8,8 +8,6 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"strconv"
-	"strings"
 	"testing"
 	"time"
 
@@ -64,7 +62,10 @@ func TestTrafficControlWithVethPair(t *testing.T) {
 	tcController := api.New(veth0)
 	err = tcController.
 		SetTotalBandwidth("100mbit").
-		AddClass("limited", "10mbit").
+		CreateTrafficClass("limited").
+		WithGuaranteedBandwidth("10mbit").
+		WithPriority(4). // Normal priority
+		And().
 		Apply()
 	require.NoError(t, err, "Failed to apply traffic control")
 	

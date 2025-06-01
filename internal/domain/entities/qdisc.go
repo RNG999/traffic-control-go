@@ -189,7 +189,7 @@ func NewTBFQdisc(device valueobjects.DeviceName, handle valueobjects.Handle, rat
 		rate:   rate,
 		buffer: 32768, // default buffer size
 		limit:  10000, // default limit
-		burst:  uint32(burstValue), // default burst (1/250th of rate)
+		burst:  uint32(burstValue), // default burst (1/250th of rate) #nosec G115 -- overflow check performed above
 	}
 }
 

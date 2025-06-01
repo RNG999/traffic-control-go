@@ -35,6 +35,10 @@ build: ## Build both binaries
 test: ## Run tests
 	@go test -v ./...
 
+test-integration: ## Run integration tests (requires root and iperf3)
+	@echo "Running integration tests (requires root privileges and iperf3)..."
+	@sudo go test -v -tags=integration ./test/integration/...
+
 clean: ## Clean build artifacts
 	@rm -rf $(BIN_DIR) dist release coverage.out
 	@echo "✓ Cleaned"

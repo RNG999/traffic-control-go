@@ -16,6 +16,7 @@ Welcome to the Traffic Control Go library documentation. This directory contains
 - [Structured Configuration API](structured-config-api.md) - YAML/JSON configuration support
 - [Priority System Guide](priority-guide.md) - Numeric priority system (0-7)
 - [Logging System](logging.md) - Comprehensive structured logging
+- [Testing Guide](testing.md) - Unit and integration testing with iperf3
 - [TC Feature Coverage](tc-feature-coverage.md) - Current implementation status and roadmap
 - [Standalone Binary](standalone-binary.md) - CLI tool usage guide
 

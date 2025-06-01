@@ -20,7 +20,6 @@ jobs:
         id: release
         with:
           release-type: go
-          package-name: traffic-control-go
           
   # Build and upload release artifacts when a release is created
   build-release:

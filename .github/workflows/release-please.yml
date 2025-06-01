@@ -8,6 +8,7 @@ on:
 permissions:
   contents: write
   pull-requests: write
+  actions: write
 
 jobs:
   release-please:
@@ -16,10 +17,12 @@ jobs:
       release_created: ${{ steps.release.outputs.release_created }}
       tag_name: ${{ steps.release.outputs.tag_name }}
     steps:
+      # Use the default GITHUB_TOKEN which has permissions based on the workflow permissions
       - uses: googleapis/release-please-action@v4
         id: release
         with:
           release-type: go
+          token: ${{ secrets.GITHUB_TOKEN }}
           
   # Build and upload release artifacts when a release is created
   build-release:

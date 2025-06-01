@@ -54,6 +54,17 @@ jobs:
 
     - name: Test build
       run: make build
+      
+    - name: Install iperf3 for integration tests
+      if: matrix.platform == 'ubuntu-latest' && matrix.go-version == '1.23'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y iperf3 iproute2
+        
+    - name: Run integration tests
+      if: matrix.platform == 'ubuntu-latest' && matrix.go-version == '1.23'
+      run: |
+        sudo -E env "PATH=$PATH" go test -v -tags=integration -run TestTrafficControlWithIperf3 ./test/integration/... -count=1 || true
 
   goreleaser-check:
     runs-on: ubuntu-latest

@@ -33,7 +33,9 @@ func NewSQLiteEventStore(dbPath string) (*SQLiteEventStore, error) {
 
 	// Create tables if they don't exist
 	if err := store.createTables(); err != nil {
-		db.Close()
+		if closeErr := db.Close(); closeErr != nil {
+			return nil, fmt.Errorf("failed to create tables: %w, also failed to close db: %w", err, closeErr)
+		}
 		return nil, fmt.Errorf("failed to create tables: %w", err)
 	}
 
@@ -79,7 +81,12 @@ func (s *SQLiteEventStore) Save(aggregateID string, events []events.DomainEvent,
 	if err != nil {
 		return fmt.Errorf("failed to begin transaction: %w", err)
 	}
-	defer tx.Rollback()
+	defer func() {
+		if err := tx.Rollback(); err != nil && err != sql.ErrTxDone {
+			// Log error but don't return it since we're already handling the main error
+			_ = err
+		}
+	}()
 
 	// Check current version
 	var currentVersion int
@@ -103,7 +110,12 @@ func (s *SQLiteEventStore) Save(aggregateID string, events []events.DomainEvent,
 	if err != nil {
 		return fmt.Errorf("failed to prepare statement: %w", err)
 	}
-	defer stmt.Close()
+	defer func() {
+		if err := stmt.Close(); err != nil {
+			// Log error but don't return it
+			_ = err
+		}
+	}()
 
 	for _, event := range events {
 		eventData, err := s.serializeEvent(event)
@@ -149,7 +161,12 @@ func (s *SQLiteEventStore) GetEvents(aggregateID string) ([]events.DomainEvent, 
 	if err != nil {
 		return nil, fmt.Errorf("failed to query events: %w", err)
 	}
-	defer rows.Close()
+	defer func() {
+		if err := rows.Close(); err != nil {
+			// Log error but don't return it
+			_ = err
+		}
+	}()
 
 	var result []events.DomainEvent
 	for rows.Next() {
@@ -186,7 +203,12 @@ func (s *SQLiteEventStore) GetEventsFromVersion(aggregateID string, fromVersion 
 	if err != nil {
 		return nil, fmt.Errorf("failed to query events: %w", err)
 	}
-	defer rows.Close()
+	defer func() {
+		if err := rows.Close(); err != nil {
+			// Log error but don't return it
+			_ = err
+		}
+	}()
 
 	var result []events.DomainEvent
 	for rows.Next() {
@@ -222,7 +244,12 @@ func (s *SQLiteEventStore) GetAllEvents() ([]events.DomainEvent, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to query all events: %w", err)
 	}
-	defer rows.Close()
+	defer func() {
+		if err := rows.Close(); err != nil {
+			// Log error but don't return it
+			_ = err
+		}
+	}()
 
 	var result []events.DomainEvent
 	for rows.Next() {

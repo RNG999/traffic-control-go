@@ -143,7 +143,9 @@ func (a *AdapterWrapper) AddFilter(ctx context.Context, filter *entities.Filter)
 	parentStr := idStr[firstColon+1:secondColon]
 	parentMajor := uint16(0)
 	parentMinor := uint16(0)
-	fmt.Sscanf(parentStr, "%x:%x", &parentMajor, &parentMinor)
+	if n, err := fmt.Sscanf(parentStr, "%x:%x", &parentMajor, &parentMinor); err != nil || n != 2 {
+		return fmt.Errorf("invalid parent handle format: %w", err)
+	}
 	parentHandle := valueobjects.NewHandle(parentMajor, parentMinor)
 
 	config := FilterConfig{
@@ -169,7 +171,9 @@ func (a *AdapterWrapper) AddFilter(ctx context.Context, filter *entities.Filter)
 			// Convert string port to uint16
 			if portStr, ok := value.(string); ok {
 				var port uint16
-				fmt.Sscanf(portStr, "%d", &port)
+				if n, err := fmt.Sscanf(portStr, "%d", &port); err != nil || n != 1 {
+					port = 0 // Default to 0 on error
+				}
 				value = port
 			}
 		case "dst_port":
@@ -177,7 +181,9 @@ func (a *AdapterWrapper) AddFilter(ctx context.Context, filter *entities.Filter)
 			// Convert string port to uint16
 			if portStr, ok := value.(string); ok {
 				var port uint16
-				fmt.Sscanf(portStr, "%d", &port)
+					if n, err := fmt.Sscanf(portStr, "%d", &port); err != nil || n != 1 {
+						port = 0 // Default to 0 on error
+					}
 				value = port
 			}
 		case "protocol":
@@ -193,7 +199,7 @@ func (a *AdapterWrapper) AddFilter(ctx context.Context, filter *entities.Filter)
 				case "icmp":
 					proto = 1
 				default:
-					fmt.Sscanf(protoStr, "%d", &proto)
+					_, _ = fmt.Sscanf(protoStr, "%d", &proto)
 				}
 				value = proto
 			}

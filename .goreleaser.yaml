@@ -179,17 +179,3 @@ dockers:
       - "--label=org.opencontainers.image.version={{.Version}}"
       - "--platform=linux/amd64"
 
-# Homebrew tap (for macOS users)
-brews:
-  - name: traffic-control-go
-    tap:
-      owner: RNG999
-      name: homebrew-tap
-    homepage: "https://github.com/RNG999/traffic-control-go"
-    description: "Linux Traffic Control management with modern CQRS architecture"
-    license: "MIT"
-    install: |
-      bin.install "traffic-control"
-      bin.install "tcctl"
-    test: |
-      system "#{bin}/traffic-control version"

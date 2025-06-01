@@ -592,17 +592,17 @@ func (s *TrafficControlService) handleFilterCreated(ctx context.Context, event i
 // handleEventForProjections forwards events to the projection manager
 func (s *TrafficControlService) handleEventForProjections(ctx context.Context, event interface{}) error {
 	// Get the latest event from the event store to get the full event with metadata
-	events, err := s.eventStore.GetEventsWithContext(ctx, "", 0, 1)
+	_, err := s.eventStore.GetEventsWithContext(ctx, "", 0, 1)
 	if err != nil {
 		return err
 	}
 
-	if len(events) > 0 {
-		// TODO: Fix event type processing for projections
-		// if domainEvent, ok := events[0].(events.DomainEvent); ok {
-		//     return s.projectionManager.ProcessEvent(ctx, domainEvent)
-		// }
-	}
+	// TODO: Fix event type processing for projections
+	// if len(events) > 0 {
+	//     if domainEvent, ok := events[0].(events.DomainEvent); ok {
+	//         return s.projectionManager.ProcessEvent(ctx, domainEvent)
+	//     }
+	// }
 
 	return nil
 }

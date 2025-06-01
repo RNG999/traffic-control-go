@@ -18,7 +18,7 @@ func NewMemoryEventStoreWithContext() EventStoreWithContext {
 
 // Load loads an aggregate from the event store
 func (m *MemoryEventStoreWrapper) Load(ctx context.Context, aggregateID string, aggregate EventSourcedAggregate) error {
-	events, err := m.MemoryEventStore.GetEvents(aggregateID)
+	events, err := m.GetEvents(aggregateID)
 	if err != nil {
 		return err
 	}
@@ -38,7 +38,7 @@ func (m *MemoryEventStoreWrapper) SaveAggregate(ctx context.Context, aggregate E
 	}
 
 	expectedVersion := aggregate.GetVersion() - len(uncommittedEvents)
-	if err := m.MemoryEventStore.Save(aggregate.GetID(), uncommittedEvents, expectedVersion); err != nil {
+	if err := m.Save(aggregate.GetID(), uncommittedEvents, expectedVersion); err != nil {
 		return err
 	}
 
@@ -48,7 +48,7 @@ func (m *MemoryEventStoreWrapper) SaveAggregate(ctx context.Context, aggregate E
 
 // GetEventsWithContext gets events with context
 func (m *MemoryEventStoreWrapper) GetEventsWithContext(ctx context.Context, aggregateID string, fromVersion int, maxEvents int) ([]interface{}, error) {
-	events, err := m.MemoryEventStore.GetEventsFromVersion(aggregateID, fromVersion)
+	events, err := m.GetEventsFromVersion(aggregateID, fromVersion)
 	if err != nil {
 		return nil, err
 	}

@@ -43,7 +43,7 @@ func (s *SQLiteEventStoreWrapper) SaveAggregate(ctx context.Context, aggregate E
 	}
 
 	expectedVersion := aggregate.GetVersion() - len(uncommittedEvents)
-	if err := s.SQLiteEventStore.Save(aggregate.GetID(), uncommittedEvents, expectedVersion); err != nil {
+	if err := s.Save(aggregate.GetID(), uncommittedEvents, expectedVersion); err != nil {
 		return err
 	}
 
@@ -53,7 +53,7 @@ func (s *SQLiteEventStoreWrapper) SaveAggregate(ctx context.Context, aggregate E
 
 // GetEventsWithContext gets events with context
 func (s *SQLiteEventStoreWrapper) GetEventsWithContext(ctx context.Context, aggregateID string, fromVersion int, maxEvents int) ([]interface{}, error) {
-	events, err := s.SQLiteEventStore.GetEventsFromVersion(aggregateID, fromVersion)
+	events, err := s.GetEventsFromVersion(aggregateID, fromVersion)
 	if err != nil {
 		return nil, err
 	}

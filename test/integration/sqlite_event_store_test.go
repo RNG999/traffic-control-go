@@ -24,7 +24,9 @@ func TestSQLiteEventStore(t *testing.T) {
 	require.NoError(t, err)
 	defer func() {
 		if sqliteStore, ok := store.(*eventstore.SQLiteEventStoreWrapper); ok {
-			sqliteStore.Close()
+			if err := sqliteStore.Close(); err != nil {
+				t.Logf("Failed to close SQLite store: %v", err)
+			}
 		}
 	}()
 
@@ -151,7 +153,10 @@ func TestSQLiteEventStorePersistence(t *testing.T) {
 		require.NoError(t, err)
 		defer func() {
 			if sqliteStore, ok := store.(*eventstore.SQLiteEventStoreWrapper); ok {
-				sqliteStore.Close()
+				if err := sqliteStore.Close(); err != nil {
+					// Cannot use t.Logf here as t is not in scope
+					_ = err
+				}
 			}
 		}()
 
@@ -177,7 +182,9 @@ func TestSQLiteEventStorePersistence(t *testing.T) {
 	require.NoError(t, err)
 	defer func() {
 		if sqliteStore, ok := store.(*eventstore.SQLiteEventStoreWrapper); ok {
-			sqliteStore.Close()
+			if err := sqliteStore.Close(); err != nil {
+				t.Logf("Failed to close SQLite store: %v", err)
+			}
 		}
 	}()
 
@@ -204,7 +211,9 @@ func TestSQLiteEventStoreFileCheck(t *testing.T) {
 	require.NoError(t, err)
 	defer func() {
 		if sqliteStore, ok := store.(*eventstore.SQLiteEventStoreWrapper); ok {
-			sqliteStore.Close()
+			if err := sqliteStore.Close(); err != nil {
+				t.Logf("Failed to close SQLite store: %v", err)
+			}
 		}
 	}()
 

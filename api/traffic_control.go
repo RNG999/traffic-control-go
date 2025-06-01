@@ -488,7 +488,7 @@ func (tc *TrafficController) Apply() error {
 	}
 
 	// Create default class for unclassified traffic
-	if err := tc.service.CreateHTBClass(ctx, tc.deviceName, "1:", "1:999",
+	if err := tc.service.CreateHTBClass(ctx, tc.deviceName, "1:0", "1:999",
 		"1mbit", tc.totalBandwidth.String()); err != nil {
 		tc.logger.Error("Failed to create default HTB class",
 			logging.Error(err),

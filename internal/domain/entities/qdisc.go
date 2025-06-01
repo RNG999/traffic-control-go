@@ -60,6 +60,11 @@ func (id QdiscID) String() string {
 	return fmt.Sprintf("%s:%s", id.device, id.handle)
 }
 
+// Device returns the device name
+func (id QdiscID) Device() valueobjects.DeviceName {
+	return id.device
+}
+
 // Qdisc represents a queueing discipline entity
 type Qdisc struct {
 	id         QdiscID

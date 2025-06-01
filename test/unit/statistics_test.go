@@ -22,6 +22,7 @@ func TestStatisticsService_GetDeviceStatistics(t *testing.T) {
 
 	service := application.NewTrafficControlService(eventStore, netlinkAdapter, logger)
 	ctx := context.Background()
+	_ = service  // Avoid unused variable warning
 
 	// Test device
 	deviceName := "eth0"

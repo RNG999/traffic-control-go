@@ -23,6 +23,7 @@ jobs:
         with:
           release-type: go
           token: ${{ secrets.GITHUB_TOKEN }}
+          skip-labeling: true
           
   # Build and upload release artifacts when a release is created
   build-release:

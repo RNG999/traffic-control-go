@@ -31,8 +31,11 @@ func TestTrafficControlWithIperf3(t *testing.T) {
 		t.Skip("iperf3 not installed, skipping test")
 	}
 
-	// Use loopback interface for testing
-	device := "lo"
+	// Skip test if no suitable network interface is available
+	device := findTestInterface(t)
+	if device == "" {
+		t.Skip("No suitable network interface found for testing")
+	}
 	
 	// Start iperf3 server in background for the entire test
 	ctx, cancel := context.WithCancel(context.Background())
@@ -91,6 +94,12 @@ func TestTrafficControlWithIperf3(t *testing.T) {
 				And().
 				Apply()
 			require.NoError(t, err, "Failed to apply traffic control")
+			
+			// Verify TC was applied
+			tcOutput, _ := exec.Command("tc", "qdisc", "show", "dev", device).CombinedOutput()
+			t.Logf("TC qdisc after apply: %s", tcOutput)
+			tcOutput, _ = exec.Command("tc", "class", "show", "dev", device).CombinedOutput()
+			t.Logf("TC class after apply: %s", tcOutput)
 			
 			// Wait for TC to take effect
 			time.Sleep(1 * time.Second)

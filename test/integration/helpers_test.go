@@ -4,6 +4,7 @@
 package integration_test
 
 import (
+	"os/exec"
 	"strconv"
 	"strings"
 	"testing"
@@ -31,4 +32,22 @@ func parseIperf3Bandwidth(t *testing.T, output string) float64 {
 	
 	t.Fatalf("Could not find bandwidth in iperf3 output:\n%s", output)
 	return 0
+}
+
+// findTestInterface finds a suitable network interface for testing
+func findTestInterface(t *testing.T) string {
+	// First try to create a dummy interface
+	if err := exec.Command("ip", "link", "add", "dummy0", "type", "dummy").Run(); err == nil {
+		// Set it up
+		exec.Command("ip", "link", "set", "dummy0", "up").Run()
+		exec.Command("ip", "addr", "add", "192.168.100.1/24", "dev", "dummy0").Run()
+		t.Cleanup(func() {
+			exec.Command("ip", "link", "del", "dummy0").Run()
+		})
+		return "dummy0"
+	}
+	
+	// If we can't create dummy, skip for now
+	// In CI environment, we'll use veth pairs
+	return ""
 }

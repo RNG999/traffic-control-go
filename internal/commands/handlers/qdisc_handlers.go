@@ -43,7 +43,9 @@ func (h *CreateTBFQdiscHandler) Handle(ctx context.Context, command interface{})
 
 	// Parse handle
 	var handleMajor, handleMinor uint16
-	fmt.Sscanf(cmd.Handle, "%x:%x", &handleMajor, &handleMinor)
+	if n, err := fmt.Sscanf(cmd.Handle, "%x:%x", &handleMajor, &handleMinor); err != nil || n != 2 {
+		return fmt.Errorf("invalid handle format: %s", cmd.Handle)
+	}
 	handle := valueobjects.NewHandle(handleMajor, handleMinor)
 
 	// Parse bandwidth
@@ -98,7 +100,9 @@ func (h *CreatePRIOQdiscHandler) Handle(ctx context.Context, command interface{}
 
 	// Parse handle
 	var handleMajor, handleMinor uint16
-	fmt.Sscanf(cmd.Handle, "%x:%x", &handleMajor, &handleMinor)
+	if n, err := fmt.Sscanf(cmd.Handle, "%x:%x", &handleMajor, &handleMinor); err != nil || n != 2 {
+		return fmt.Errorf("invalid handle format: %s", cmd.Handle)
+	}
 	handle := valueobjects.NewHandle(handleMajor, handleMinor)
 
 	// Execute business logic
@@ -147,7 +151,9 @@ func (h *CreateFQCODELQdiscHandler) Handle(ctx context.Context, command interfac
 
 	// Parse handle
 	var handleMajor, handleMinor uint16
-	fmt.Sscanf(cmd.Handle, "%x:%x", &handleMajor, &handleMinor)
+	if n, err := fmt.Sscanf(cmd.Handle, "%x:%x", &handleMajor, &handleMinor); err != nil || n != 2 {
+		return fmt.Errorf("invalid handle format: %s", cmd.Handle)
+	}
 	handle := valueobjects.NewHandle(handleMajor, handleMinor)
 
 	// Execute business logic

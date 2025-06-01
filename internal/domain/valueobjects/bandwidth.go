@@ -44,12 +44,12 @@ func MustParseBandwidth(s string) Bandwidth {
 
 // ParseBandwidth parses a bandwidth string with error handling
 func ParseBandwidth(s string) (Bandwidth, error) {
-	// Regular expression to match number + unit
-	re := regexp.MustCompile(`^(\d+(?:\.\d+)?)\s*(bps|kbps|mbps|gbps|Bps|Kbps|Mbps|Gbps)$`)
+	// Regular expression to match number + unit (supports both formats: 100Mbps and 1mbit)
+	re := regexp.MustCompile(`^(\d+(?:\.\d+)?)\s*(bps|kbps|mbps|gbps|Bps|Kbps|Mbps|Gbps|bit|kbit|mbit|gbit)$`)
 	matches := re.FindStringSubmatch(strings.TrimSpace(s))
 
 	if len(matches) != 3 {
-		return Bandwidth{}, fmt.Errorf("invalid bandwidth format: %s (expected format: '100Mbps')", s)
+		return Bandwidth{}, fmt.Errorf("invalid bandwidth format: %s (expected format: '100Mbps' or '1mbit')", s)
 	}
 
 	value, err := strconv.ParseFloat(matches[1], 64)
@@ -60,13 +60,13 @@ func ParseBandwidth(s string) (Bandwidth, error) {
 	unit := strings.ToLower(matches[2])
 
 	switch unit {
-	case "bps":
+	case "bps", "bit":
 		return Bps(uint64(value)), nil
-	case "kbps":
+	case "kbps", "kbit":
 		return Kbps(value), nil
-	case "mbps":
+	case "mbps", "mbit":
 		return Mbps(value), nil
-	case "gbps":
+	case "gbps", "gbit":
 		return Gbps(value), nil
 	default:
 		return Bandwidth{}, fmt.Errorf("unknown bandwidth unit: %s", unit)

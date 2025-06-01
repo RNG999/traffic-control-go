@@ -7,6 +7,7 @@ import (
 
 	chandlers "github.com/rng999/traffic-control-go/internal/commands/handlers"
 	"github.com/rng999/traffic-control-go/internal/commands/models"
+	"github.com/rng999/traffic-control-go/internal/domain/events"
 	"github.com/rng999/traffic-control-go/internal/domain/valueobjects"
 	"github.com/rng999/traffic-control-go/internal/infrastructure/eventstore"
 	"github.com/rng999/traffic-control-go/internal/infrastructure/netlink"
@@ -64,6 +65,11 @@ func NewTrafficControlService(
 	service.queryBus = NewQueryBus(service)
 	service.eventBus = NewEventBus(service)
 
+	// Setup event publishing from event store to event bus
+	if wrapper, ok := eventStore.(*eventstore.MemoryEventStoreWrapper); ok {
+		wrapper.SetEventPublisher(service.publishEvent)
+	}
+
 	// Register handlers
 	service.registerHandlers()
 
@@ -101,11 +107,11 @@ func (s *TrafficControlService) registerHandlers() {
 	// s.queryBus.Register("GetRealtimeStatistics", qhandlers.NewGetRealtimeStatisticsHandler(statisticsQueryService))
 
 	// Register event handlers for netlink integration
-	// Note: Event handlers temporarily disabled due to interface compatibility issues
-	// TODO: Fix event handler signatures and event type references
-	// s.eventBus.Subscribe("QdiscCreated", s.handleQdiscCreated)
-	// s.eventBus.Subscribe("ClassCreated", s.handleClassCreated)
-	// s.eventBus.Subscribe("FilterCreated", s.handleFilterCreated)
+	s.eventBus.Subscribe("QdiscCreated", s.handleQdiscCreated)
+	s.eventBus.Subscribe("HTBQdiscCreated", s.handleQdiscCreated)
+	s.eventBus.Subscribe("ClassCreated", s.handleClassCreated)
+	s.eventBus.Subscribe("HTBClassCreated", s.handleClassCreated)
+	s.eventBus.Subscribe("FilterCreated", s.handleFilterCreated)
 
 	// Register event handlers for projections
 	s.eventBus.Subscribe("QdiscCreated", s.handleEventForProjections)
@@ -452,142 +458,28 @@ func convertApplicationStatsToView(stats *DeviceStatistics) qmodels.DeviceStatis
 	return view
 }
 
-// Event handlers for netlink integration
-// Note: These methods are temporarily disabled due to compilation issues
-
-/*
-func (s *TrafficControlService) handleQdiscCreated(ctx context.Context, event interface{}) error {
-	// Get the latest event from the event store
-	events, err := s.eventStore.GetEvents(ctx, "", 0, 1)
-	if err != nil {
-		return err
-	}
-
-	if len(events) == 0 {
-		return fmt.Errorf("no events found")
-	}
-
-	// Extract device name from the latest event
-	var deviceName string
-	switch e := events[0].(type) {
-	case *aggregates.QdiscCreatedEvent:
-		deviceName = e.DeviceName
+// publishEvent publishes an event to the event bus
+func (s *TrafficControlService) publishEvent(ctx context.Context, event interface{}) error {
+	// Determine event type from the event itself
+	eventType := ""
+	switch event.(type) {
+	case *events.QdiscCreatedEvent:
+		eventType = "QdiscCreated"
+	case *events.HTBQdiscCreatedEvent:
+		eventType = "HTBQdiscCreated"
+	case *events.ClassCreatedEvent:
+		eventType = "ClassCreated"
+	case *events.HTBClassCreatedEvent:
+		eventType = "HTBClassCreated"
+	case *events.FilterCreatedEvent:
+		eventType = "FilterCreated"
 	default:
-		return fmt.Errorf("unexpected event type")
+		s.logger.Debug("Unknown event type, skipping publish", logging.String("type", fmt.Sprintf("%T", event)))
+		return nil
 	}
 
-	device, err := valueobjects.NewDevice(deviceName)
-	if err != nil {
-		return err
-	}
-
-	aggregate := aggregates.NewTrafficControlAggregate(device)
-	if err := s.eventStore.Load(ctx, aggregate.GetID(), aggregate); err != nil {
-		return err
-	}
-
-	// Apply to netlink
-	for _, qdisc := range aggregate.GetQdiscs() {
-		if err := s.netlinkAdapter.AddQdisc(ctx, qdisc); err != nil {
-			s.logger.Error("Failed to apply qdisc to netlink",
-				"device", qdisc.Device.String(),
-				"handle", qdisc.Handle.String(),
-				"error", err)
-			return err
-		}
-	}
-
-	return nil
+	return s.eventBus.Publish(ctx, eventType, event)
 }
-
-func (s *TrafficControlService) handleClassCreated(ctx context.Context, event interface{}) error {
-	// Get the latest event from the event store
-	events, err := s.eventStore.GetEvents(ctx, "", 0, 1)
-	if err != nil {
-		return err
-	}
-
-	if len(events) == 0 {
-		return fmt.Errorf("no events found")
-	}
-
-	// Extract device name from the latest event
-	var deviceName string
-	switch e := events[0].(type) {
-	case *aggregates.ClassCreatedEvent:
-		deviceName = e.DeviceName
-	default:
-		return fmt.Errorf("unexpected event type")
-	}
-
-	device, err := valueobjects.NewDevice(deviceName)
-	if err != nil {
-		return err
-	}
-
-	aggregate := aggregates.NewTrafficControlAggregate(device)
-	if err := s.eventStore.Load(ctx, aggregate.GetID(), aggregate); err != nil {
-		return err
-	}
-
-	// Apply to netlink
-	for _, class := range aggregate.GetClasses() {
-		if err := s.netlinkAdapter.AddClass(ctx, class); err != nil {
-			s.logger.Error("Failed to apply class to netlink",
-				"device", class.Device.String(),
-				"classID", class.ClassID.String(),
-				"error", err)
-			return err
-		}
-	}
-
-	return nil
-}
-
-func (s *TrafficControlService) handleFilterCreated(ctx context.Context, event interface{}) error {
-	// Get the latest event from the event store
-	events, err := s.eventStore.GetEvents(ctx, "", 0, 1)
-	if err != nil {
-		return err
-	}
-
-	if len(events) == 0 {
-		return fmt.Errorf("no events found")
-	}
-
-	// Extract device name from the latest event
-	var deviceName string
-	switch e := events[0].(type) {
-	case *aggregates.FilterCreatedEvent:
-		deviceName = e.DeviceName
-	default:
-		return fmt.Errorf("unexpected event type")
-	}
-
-	device, err := valueobjects.NewDevice(deviceName)
-	if err != nil {
-		return err
-	}
-
-	aggregate := aggregates.NewTrafficControlAggregate(device)
-	if err := s.eventStore.Load(ctx, aggregate.GetID(), aggregate); err != nil {
-		return err
-	}
-
-	// Apply to netlink
-	for _, filter := range aggregate.GetFilters() {
-		if err := s.netlinkAdapter.AddFilter(ctx, filter); err != nil {
-			s.logger.Error("Failed to apply filter to netlink",
-				"device", filter.Device.String(),
-				"priority", filter.Priority,
-				"error", err)
-			return err
-		}
-	}
-
-	return nil
-}
-*/
 
 // handleEventForProjections forwards events to the projection manager
 func (s *TrafficControlService) handleEventForProjections(ctx context.Context, event interface{}) error {

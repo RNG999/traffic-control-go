@@ -90,31 +90,61 @@ func (m *MockAdapter) GetQdiscs(device valueobjects.DeviceName) types.Result[[]Q
 }
 
 // AddClass adds a class (new interface)
-func (m *MockAdapter) AddClass(ctx context.Context, class *entities.Class) error {
+func (m *MockAdapter) AddClass(ctx context.Context, classEntity interface{}) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	deviceStr := class.ID().Device().String()
+	// Type switch to handle different class types
+	switch class := classEntity.(type) {
+	case *entities.Class:
+		deviceStr := class.ID().Device().String()
 
-	// Initialize device map if needed
-	if _, exists := m.classes[deviceStr]; !exists {
-		m.classes[deviceStr] = make(map[valueobjects.Handle]ClassInfo)
+		// Initialize device map if needed
+		if _, exists := m.classes[deviceStr]; !exists {
+			m.classes[deviceStr] = make(map[valueobjects.Handle]ClassInfo)
+		}
+
+		// Check if class already exists
+		if _, exists := m.classes[deviceStr][class.Handle()]; exists {
+			return fmt.Errorf("class %s already exists on device %s", class.Handle(), class.ID().Device())
+		}
+
+		// Add the class
+		m.classes[deviceStr][class.Handle()] = ClassInfo{
+			Handle:     class.Handle(),
+			Parent:     class.Parent(),
+			Type:       entities.QdiscTypeHTB, // Default to HTB for classes
+			Statistics: ClassStats{},
+		}
+
+		return nil
+
+	case *entities.HTBClass:
+		deviceStr := class.ID().Device().String()
+
+		// Initialize device map if needed
+		if _, exists := m.classes[deviceStr]; !exists {
+			m.classes[deviceStr] = make(map[valueobjects.Handle]ClassInfo)
+		}
+
+		// Check if class already exists
+		if _, exists := m.classes[deviceStr][class.Handle()]; exists {
+			return fmt.Errorf("HTB class %s already exists on device %s", class.Handle(), class.ID().Device())
+		}
+
+		// Add the HTB class
+		m.classes[deviceStr][class.Handle()] = ClassInfo{
+			Handle:     class.Handle(),
+			Parent:     class.Parent(),
+			Type:       entities.QdiscTypeHTB,
+			Statistics: ClassStats{},
+		}
+
+		return nil
+
+	default:
+		return fmt.Errorf("unsupported class type: %T", classEntity)
 	}
-
-	// Check if class already exists
-	if _, exists := m.classes[deviceStr][class.Handle()]; exists {
-		return fmt.Errorf("class %s already exists on device %s", class.Handle(), class.ID().Device())
-	}
-
-	// Add the class
-	m.classes[deviceStr][class.Handle()] = ClassInfo{
-		Handle:     class.Handle(),
-		Parent:     class.Parent(),
-		Type:       entities.QdiscTypeHTB, // Default to HTB for classes
-		Statistics: ClassStats{},
-	}
-
-	return nil
 }
 
 // DeleteClass deletes a class

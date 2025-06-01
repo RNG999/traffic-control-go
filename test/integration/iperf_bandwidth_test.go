@@ -8,6 +8,9 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"regexp"
+	"strconv"
+	"strings"
 	"testing"
 	"time"
 
@@ -186,5 +189,63 @@ func runIperfClient() (string, error) {
 	cmd := exec.Command("iperf3", "-c", "127.0.0.1", "-p", "5201", "-t", "5", "-f", "m")
 	output, err := cmd.CombinedOutput()
 	return string(output), err
+}
+
+func findTestInterface(t *testing.T) string {
+	// Try to find a suitable network interface for testing
+	// Prefer loopback for isolation, but can use others if needed
+	
+	// First try loopback
+	if _, err := exec.Command("ip", "link", "show", "lo").Output(); err == nil {
+		return "lo"
+	}
+	
+	// Try to find another interface
+	output, err := exec.Command("ip", "link", "show").Output()
+	if err != nil {
+		return ""
+	}
+	
+	lines := strings.Split(string(output), "\n")
+	for _, line := range lines {
+		if strings.Contains(line, ": ") && strings.Contains(line, "state UP") {
+			parts := strings.Split(line, ": ")
+			if len(parts) >= 2 {
+				iface := strings.TrimSpace(parts[1])
+				if iface != "" && !strings.Contains(iface, "@") {
+					return iface
+				}
+			}
+		}
+	}
+	
+	return ""
+}
+
+func parseIperf3Bandwidth(t *testing.T, output string) float64 {
+	// Parse iperf3 output to extract bandwidth
+	// Look for lines like:
+	// [  4]   0.00-5.00   sec  6.25 MBytes  10.5 Mbits/sec                  sender
+	// [  4]   0.00-5.04   sec  6.12 MBytes  10.2 Mbits/sec                  receiver
+	
+	// We want the receiver bandwidth as it's more accurate for our test
+	re := regexp.MustCompile(`\[\s*\d+\]\s+[\d.-]+-[\d.-]+\s+sec\s+[\d.]+\s+\w+\s+([\d.]+)\s+Mbits/sec\s+receiver`)
+	matches := re.FindStringSubmatch(output)
+	
+	if len(matches) < 2 {
+		// Try sender if receiver not found
+		re = regexp.MustCompile(`\[\s*\d+\]\s+[\d.-]+-[\d.-]+\s+sec\s+[\d.]+\s+\w+\s+([\d.]+)\s+Mbits/sec\s+sender`)
+		matches = re.FindStringSubmatch(output)
+	}
+	
+	if len(matches) < 2 {
+		t.Logf("Could not parse bandwidth from iperf3 output:\n%s", output)
+		t.Fatal("Failed to parse iperf3 bandwidth")
+	}
+	
+	bandwidth, err := strconv.ParseFloat(matches[1], 64)
+	require.NoError(t, err, "Failed to parse bandwidth value: %s", matches[1])
+	
+	return bandwidth
 }
 

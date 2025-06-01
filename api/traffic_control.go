@@ -433,7 +433,7 @@ func (tc *TrafficController) Apply() error {
 	ctx := context.Background()
 
 	// Create HTB qdisc
-	handle := "1:"
+	handle := "1:0"
 	defaultClass := "1:999" // Default class for unclassified traffic
 	if err := tc.service.CreateHTBQdisc(ctx, tc.deviceName, handle, defaultClass); err != nil {
 		tc.logger.Error("Failed to create HTB qdisc",
@@ -446,7 +446,7 @@ func (tc *TrafficController) Apply() error {
 	// Create classes
 	for i, class := range tc.classes {
 		classID := fmt.Sprintf("1:%d", i+10) // Start class IDs at 1:10
-		parent := "1:" // Parent is the root qdisc
+		parent := "1:0" // Parent is the root qdisc
 
 		tc.logger.Debug("Creating HTB class",
 			logging.String("class_name", class.name),

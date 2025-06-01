@@ -17,10 +17,10 @@ import (
 	"github.com/rng999/traffic-control-go/api"
 )
 
-// TestTrafficControlWithIperf tests actual bandwidth limiting using iperf3
-func TestTrafficControlWithIperf(t *testing.T) {
+// TestTrafficControlWithIperf3 tests actual bandwidth limiting using iperf3
+func TestTrafficControlWithIperf3(t *testing.T) {
 	if testing.Short() {
-		t.Skip("Skipping iperf test in short mode")
+		t.Skip("Skipping iperf3 test in short mode")
 	}
 
 	// Check if running as root
@@ -99,8 +99,8 @@ func TestTrafficControlWithIperf(t *testing.T) {
 			output, err := runIperfClient()
 			require.NoError(t, err, "Failed to run iperf client")
 			
-			// Parse bandwidth from iperf output
-			actualMbps := parseIperfBandwidth(t, output)
+			// Parse bandwidth from iperf3 output
+			actualMbps := parseIperf3Bandwidth(t, output)
 			
 			// Check if actual bandwidth is within tolerance
 			lowerBound := tc.expectedMbps * (1 - tc.tolerance/100)
@@ -123,7 +123,7 @@ func TestTrafficControlWithIperf(t *testing.T) {
 // TestTrafficControlPriority tests priority-based traffic shaping
 func TestTrafficControlPriority(t *testing.T) {
 	if testing.Short() {
-		t.Skip("Skipping iperf test in short mode")
+		t.Skip("Skipping iperf3 test in short mode")
 	}
 
 	if os.Geteuid() != 0 {
@@ -149,7 +149,7 @@ func TestTrafficControlPriority(t *testing.T) {
 	require.NoError(t, err, "Failed to apply traffic control")
 	
 	// Note: Full priority testing would require marking packets with different
-	// priorities and running multiple iperf streams simultaneously.
+	// priorities and running multiple iperf3 streams simultaneously.
 	// This is a simplified test that verifies the configuration applies successfully.
 	
 	// Clean up
@@ -170,7 +170,7 @@ func runIperfClient() (string, error) {
 	return string(output), err
 }
 
-func parseIperfBandwidth(t *testing.T, output string) float64 {
+func parseIperf3Bandwidth(t *testing.T, output string) float64 {
 	// Look for the sender summary line
 	// Example: "[  5]   0.00-5.00   sec  59.0 MBytes  99.0 Mbits/sec                  sender"
 	lines := strings.Split(output, "\n")
@@ -187,6 +187,6 @@ func parseIperfBandwidth(t *testing.T, output string) float64 {
 		}
 	}
 	
-	t.Fatalf("Could not find bandwidth in iperf output:\n%s", output)
+	t.Fatalf("Could not find bandwidth in iperf3 output:\n%s", output)
 	return 0
 }

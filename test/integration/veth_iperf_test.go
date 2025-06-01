@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"strconv"
+	"strings"
 	"testing"
 	"time"
 
@@ -73,7 +75,7 @@ func TestTrafficControlWithVethPair(t *testing.T) {
 	require.NoError(t, err, "Failed to run iperf client: %s", string(output))
 	
 	// Parse and verify bandwidth
-	actualMbps := parseIperfBandwidth(t, string(output))
+	actualMbps := parseIperf3Bandwidth(t, string(output))
 	t.Logf("Measured bandwidth: %.1f Mbps (expected ~10 Mbps)", actualMbps)
 	
 	// Verify bandwidth is limited (with tolerance)

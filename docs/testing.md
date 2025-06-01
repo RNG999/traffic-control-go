@@ -50,7 +50,7 @@ These tests use virtual ethernet pairs (veth) to create isolated network environ
 
 ```bash
 # Run only bandwidth tests
-sudo go test -v -tags=integration -run TestTrafficControlWithIperf ./test/integration/
+sudo go test -v -tags=integration -run TestTrafficControlWithIperf3 ./test/integration/
 
 # Run only veth tests
 sudo go test -v -tags=integration -run TestTrafficControlWithVethPair ./test/integration/

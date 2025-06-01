@@ -28,6 +28,11 @@ func Kbps(value float64) Bandwidth { return Bandwidth{value: uint64(value * 1000
 func Mbps(value float64) Bandwidth { return Bandwidth{value: uint64(value * 1000 * 1000)} }
 func Gbps(value float64) Bandwidth { return Bandwidth{value: uint64(value * 1000 * 1000 * 1000)} }
 
+// NewBandwidth is an alias for ParseBandwidth for consistency
+func NewBandwidth(s string) (Bandwidth, error) {
+	return ParseBandwidth(s)
+}
+
 // MustParseBandwidth parses a bandwidth string like "100Mbps" or "1.5Gbps"
 func MustParseBandwidth(s string) Bandwidth {
 	b, err := ParseBandwidth(s)

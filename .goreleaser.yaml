@@ -1,0 +1,195 @@
+version: 1
+
+# Project metadata
+project_name: traffic-control-go
+
+before:
+  hooks:
+    - go mod tidy
+    - go generate ./...
+
+# Build configuration
+builds:
+  - id: traffic-control
+    main: ./cmd/traffic-control
+    binary: traffic-control
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - windows
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    # Skip unsupported combinations
+    ignore:
+      - goos: windows
+        goarch: arm64
+    ldflags:
+      - -s -w
+      - -X main.version={{.Version}}
+      - -X main.commit={{.Commit}}
+      - -X main.date={{.Date}}
+      - -X main.builtBy=goreleaser
+
+  - id: tcctl
+    main: ./cmd/tcctl
+    binary: tcctl
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - windows
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    ignore:
+      - goos: windows
+        goarch: arm64
+    ldflags:
+      - -s -w
+      - -X main.Version={{.Version}}
+      - -X main.Commit={{.Commit}}
+      - -X main.BuildTime={{.Date}}
+
+# Archive configuration
+archives:
+  - id: default
+    builds:
+      - traffic-control
+      - tcctl
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    format_overrides:
+      - goos: windows
+        format: zip
+    files:
+      - README.md
+      - LICENSE*
+      - docs/**/*
+      - examples/**/*
+
+# Release configuration  
+release:
+  github:
+    owner: RNG999
+    name: traffic-control-go
+  draft: false
+  prerelease: auto
+  mode: replace
+  header: |
+    ## Traffic Control Go {{ .Tag }}
+    
+    This release includes support for multiple Linux Traffic Control queueing disciplines:
+    - **HTB** (Hierarchical Token Bucket) - Complex bandwidth hierarchies
+    - **TBF** (Token Bucket Filter) - Simple rate limiting  
+    - **PRIO** (Priority) - Priority-based scheduling
+    - **FQ_CODEL** (Fair Queue CoDel) - Fair queuing with AQM
+    
+  footer: |
+    ## Installation
+    
+    ### Linux/macOS
+    ```bash
+    # Download and extract
+    tar -xzf traffic-control-go_{{ .Version }}_linux_amd64.tar.gz
+    
+    # Install to system path
+    sudo cp traffic-control /usr/local/bin/
+    sudo chmod +x /usr/local/bin/traffic-control
+    
+    # Verify installation
+    traffic-control version
+    ```
+    
+    ### Windows
+    ```powershell
+    # Extract zip file and add to PATH
+    # Run as Administrator for network modifications
+    traffic-control.exe version
+    ```
+    
+    ## Usage Examples
+    
+    ```bash
+    # Simple rate limiting
+    sudo traffic-control tbf eth0 1:0 100Mbps
+    
+    # Priority scheduling
+    sudo traffic-control prio eth0 1:0 3
+    
+    # Fair queuing with low latency
+    sudo traffic-control fq_codel eth0 1:0 --target 1000 --ecn
+    
+    # Complex HTB hierarchy
+    sudo traffic-control htb eth0 1:0 1:999 \
+        --class 1:10,parent=1:,rate=60Mbps,ceil=80Mbps \
+        --class 1:20,parent=1:,rate=30Mbps,ceil=50Mbps
+    
+    # Monitor statistics
+    sudo traffic-control stats eth0 --monitor 5
+    ```
+    
+    **Full Changelog**: https://github.com/RNG999/traffic-control-go/compare/{{ .PreviousTag }}...{{ .Tag }}
+
+# Changelog generation
+changelog:
+  use: github
+  sort: asc
+  abbrev: 7
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^ci:"
+      - "typo"
+      - "^Merge "
+  groups:
+    - title: "🚀 New Features"
+      regexp: "^.*feat.*:"
+      order: 0
+    - title: "🐛 Bug Fixes" 
+      regexp: "^.*fix.*:"
+      order: 1
+    - title: "📚 Documentation"
+      regexp: "^.*docs.*:"
+      order: 2
+    - title: "🔧 Maintenance"
+      order: 999
+
+# Checksums
+checksum:
+  name_template: "checksums.txt"
+
+# Snapshots (for unreleased versions)
+snapshot:
+  name_template: "{{ incpatch .Version }}-next"
+
+# Docker images (optional)
+dockers:
+  - image_templates:
+      - "ghcr.io/rng999/traffic-control-go:{{ .Tag }}"
+      - "ghcr.io/rng999/traffic-control-go:latest"
+    dockerfile: Dockerfile
+    build_flag_templates:
+      - "--label=org.opencontainers.image.created={{.Date}}"
+      - "--label=org.opencontainers.image.title={{.ProjectName}}"
+      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
+      - "--label=org.opencontainers.image.version={{.Version}}"
+      - "--platform=linux/amd64"
+
+# Homebrew tap (for macOS users)
+brews:
+  - name: traffic-control-go
+    tap:
+      owner: RNG999
+      name: homebrew-tap
+    homepage: "https://github.com/RNG999/traffic-control-go"
+    description: "Linux Traffic Control management with modern CQRS architecture"
+    license: "MIT"
+    install: |
+      bin.install "traffic-control"
+      bin.install "tcctl"
+    test: |
+      system "#{bin}/traffic-control version"

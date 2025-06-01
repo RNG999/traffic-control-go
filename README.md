@@ -18,13 +18,16 @@ This library provides an intuitive API for managing Linux Traffic Control, makin
 - **Human-Readable API**: Intuitive method chaining instead of cryptic TC commands
 - **Type-Safe**: Leverages Go's type system to prevent configuration errors
 - **Event-Driven**: Built with CQRS and Event Sourcing for configuration history
-- **Comprehensive**: Supports HTB, PRIO, FQ_CODEL, and other major qdiscs
+- **Multiple Qdiscs**: HTB, TBF, PRIO, FQ_CODEL with complete CQRS integration
+- **Event Sourcing**: SQLite-based persistent event store for configuration history
+- **Statistics**: Real-time traffic monitoring and metrics collection
+- **CLI Tool**: Standalone binary for command-line traffic control management
 - **Well-Tested**: Extensive unit and integration tests
 
 ## Quick Start
 
 ```go
-import tc "github.com/example/traffic-control-go"
+import tc "github.com/rng999/traffic-control-go"
 
 // Create a traffic controller
 controller := tc.New("eth0").
@@ -61,7 +64,7 @@ This library focuses on providing a clean, intuitive API for Linux Traffic Contr
 ## Installation
 
 ```bash
-go get github.com/example/traffic-control-go
+go get github.com/rng999/traffic-control-go
 ```
 
 ## Examples
@@ -153,12 +156,15 @@ logger.Info("Traffic control operation started")
 - [x] **Numeric Priority System (0-7)**
 - [x] **Comprehensive Logging System**
 - [x] **CI/CD Pipeline with GitHub Actions**
-- [ ] Complete netlink integration
-- [ ] Full qdisc support (PRIO, CBQ, HFSC, FQ_CODEL, CAKE)
-- [ ] Comprehensive filter types (u32, fw, route)
-- [ ] Actions support (police, mirred, nat)
-- [ ] Statistics and monitoring API
-- [ ] Performance optimizations
+- [x] **Extended Qdisc Support** (HTB, TBF, PRIO, FQ_CODEL)
+- [x] **SQLite Event Store** for persistent storage
+- [x] **Statistics Collection** and monitoring
+- [x] **Standalone CLI Binary** (traffic-control command)
+- [x] **GoReleaser & Release Please** for automated releases
+- [ ] NETEM qdisc (network emulation)
+- [ ] fw/flower filter types
+- [ ] police/mirred actions
+- [ ] Performance optimization and benchmarks
 
 ## Requirements
 
@@ -213,15 +219,17 @@ make build-all
 ### Available Make Targets
 ```bash
 make help           # Show all available targets
+make build          # Build both binaries (traffic-control, tcctl)
 make test           # Run all tests
-make test-unit      # Run unit tests only
-make test-integration # Run integration tests
-make lint           # Run golangci-lint
-make security       # Run security scanner
-make build          # Build for current platform
-make build-all      # Build for all platforms
-make docker-build   # Build Docker image
 make clean          # Clean build artifacts
+make install        # Install binaries to system
+make dev            # Set up development environment
+make fmt            # Format code
+make lint           # Run basic linting
+make check          # Run all quality checks
+make version        # Show current version
+make release-simple # Simple release (manual)
+make release-goreleaser # Release with GoReleaser
 ```
 
 ## Testing
@@ -294,16 +302,29 @@ This project uses GitHub Actions for continuous integration and deployment:
 - **Security**: Gosec security scanner
 - **Coverage**: Codecov integration
 
-### Main Branch Workflow
-- **Multi-platform Builds**: Linux, macOS, Windows (amd64/arm64)
-- **Docker Images**: Multi-arch container builds
-- **Release Automation**: Automatic releases on version tags
+### Release Workflow
+- **Multi-platform Builds**: Linux, macOS, Windows (amd64/arm64) via GoReleaser
+- **Automated Versioning**: Release Please for semantic versioning
+- **GitHub Releases**: Automated releases with binary attachments
+- **Version 0.X.Y**: Following semantic versioning for pre-1.0 releases
 
-### Local CI Testing
+### CLI Tool Usage
 ```bash
-# Run the full CI pipeline locally
-make ci
+# Install the CLI tool
+make install
 
-# Check release readiness
-make release-check
+# Basic traffic shaping with TBF
+sudo traffic-control tbf eth0 1:0 100Mbps
+
+# Priority scheduling with PRIO
+sudo traffic-control prio eth0 1:0 3
+
+# Fair queuing with FQ_CODEL
+sudo traffic-control fq_codel eth0 1:0 --target 1000 --ecn
+
+# Show statistics
+sudo traffic-control stats eth0
+
+# Show version
+traffic-control --version
 ```

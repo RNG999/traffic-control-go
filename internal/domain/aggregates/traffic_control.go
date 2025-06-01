@@ -24,6 +24,11 @@ type TrafficControlAggregate struct {
 	changes []events.DomainEvent
 }
 
+// GetID returns the aggregate ID
+func (a *TrafficControlAggregate) GetID() string {
+	return a.id
+}
+
 // NewTrafficControlAggregate creates a new aggregate
 func NewTrafficControlAggregate(deviceName valueobjects.DeviceName) *TrafficControlAggregate {
 	return &TrafficControlAggregate{
@@ -86,6 +91,141 @@ func (tc *TrafficControlAggregate) AddHTBQdisc(handle valueobjects.Handle, defau
 		tc.deviceName,
 		handle,
 		defaultClass,
+	)
+
+	tc.ApplyEvent(event)
+	tc.changes = append(tc.changes, event)
+	tc.version++
+
+	return nil
+}
+
+// AddTBFQdisc adds a TBF qdisc
+func (tc *TrafficControlAggregate) AddTBFQdisc(handle valueobjects.Handle, rate valueobjects.Bandwidth, buffer, limit, burst uint32) error {
+	// Business rule: Check if qdisc already exists
+	if _, exists := tc.qdiscs[handle]; exists {
+		return fmt.Errorf("qdisc with handle %s already exists", handle)
+	}
+
+	// Business rule: Root qdisc must have minor = 0
+	if !handle.IsRoot() {
+		return fmt.Errorf("root qdisc handle must have minor = 0, got %s", handle)
+	}
+
+	// Business rule: Rate must be positive
+	if rate.BitsPerSecond() <= 0 {
+		return fmt.Errorf("rate must be positive, got %s", rate)
+	}
+
+	// Create and apply event
+	event := events.NewTBFQdiscCreatedEvent(
+		tc.id,
+		tc.version+1,
+		tc.deviceName,
+		handle,
+		rate,
+		buffer,
+		limit,
+		burst,
+	)
+
+	tc.ApplyEvent(event)
+	tc.changes = append(tc.changes, event)
+	tc.version++
+
+	return nil
+}
+
+// AddPRIOQdisc adds a PRIO qdisc
+func (tc *TrafficControlAggregate) AddPRIOQdisc(handle valueobjects.Handle, bands uint8, priomap []uint8) error {
+	// Business rule: Check if qdisc already exists
+	if _, exists := tc.qdiscs[handle]; exists {
+		return fmt.Errorf("qdisc with handle %s already exists", handle)
+	}
+
+	// Business rule: Root qdisc must have minor = 0
+	if !handle.IsRoot() {
+		return fmt.Errorf("root qdisc handle must have minor = 0, got %s", handle)
+	}
+
+	// Business rule: Bands must be between 2 and 16
+	if bands < 2 || bands > 16 {
+		return fmt.Errorf("bands must be between 2 and 16, got %d", bands)
+	}
+
+	// Business rule: Priomap must have 16 elements
+	if len(priomap) != 16 {
+		return fmt.Errorf("priomap must have 16 elements, got %d", len(priomap))
+	}
+
+	// Business rule: All priomap values must be < bands
+	for i, p := range priomap {
+		if p >= bands {
+			return fmt.Errorf("priomap[%d] = %d must be < bands (%d)", i, p, bands)
+		}
+	}
+
+	// Create and apply event
+	event := events.NewPRIOQdiscCreatedEvent(
+		tc.id,
+		tc.version+1,
+		tc.deviceName,
+		handle,
+		bands,
+		priomap,
+	)
+
+	tc.ApplyEvent(event)
+	tc.changes = append(tc.changes, event)
+	tc.version++
+
+	return nil
+}
+
+// AddFQCODELQdisc adds a FQ_CODEL qdisc
+func (tc *TrafficControlAggregate) AddFQCODELQdisc(handle valueobjects.Handle, limit, flows, target, interval, quantum uint32, ecn bool) error {
+	// Business rule: Check if qdisc already exists
+	if _, exists := tc.qdiscs[handle]; exists {
+		return fmt.Errorf("qdisc with handle %s already exists", handle)
+	}
+
+	// Business rule: Root qdisc must have minor = 0
+	if !handle.IsRoot() {
+		return fmt.Errorf("root qdisc handle must have minor = 0, got %s", handle)
+	}
+
+	// Business rule: Limit must be positive
+	if limit == 0 {
+		return fmt.Errorf("limit must be positive, got %d", limit)
+	}
+
+	// Business rule: Flows must be positive and power of 2
+	if flows == 0 || (flows&(flows-1)) != 0 {
+		return fmt.Errorf("flows must be positive and power of 2, got %d", flows)
+	}
+
+	// Business rule: Target must be positive
+	if target == 0 {
+		return fmt.Errorf("target must be positive, got %d microseconds", target)
+	}
+
+	// Business rule: Interval must be positive and >= target
+	if interval == 0 || interval < target {
+		return fmt.Errorf("interval must be positive and >= target (%d), got %d microseconds", target, interval)
+	}
+
+	// Create and apply event
+	event := events.NewFQCODELQdiscCreatedEvent(
+		tc.id,
+		tc.version+1,
+		tc.deviceName,
+		handle,
+		limit,
+		flows,
+		target,
+		interval,
+		quantum,
+		ecn,
 	)
 
 	tc.ApplyEvent(event)
@@ -177,11 +317,58 @@ func (tc *TrafficControlAggregate) AddFilter(parent valueobjects.Handle, priorit
 	return nil
 }
 
+// GetUncommittedEvents returns uncommitted events
+func (tc *TrafficControlAggregate) GetUncommittedEvents() []events.DomainEvent {
+	return tc.changes
+}
+
+// MarkEventsAsCommitted clears uncommitted events
+func (tc *TrafficControlAggregate) MarkEventsAsCommitted() {
+	tc.changes = make([]events.DomainEvent, 0)
+}
+
+// LoadFromHistory rebuilds aggregate state from events
+func (tc *TrafficControlAggregate) LoadFromHistory(history []events.DomainEvent) {
+	for _, event := range history {
+		tc.ApplyEvent(event)
+		tc.version++
+	}
+	// Clear changes as these are already committed
+	tc.changes = make([]events.DomainEvent, 0)
+}
+
+// GetVersion returns the current version
+func (tc *TrafficControlAggregate) GetVersion() int {
+	return tc.version
+}
+
 // ApplyEvent applies a domain event to update aggregate state
 func (tc *TrafficControlAggregate) ApplyEvent(event events.DomainEvent) {
 	switch e := event.(type) {
 	case *events.HTBQdiscCreatedEvent:
 		qdisc := entities.NewHTBQdisc(e.DeviceName, e.Handle, e.DefaultClass)
+		tc.qdiscs[e.Handle] = qdisc.Qdisc
+
+	case *events.TBFQdiscCreatedEvent:
+		qdisc := entities.NewTBFQdisc(e.DeviceName, e.Handle, e.Rate)
+		qdisc.SetBuffer(e.Buffer)
+		qdisc.SetLimit(e.Limit)
+		qdisc.SetBurst(e.Burst)
+		tc.qdiscs[e.Handle] = qdisc.Qdisc
+
+	case *events.PRIOQdiscCreatedEvent:
+		qdisc := entities.NewPRIOQdisc(e.DeviceName, e.Handle, e.Bands)
+		qdisc.SetPriomap(e.Priomap)
+		tc.qdiscs[e.Handle] = qdisc.Qdisc
+
+	case *events.FQCODELQdiscCreatedEvent:
+		qdisc := entities.NewFQCODELQdisc(e.DeviceName, e.Handle)
+		qdisc.SetLimit(e.Limit)
+		qdisc.SetFlows(e.Flows)
+		qdisc.SetTarget(e.Target)
+		qdisc.SetInterval(e.Interval)
+		qdisc.SetQuantum(e.Quantum)
+		qdisc.SetECN(e.ECN)
 		tc.qdiscs[e.Handle] = qdisc.Qdisc
 
 	case *events.HTBClassCreatedEvent:

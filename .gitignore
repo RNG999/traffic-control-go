@@ -76,5 +76,13 @@ results.sarif
 tc-*.conf
 test-devices.txt
 
+# SQLite databases (development/testing)
+*.db
+*.sqlite
+*.sqlite3
+
+# Build scripts output
+/scripts/output/
+
 # Go module downloads
 /pkg/mod/

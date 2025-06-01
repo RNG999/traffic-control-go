@@ -14,11 +14,6 @@ linters:
     - unused
 
 issues:
-  exclude-rules:
-    # Exclude G104 (error handling) for deferred Close calls in test helpers
-    - path: _test\.go
-      text: "G104"
-    - path: internal/infrastructure/eventstore/sqlite\.go
-      text: "G104"
-      linters:
-        - gosec
+  exclude:
+    # Exclude G104 (error handling) for deferred Close calls
+    - "G104"

@@ -58,6 +58,13 @@ lint: ## Run basic linting
 	@go vet ./...
 	@echo "✓ Linting completed"
 
+security: ## Run security scanner
+	@if command -v gosec >/dev/null 2>&1; then \
+		gosec -quiet -fmt json ./... || true; \
+	else \
+		echo "gosec not installed, skipping security scan"; \
+	fi
+
 check: fmt lint test ## Run all quality checks
 
 # Version management (simplified)

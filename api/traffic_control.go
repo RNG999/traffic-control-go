@@ -469,7 +469,8 @@ func (tc *TrafficController) Apply() error {
 			if j > 65435 { // Prevent overflow when adding 100 (65535 - 100)
 				return fmt.Errorf("too many filters: would overflow uint16")
 			}
-			priority := uint16(100) + uint16(j) // Start filter priorities at 100 #nosec G115 -- overflow check performed above
+			// #nosec G115 -- overflow check performed above
+			priority := uint16(100) + uint16(j) // Start filter priorities at 100
 			protocol := "ip"
 			flowID := classID
 

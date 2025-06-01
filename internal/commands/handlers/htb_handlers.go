@@ -46,11 +46,15 @@ func (h *CreateHTBQdiscHandler) Handle(ctx context.Context, command interface{})
 	// Parse handles
 	// Parse handles from string format "major:minor"
 	var handleMajor, handleMinor uint16
-	fmt.Sscanf(cmd.Handle, "%x:%x", &handleMajor, &handleMinor)
+	if n, err := fmt.Sscanf(cmd.Handle, "%x:%x", &handleMajor, &handleMinor); err != nil || n != 2 {
+		return fmt.Errorf("invalid handle format: %s", cmd.Handle)
+	}
 	handle := valueobjects.NewHandle(handleMajor, handleMinor)
 
 	var defaultMajor, defaultMinor uint16
-	fmt.Sscanf(cmd.DefaultClass, "%x:%x", &defaultMajor, &defaultMinor)
+	if n, err := fmt.Sscanf(cmd.DefaultClass, "%x:%x", &defaultMajor, &defaultMinor); err != nil || n != 2 {
+		return fmt.Errorf("invalid default class format: %s", cmd.DefaultClass)
+	}
 	defaultClass := valueobjects.NewHandle(defaultMajor, defaultMinor)
 
 	// Execute business logic
@@ -99,11 +103,15 @@ func (h *CreateHTBClassHandler) Handle(ctx context.Context, command interface{})
 
 	// Parse handles from string format "major:minor"
 	var parentMajor, parentMinor uint16
-	fmt.Sscanf(cmd.Parent, "%x:%x", &parentMajor, &parentMinor)
+	if n, err := fmt.Sscanf(cmd.Parent, "%x:%x", &parentMajor, &parentMinor); err != nil || n != 2 {
+		return fmt.Errorf("invalid parent handle format: %s", cmd.Parent)
+	}
 	parentHandle := valueobjects.NewHandle(parentMajor, parentMinor)
 
 	var classMajor, classMinor uint16
-	fmt.Sscanf(cmd.ClassID, "%x:%x", &classMajor, &classMinor)
+	if n, err := fmt.Sscanf(cmd.ClassID, "%x:%x", &classMajor, &classMinor); err != nil || n != 2 {
+		return fmt.Errorf("invalid class ID format: %s", cmd.ClassID)
+	}
 	classHandle := valueobjects.NewHandle(classMajor, classMinor)
 
 	// Parse bandwidth values
@@ -168,14 +176,18 @@ func (h *CreateFilterHandler) Handle(ctx context.Context, command interface{}) e
 
 	// Parse handles from string format "major:minor"
 	var parentMajor, parentMinor uint16
-	fmt.Sscanf(cmd.Parent, "%x:%x", &parentMajor, &parentMinor)
+	if n, err := fmt.Sscanf(cmd.Parent, "%x:%x", &parentMajor, &parentMinor); err != nil || n != 2 {
+		return fmt.Errorf("invalid parent handle format: %s", cmd.Parent)
+	}
 	parentHandle := valueobjects.NewHandle(parentMajor, parentMinor)
 
 	// Generate filter handle
 	handle := valueobjects.NewHandle(0x800, 0x800)
 
 	var flowMajor, flowMinor uint16
-	fmt.Sscanf(cmd.FlowID, "%x:%x", &flowMajor, &flowMinor)
+	if n, err := fmt.Sscanf(cmd.FlowID, "%x:%x", &flowMajor, &flowMinor); err != nil || n != 2 {
+		return fmt.Errorf("invalid flow ID format: %s", cmd.FlowID)
+	}
 	flowID := valueobjects.NewHandle(flowMajor, flowMinor)
 
 	// Convert match map to Match entities

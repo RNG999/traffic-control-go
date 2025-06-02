@@ -1,12 +1,12 @@
 # Traffic Control Go
 
-[![Test](https://github.com/rng999/traffic-control-go/actions/workflows/test.yml/badge.svg)](https://github.com/rng999/traffic-control-go/actions/workflows/test.yml)
-[![Build](https://github.com/rng999/traffic-control-go/actions/workflows/build.yml/badge.svg)](https://github.com/rng999/traffic-control-go/actions/workflows/build.yml)
-[![codecov](https://codecov.io/gh/rng999/traffic-control-go/branch/main/graph/badge.svg)](https://codecov.io/gh/rng999/traffic-control-go)
-[![Go Report Card](https://goreportcard.com/badge/github.com/rng999/traffic-control-go)](https://goreportcard.com/report/github.com/rng999/traffic-control-go)
-[![Go Reference](https://pkg.go.dev/badge/github.com/rng999/traffic-control-go.svg)](https://pkg.go.dev/github.com/rng999/traffic-control-go)
+[![CI](https://github.com/RNG999/traffic-control-go/actions/workflows/ci.yml/badge.svg)](https://github.com/RNG999/traffic-control-go/actions/workflows/ci.yml)
+[![Build](https://github.com/RNG999/traffic-control-go/actions/workflows/release.yml/badge.svg)](https://github.com/RNG999/traffic-control-go/actions/workflows/release.yml)
+[![codecov](https://codecov.io/gh/RNG999/traffic-control-go/branch/main/graph/badge.svg)](https://codecov.io/gh/RNG999/traffic-control-go)
+[![Go Report Card](https://goreportcard.com/badge/github.com/RNG999/traffic-control-go)](https://goreportcard.com/report/github.com/RNG999/traffic-control-go)
+[![Go Reference](https://pkg.go.dev/badge/github.com/RNG999/traffic-control-go.svg)](https://pkg.go.dev/github.com/RNG999/traffic-control-go)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Release](https://img.shields.io/github/release/rng999/traffic-control-go.svg)](https://github.com/rng999/traffic-control-go/releases/latest)
+[![Release](https://img.shields.io/github/release/RNG999/traffic-control-go.svg)](https://github.com/RNG999/traffic-control-go/releases/latest)
 
 A human-readable Go library for Linux Traffic Control (TC) - **v0.1.0 Released! Unified Date-based Versioning**
 

@@ -38,6 +38,11 @@ build: ## Build both binaries
 test: ## Run tests
 	@go test -v ./...
 
+test-coverage: ## Run tests with coverage
+	@go test -v -coverprofile=coverage.out -covermode=atomic ./...
+	@go tool cover -html=coverage.out -o coverage.html
+	@echo "✓ Coverage report generated: coverage.html"
+
 test-integration: ## Run integration tests (requires root and iperf3)
 	@echo "Running integration tests (requires root privileges and iperf3)..."
 	@sudo go test -v -tags=integration ./test/integration/...

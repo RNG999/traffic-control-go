@@ -43,6 +43,10 @@ Thumbs.db
 /dist/
 /build/
 
+# Project binaries
+traffic-control
+tcctl
+
 # Temporary files
 *.tmp
 *.temp

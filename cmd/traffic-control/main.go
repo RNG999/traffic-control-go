@@ -13,8 +13,8 @@ import (
 var (
 	// Version information (set by build flags)
 	version   = "dev"
-	buildTime = "unknown"
-	gitCommit = "unknown"
+	buildDate = "unknown"
+	commit    = "unknown"
 )
 
 const (
@@ -128,12 +128,14 @@ func main() {
 		fmt.Print(usage)
 	case "version", "-v", "--version":
 		fmt.Printf("Traffic Control Go v%s\n", version)
-		if gitCommit != "unknown" {
-			fmt.Printf("Git Commit: %s\n", gitCommit)
+		if commit != "unknown" {
+			fmt.Printf("Git Commit: %s\n", commit)
 		}
-		if buildTime != "unknown" {
-			fmt.Printf("Build Time: %s\n", buildTime)
+		if buildDate != "unknown" {
+			fmt.Printf("Build Date: %s\n", buildDate)
 		}
+		fmt.Printf("Go Version: %s\n", "1.21+")
+		fmt.Printf("Platform: %s\n", "linux/amd64")
 	case "htb":
 		handleHTBCommand(os.Args[2:])
 	case "tbf":

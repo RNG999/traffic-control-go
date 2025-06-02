@@ -8,9 +8,11 @@ MAIN_BINARY := traffic-control
 DEMO_BINARY := tcctl
 BIN_DIR := bin
 VERSION := $(shell grep -o 'version = "[^"]*"' cmd/traffic-control/main.go | cut -d'"' -f2 2>/dev/null || echo "dev")
+BUILD_DATE := $(shell TZ=Asia/Tokyo date '+%Y%m%d%H%M')
+BUILD_TIME := $(shell TZ=Asia/Tokyo date '+%Y-%m-%d_%H:%M_JST')
 
 # Build flags
-LDFLAGS := -s -w -X main.version=$(VERSION) -X main.commit=$(shell git rev-parse --short HEAD 2>/dev/null || echo "unknown")
+LDFLAGS := -s -w -X main.version=$(VERSION) -X main.commit=$(shell git rev-parse --short HEAD 2>/dev/null || echo "unknown") -X main.buildDate=$(BUILD_TIME)
 
 help: ## Show available commands
 	@echo "Traffic Control Go - Available Commands:"
@@ -21,7 +23,8 @@ help: ## Show available commands
 	@echo "  make build               # Build both binaries"
 	@echo "  make test                # Run tests"
 	@echo "  make install             # Install to system"
-	@echo "  make release VERSION=0.2.0  # Create release"
+	@echo "  make release-auto                # Automated release (v202412021430)"
+	@echo "  make release-with-date VERSION=0.2.0  # Manual release with date"
 
 # Core development commands
 build: ## Build both binaries
@@ -75,7 +78,7 @@ check: fmt lint test ## Run all quality checks
 version: ## Show current version
 	@echo "Current version: $(VERSION)"
 
-# Release management (choose one approach)
+# Release management (enhanced with date support)
 release-simple: ## Simple release (manual)
 ifndef VERSION
 	@echo "Usage: make release-simple VERSION=0.2.0"
@@ -84,6 +87,47 @@ endif
 	@echo "Creating simple release $(VERSION)..."
 	@$(MAKE) clean test build
 	@echo "✓ Release $(VERSION) ready in $(BIN_DIR)/"
+
+release-with-date: ## Create release with date tag
+ifndef VERSION
+	@echo "Usage: make release-with-date VERSION=0.2.0"
+	@exit 1
+endif
+	@echo "Creating release $(VERSION) with date $(BUILD_DATE)..."
+	@$(MAKE) clean test build
+	@echo "Version: $(VERSION)"
+	@echo "Build Date: $(BUILD_TIME)"
+	@echo "Commit: $(shell git rev-parse --short HEAD)"
+	@echo ""
+	@echo "To create a git tag with date:"
+	@echo "  git tag -a v$(BUILD_DATE) -m 'Release v$(VERSION) built on $(BUILD_TIME)'"
+	@echo "  git push origin v$(BUILD_DATE)"
+	@echo ""
+	@echo "✓ Release v$(BUILD_DATE) (version $(VERSION)) ready in $(BIN_DIR)/"
+
+release-auto: ## Trigger automated GitHub release
+	@echo "Usage: make release-auto [PRE_RELEASE=beta]"
+	@echo ""
+	@echo "Examples:"
+	@echo "  make release-auto                         # Creates v202412021430"
+	@echo "  make release-auto PRE_RELEASE=beta       # Creates v202412021430-beta"
+	@echo "  make release-auto PRE_RELEASE=rc1        # Creates v202412021430-rc1"
+	@echo ""
+	@echo "Note: Version and tag are unified as date-based vYYYYMMDDHHMM"
+	@echo ""
+	@echo "Triggering automated GitHub release..."
+	@if command -v gh >/dev/null 2>&1; then \
+		if [ -n "$(PRE_RELEASE)" ]; then \
+			gh workflow run auto-release.yml -f pre_release=$(PRE_RELEASE); \
+		else \
+			gh workflow run auto-release.yml; \
+		fi; \
+		echo "✓ GitHub Actions workflow triggered"; \
+		echo "Check progress at: https://github.com/$(shell git config --get remote.origin.url | sed 's|.*github.com[:/]||' | sed 's|\.git||')/actions"; \
+	else \
+		echo "GitHub CLI (gh) not found. Please install it or use GitHub web interface."; \
+		echo "Manually trigger workflow at: https://github.com/$(shell git config --get remote.origin.url | sed 's|.*github.com[:/]||' | sed 's|\.git||')/actions/workflows/auto-release.yml"; \
+	fi
 
 release-goreleaser: ## Release with GoReleaser (requires setup)
 	@if ! command -v goreleaser >/dev/null 2>&1; then \

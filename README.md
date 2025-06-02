@@ -8,7 +8,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Release](https://img.shields.io/github/release/rng999/traffic-control-go.svg)](https://github.com/rng999/traffic-control-go/releases/latest)
 
-A human-readable Go library for Linux Traffic Control (TC) - **v0.1.0 Ready for Release!**
+A human-readable Go library for Linux Traffic Control (TC) - **v0.1.0 Released! Unified Date-based Versioning**
 
 ## Overview
 
@@ -16,7 +16,8 @@ This library provides an intuitive API for managing Linux Traffic Control, makin
 
 ## Features
 
-- **Human-Readable API**: Intuitive method chaining instead of cryptic TC commands
+- **Improved Human-Readable API**: Clean, intuitive method chaining without redundant calls
+- **Dual API Design**: Classic API (v0.1.0) and Improved API (v0.2.0+) for better developer experience
 - **Type-Safe**: Leverages Go's type system to prevent configuration errors
 - **Event-Driven**: Built with CQRS and Event Sourcing for configuration history
 - **Multiple Qdiscs**: HTB, TBF, PRIO, FQ_CODEL with complete CQRS integration
@@ -28,14 +29,34 @@ This library provides an intuitive API for managing Linux Traffic Control, makin
 
 ## Quick Start
 
-```go
-import tc "github.com/rng999/traffic-control-go"
+### Improved API (Recommended)
 
-// Create a traffic controller
-controller := tc.New("eth0").
+```go
+import "github.com/rng999/traffic-control-go/api"
+
+// Create a traffic controller with the improved API
+tc := api.NewImproved("eth0").
+    TotalBandwidth("1Gbps")
+
+// Configure traffic classes with clean, natural syntax
+tc.Class("Database").
+    Guaranteed("100Mbps").
+    BurstTo("200Mbps").
+    Priority(2).
+    DestIPs("192.168.1.10")
+
+tc.Apply()
+```
+
+### Classic API (v0.1.0 - Still Supported)
+
+```go
+import "github.com/rng999/traffic-control-go/api"
+
+// Classic API with And() calls
+controller := api.New("eth0").
     SetTotalBandwidth("1Gbps")
 
-// Add traffic classes with intuitive methods
 err := controller.
     CreateTrafficClass("database").
         WithGuaranteedBandwidth("100Mbps").
@@ -43,6 +64,14 @@ err := controller.
         ForDestination("192.168.1.10").
     Apply()
 ```
+
+**Benefits of the Improved API:**
+- ✅ **No redundant And() calls** - cleaner method chaining
+- ✅ **Shorter method names** - `Guaranteed()` vs `WithGuaranteedBandwidth()`
+- ✅ **Natural flow** - configure controller first, then classes
+- ✅ **Variadic parameters** - `Ports(80, 443, 8080)` in one call
+- ✅ **Enhanced filtering** - IP ranges, protocols, multiple criteria
+- ✅ **Class reuse** - configure the same class incrementally
 
 Compare this to traditional TC commands:
 ```bash
@@ -72,43 +101,103 @@ go get github.com/rng999/traffic-control-go
 ## Examples
 
 ### Home Network Fair Sharing
+
+**Improved API:**
 ```go
-controller := tc.New("eth0").
+tc := api.NewImproved("eth0").
+    TotalBandwidth("100Mbps")
+
+tc.Class("Streaming").
+    Guaranteed("40Mbps").
+    BurstTo("60Mbps").
+    Priority(4).
+    SourceIPs("192.168.1.100") // Smart TV
+
+tc.Class("Work").
+    Guaranteed("30Mbps").
+    Priority(1). // High priority
+    SourceIPs("192.168.1.101") // Laptop
+
+tc.Apply()
+```
+
+**Classic API:**
+```go
+controller := api.New("eth0").
     SetTotalBandwidth("100Mbps")
 
 controller.CreateTrafficClass("streaming").
     WithGuaranteedBandwidth("40Mbps").
     WithBurstableTo("60Mbps").
-    ForDevice("smart-tv")
-
-controller.CreateTrafficClass("work").
+    WithPriority(4).
+    ForSource("192.168.1.100"). // Smart TV
+    And().
+CreateTrafficClass("work").
     WithGuaranteedBandwidth("30Mbps").
     WithPriority(1). // High priority
-    ForDevice("laptop")
-
-controller.Apply()
+    ForSource("192.168.1.101"). // Laptop
+    And().
+Apply()
 ```
 
 ### Priority-Based Traffic Control
+
+**Improved API:**
 ```go
+tc := api.NewImproved("eth0").
+    TotalBandwidth("1Gbps")
+
+// Set priority values (0-7, where 0 is highest)
+tc.Class("Critical Services").
+    Guaranteed("200Mbps").
+    BurstTo("400Mbps").
+    Priority(0). // Highest priority
+    Ports(5060, 5061). // VoIP
+    Protocols("rtp", "sip")
+
+tc.Class("Normal Traffic").
+    Guaranteed("500Mbps").
+    BurstTo("800Mbps").
+    Priority(4). // Default priority
+    Ports(80, 443, 8080, 8443) // HTTP/HTTPS
+
+tc.Class("Background").
+    Guaranteed("100Mbps").
+    BurstTo("200Mbps").
+    Priority(7). // Lowest priority
+    Ports(873, 22). // rsync, SSH
+    Protocols("rsync", "ssh")
+
+tc.Apply()
+```
+
+**Classic API:**
+```go
+controller := api.New("eth0").
+    SetTotalBandwidth("1Gbps")
+
 // Set priority values (0-7, where 0 is highest)
 controller.CreateTrafficClass("critical").
-    WithGuaranteedBandwidth("50Mbps").
+    WithGuaranteedBandwidth("200Mbps").
     WithPriority(0). // Highest priority
-    ForPort(5060, 5061) // VoIP
-
-controller.CreateTrafficClass("normal").
+    ForPort(5060, 5061). // VoIP
+    And().
+CreateTrafficClass("normal").
+    WithGuaranteedBandwidth("500Mbps").
+    WithPriority(4). // Default priority
+    ForPort(80, 443). // HTTP/HTTPS
+    And().
+CreateTrafficClass("background").
     WithGuaranteedBandwidth("100Mbps").
-    // Default priority is 4
-    ForPort(80, 443) // HTTP/HTTPS
-
-controller.CreateTrafficClass("background").
-    WithGuaranteedBandwidth("50Mbps").
     WithPriority(7). // Lowest priority
-    ForPort(873) // rsync
+    ForPort(873). // rsync
+    And().
+Apply()
 ```
 
 ### Configuration File Support
+
+**YAML Configuration:**
 ```yaml
 # config.yaml
 version: "1.0"
@@ -117,19 +206,33 @@ bandwidth: 1Gbps
 classes:
   - name: critical
     guaranteed: 400Mbps
-    priority: high
+    max: 600Mbps
+    priority: 0 # Highest priority
   - name: standard
     guaranteed: 600Mbps
+    max: 800Mbps
+    priority: 4 # Normal priority
 rules:
   - name: ssh_traffic
     match:
       dest_port: [22]
     target: critical
+  - name: web_traffic
+    match:
+      dest_port: [80, 443]
+    target: standard
 ```
 
+**Programmatic Configuration:**
 ```go
 // Apply configuration from file
 err := api.LoadAndApplyYAML("config.yaml", "eth0")
+
+// Or build configuration programmatically
+tc := api.NewImproved("eth0").TotalBandwidth("1Gbps")
+tc.Class("Critical").Guaranteed("400Mbps").BurstTo("600Mbps").Priority(0).Ports(22)
+tc.Class("Standard").Guaranteed("600Mbps").BurstTo("800Mbps").Priority(4).Ports(80, 443)
+tc.Apply()
 ```
 
 ### Logging Configuration
@@ -165,10 +268,15 @@ logger.Info("Traffic control operation started")
 - [x] Standalone CLI Binary (traffic-control command)
 - [x] GoReleaser & Release Please for automated releases
 
+### v0.2.0 (In Development)
+- [x] **Improved API Design** - Clean method chaining without redundant And() calls
+- [ ] CQRS query handler interface compatibility fixes
+- [ ] Enhanced statistics collection with detailed metrics
+- [ ] Mark-based filtering (fw filter)
+
 ### Future Releases
 - [ ] NETEM qdisc (network emulation)
-- [ ] fw/flower filter types
-- [ ] police/mirred actions
+- [ ] Flower filter types and police actions
 - [ ] Performance optimization and benchmarks
 - [ ] REST API server mode
 - [ ] Kubernetes integration
@@ -188,7 +296,8 @@ logger.Info("Traffic control operation started")
 - [Architecture](memory-bank/architecture-overview.md) - System architecture
 - [Traffic Control Basics](docs/traffic-control.md) - Linux TC fundamentals
 
-### Feature Guides
+### API Guides
+- **[Improved API Guide](docs/improved-api-guide.md) - New improved API without redundant And() calls**
 - [Structured Configuration API](docs/structured-config-api.md) - YAML/JSON configuration support
 - [Priority System Guide](docs/priority-guide.md) - Numeric priority system (0-7)
 - [Logging System](docs/logging.md) - Comprehensive structured logging

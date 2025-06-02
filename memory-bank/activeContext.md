@@ -1,7 +1,7 @@
 # Active Context - 現在の作業フォーカス
 
 ## 現在のフェーズ
-プロジェクト最終調整フェーズ - 新qdiscタイプ・SQLite Event Store・CLIツール実装完了、v0.1.0リリース準備中
+PR作成フェーズ - 全機能実装完了、CI/リンティング修正済み、v0.1.0リリース準備完了
 
 ## 最新の作業完了
 1. **Extended Qdisc Support** ✅
@@ -28,6 +28,12 @@
    - パケット数、バイト数、ドロップ数等
    - コマンドラインからの統計表示
 
+5. **CI/CD最適化** ✅ **NEW**
+   - GitHub Actions CIワークフロー修正
+   - golangci-lint全エラー解決
+   - 統合テスト（iperf3）サポート追加
+   - ビルドスクリプト削除とMakefile簡素化
+
 ## 現在のタスク
 - [x] ~~systemPatterns.mdの作成~~
 - [x] ~~techContext.mdの作成~~
@@ -44,9 +50,10 @@
 - [x] ~~GoReleaser & GitHub Actions設定~~
 - [x] ~~Makefile簡素化~~
 - [x] ~~プロジェクト構造最適化~~
-- [🔄] **Memory bank更新**
-- [⏳] **ドキュメント最終更新**
-- [⏳] **PR作成**
+- [x] ~~CI/リンティングエラー修正~~
+- [x] ~~統合テスト追加（iperf3）~~
+- [🔄] **Memory bank更新** ← 現在実行中
+- [⏳] **PR作成** ← 次のステップ
 
 ## 重要な決定事項
 
@@ -73,9 +80,9 @@
 6. ✅ Logging設計 → 構造化ログ完全実装
 
 ## 現在の検討事項
-1. **v0.1.0リリース準備**: Release Please設定完了
-2. **ドキュメント最終調整**: README、APIガイド更新
-3. **コードクリーンアップ**: .gitignore最適化完了
+1. **v0.1.0リリースPR**: fix/remove-build-scriptブランチからmainへ
+2. **リリース内容**: 全主要機能実装完了
+3. **CI/CD**: GitHub Actions完全動作確認済み
 4. **次期TC機能**: NETEM, fw/flower filters, police action
 5. **パフォーマンス測定**: ベンチマークテスト作成
 
@@ -106,5 +113,6 @@
 - ✅ Priority system (numeric 0-7)
 - ✅ Validation and error handling
 - ✅ GoReleaser & GitHub Actions CI/CD
-- ✅ Comprehensive testing suite
+- ✅ Comprehensive testing suite (unit & integration)
 - ✅ Complete documentation
+- ✅ CI/リンティング全修正完了 **NEW**

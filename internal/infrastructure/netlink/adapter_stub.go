@@ -4,8 +4,10 @@
 package netlink
 
 import (
+	"context"
 	"fmt"
 
+	"github.com/rng999/traffic-control-go/internal/domain/entities"
 	"github.com/rng999/traffic-control-go/internal/domain/valueobjects"
 	"github.com/rng999/traffic-control-go/pkg/logging"
 	"github.com/rng999/traffic-control-go/pkg/types"
@@ -27,8 +29,8 @@ func NewRealNetlinkAdapter() *RealNetlinkAdapter {
 }
 
 // AddQdisc is not supported on non-Linux platforms
-func (a *RealNetlinkAdapter) AddQdisc(device valueobjects.DeviceName, config QdiscConfig) types.Result[Unit] {
-	return types.Failure[Unit](fmt.Errorf("traffic control operations are not supported on this platform"))
+func (a *RealNetlinkAdapter) AddQdisc(ctx context.Context, qdisc *entities.Qdisc) error {
+	return fmt.Errorf("traffic control operations are not supported on this platform")
 }
 
 // DeleteQdisc is not supported on non-Linux platforms
@@ -42,8 +44,8 @@ func (a *RealNetlinkAdapter) GetQdiscs(device valueobjects.DeviceName) types.Res
 }
 
 // AddClass is not supported on non-Linux platforms
-func (a *RealNetlinkAdapter) AddClass(device valueobjects.DeviceName, config ClassConfig) types.Result[Unit] {
-	return types.Failure[Unit](fmt.Errorf("traffic control operations are not supported on this platform"))
+func (a *RealNetlinkAdapter) AddClass(ctx context.Context, class interface{}) error {
+	return fmt.Errorf("traffic control operations are not supported on this platform")
 }
 
 // DeleteClass is not supported on non-Linux platforms
@@ -57,8 +59,8 @@ func (a *RealNetlinkAdapter) GetClasses(device valueobjects.DeviceName) types.Re
 }
 
 // AddFilter is not supported on non-Linux platforms
-func (a *RealNetlinkAdapter) AddFilter(device valueobjects.DeviceName, config FilterConfig) types.Result[Unit] {
-	return types.Failure[Unit](fmt.Errorf("traffic control operations are not supported on this platform"))
+func (a *RealNetlinkAdapter) AddFilter(ctx context.Context, filter *entities.Filter) error {
+	return fmt.Errorf("traffic control operations are not supported on this platform")
 }
 
 // DeleteFilter is not supported on non-Linux platforms

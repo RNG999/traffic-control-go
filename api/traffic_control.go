@@ -465,28 +465,46 @@ func (tc *TrafficController) Apply() error {
 		}
 
 		// Create filters for the class
-		for j, filter := range class.filters {
-			if j > 65435 { // Prevent overflow when adding 100 (65535 - 100)
-				return fmt.Errorf("too many filters: would overflow uint16")
-			}
-			// #nosec G115 -- overflow check performed above
-			priority := uint16(100) + uint16(j) // Start filter priorities at 100
+		if len(class.filters) == 0 {
+			// Create a catch-all filter if no specific filters are defined
+			priority := uint16(100) // Default priority for catch-all
 			protocol := "ip"
 			flowID := classID
-
-			match := tc.buildFilterMatch(filter)
-			if len(match) == 0 {
-				continue // Skip unsupported filters
-			}
+			match := make(map[string]string) // Empty match = catch all
 
 			if err := tc.service.CreateFilter(ctx, tc.deviceName, parent, priority,
 				protocol, flowID, match); err != nil {
-				tc.logger.Error("Failed to create filter",
+				tc.logger.Error("Failed to create catch-all filter",
 					logging.Error(err),
 					logging.String("class_name", class.name),
-					logging.String("filter_type", fmt.Sprintf("%v", filter.filterType)),
 				)
-				return fmt.Errorf("failed to create filter for class %s: %w", class.name, err)
+				return fmt.Errorf("failed to create catch-all filter for class %s: %w", class.name, err)
+			}
+		} else {
+			// Create explicit filters
+			for j, filter := range class.filters {
+				if j > 65435 { // Prevent overflow when adding 100 (65535 - 100)
+					return fmt.Errorf("too many filters: would overflow uint16")
+				}
+				// #nosec G115 -- overflow check performed above
+				priority := uint16(100) + uint16(j) // Start filter priorities at 100
+				protocol := "ip"
+				flowID := classID
+
+				match := tc.buildFilterMatch(filter)
+				if len(match) == 0 {
+					continue // Skip unsupported filters
+				}
+
+				if err := tc.service.CreateFilter(ctx, tc.deviceName, parent, priority,
+					protocol, flowID, match); err != nil {
+					tc.logger.Error("Failed to create filter",
+						logging.Error(err),
+						logging.String("class_name", class.name),
+						logging.String("filter_type", fmt.Sprintf("%v", filter.filterType)),
+					)
+					return fmt.Errorf("failed to create filter for class %s: %w", class.name, err)
+				}
 			}
 		}
 	}

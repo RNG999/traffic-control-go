@@ -97,6 +97,10 @@ type EventStore interface {
     GetEvents(aggregateID string, fromVersion int) ([]DomainEvent, error)
     GetAllEvents() ([]DomainEvent, error)
 }
+
+// 実装済み
+- MemoryEventStore: インメモリ実装（テスト用）
+- SQLiteEventStore: 永続化実装（本番用）
 ```
 
 ## DDD ドメインモデル
@@ -191,13 +195,29 @@ func (m Maybe[T]) OrElse(defaultValue T) T
 ### Netlink Adapter
 ```go
 type NetlinkAdapter interface {
+    // Qdisc操作
     AddQdisc(qdisc QdiscConfig) Result[Unit]
     DeleteQdisc(handle Handle, device DeviceName) Result[Unit]
     GetQdiscs(device DeviceName) Result[[]QdiscInfo]
+    
+    // Class操作
     AddClass(class ClassConfig) Result[Unit]
     DeleteClass(handle Handle, device DeviceName) Result[Unit]
     GetClasses(device DeviceName) Result[[]ClassInfo]
+    
+    // Filter操作
+    AddFilter(filter FilterConfig) Result[Unit]
+    DeleteFilter(handle Handle, device DeviceName) Result[Unit]
+    
+    // Statistics
+    GetStatistics(handle Handle, device DeviceName) Result[Statistics]
 }
+
+// 実装済みQdiscタイプ
+- HTB (Hierarchical Token Bucket)
+- TBF (Token Bucket Filter)
+- PRIO (Priority Scheduler)
+- FQ_CODEL (Fair Queue Controlled Delay)
 ```
 
 ### Repository Pattern

@@ -3,9 +3,10 @@
 ## Prerequisites
 
 - Linux system with kernel 2.6.32 or later
-- Go 1.19 or later (for building from source)
+- Go 1.21 or later (for building from source)
 - Root privileges for network interface modifications
 - `tc` utility from `iproute2` package (usually pre-installed)
+- `iperf3` (for running integration tests)
 
 ## System Requirements
 
@@ -35,49 +36,56 @@ The application requires the following Linux capabilities:
 ### Method 1: Download Pre-built Binary
 
 ```bash
-# Download the latest release (currently v0.1.0)
-wget https://github.com/YOUR_ORG/traffic-control-go/releases/latest/download/traffic-control-linux-amd64.tar.gz
+# Download the latest release
+wget https://github.com/rng999/traffic-control-go/releases/download/v0.1.0/traffic-control-linux-amd64.tar.gz
 
 # Extract
 tar -xzf traffic-control-linux-amd64.tar.gz
 
 # Install to system path
 sudo cp traffic-control /usr/local/bin/
+sudo cp tcctl /usr/local/bin/
 
 # Verify installation
-traffic-control version
+traffic-control --version
+tcctl --version
 ```
 
 ### Method 2: Build from Source
 
 ```bash
 # Clone the repository
-git clone https://github.com/YOUR_ORG/traffic-control-go.git
+git clone https://github.com/rng999/traffic-control-go.git
 cd traffic-control-go
 
-# Build using the provided script
-./scripts/build.sh
+# Build using make (no build.sh script needed!)
+make build
 
 # Install to system path
-sudo cp bin/traffic-control /usr/local/bin/
+sudo make install
 
 # Verify installation
-traffic-control version
+traffic-control --version
+tcctl --version
 ```
 
 ### Method 3: Install with Go
 
 ```bash
-go install github.com/YOUR_ORG/traffic-control-go/cmd/traffic-control@latest
+# Install the main binary
+go install github.com/rng999/traffic-control-go/cmd/traffic-control@v0.1.0
+
+# Install the CLI tool
+go install github.com/rng999/traffic-control-go/cmd/tcctl@v0.1.0
 ```
 
 ## Post-Installation Setup
 
 ### 1. Verify Permissions
-Ensure the binary has proper permissions:
+Ensure the binaries have proper permissions:
 ```bash
-sudo chown root:root /usr/local/bin/traffic-control
-sudo chmod 755 /usr/local/bin/traffic-control
+sudo chown root:root /usr/local/bin/traffic-control /usr/local/bin/tcctl
+sudo chmod 755 /usr/local/bin/traffic-control /usr/local/bin/tcctl
 ```
 
 ### 2. Set up Sudoers (Optional)

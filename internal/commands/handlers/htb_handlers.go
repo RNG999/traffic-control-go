@@ -44,15 +44,15 @@ func (h *CreateHTBQdiscHandler) Handle(ctx context.Context, command interface{})
 	}
 
 	// Parse handles
-	// Parse handles from string format "major:minor"
+	// Parse handles from string format "major:minor" (decimal format like "1:0")
 	var handleMajor, handleMinor uint16
-	if n, err := fmt.Sscanf(cmd.Handle, "%x:%x", &handleMajor, &handleMinor); err != nil || n != 2 {
+	if n, err := fmt.Sscanf(cmd.Handle, "%d:%d", &handleMajor, &handleMinor); err != nil || n != 2 {
 		return fmt.Errorf("invalid handle format: %s", cmd.Handle)
 	}
 	handle := valueobjects.NewHandle(handleMajor, handleMinor)
 
 	var defaultMajor, defaultMinor uint16
-	if n, err := fmt.Sscanf(cmd.DefaultClass, "%x:%x", &defaultMajor, &defaultMinor); err != nil || n != 2 {
+	if n, err := fmt.Sscanf(cmd.DefaultClass, "%d:%d", &defaultMajor, &defaultMinor); err != nil || n != 2 {
 		return fmt.Errorf("invalid default class format: %s", cmd.DefaultClass)
 	}
 	defaultClass := valueobjects.NewHandle(defaultMajor, defaultMinor)
@@ -101,15 +101,15 @@ func (h *CreateHTBClassHandler) Handle(ctx context.Context, command interface{})
 		return fmt.Errorf("failed to load aggregate: %w", err)
 	}
 
-	// Parse handles from string format "major:minor"
+	// Parse handles from string format "major:minor" (decimal format like "1:0")
 	var parentMajor, parentMinor uint16
-	if n, err := fmt.Sscanf(cmd.Parent, "%x:%x", &parentMajor, &parentMinor); err != nil || n != 2 {
-		return fmt.Errorf("invalid parent handle format: %s", cmd.Parent)
+	if n, err := fmt.Sscanf(cmd.Parent, "%d:%d", &parentMajor, &parentMinor); err != nil || n != 2 {
+		return fmt.Errorf("invalid parent handle format: %s (error: %v, matched: %d)", cmd.Parent, err, n)
 	}
 	parentHandle := valueobjects.NewHandle(parentMajor, parentMinor)
 
 	var classMajor, classMinor uint16
-	if n, err := fmt.Sscanf(cmd.ClassID, "%x:%x", &classMajor, &classMinor); err != nil || n != 2 {
+	if n, err := fmt.Sscanf(cmd.ClassID, "%d:%d", &classMajor, &classMinor); err != nil || n != 2 {
 		return fmt.Errorf("invalid class ID format: %s", cmd.ClassID)
 	}
 	classHandle := valueobjects.NewHandle(classMajor, classMinor)
@@ -174,19 +174,19 @@ func (h *CreateFilterHandler) Handle(ctx context.Context, command interface{}) e
 		return fmt.Errorf("failed to load aggregate: %w", err)
 	}
 
-	// Parse handles from string format "major:minor"
+	// Parse handles from string format "major:minor" (decimal format like "1:0")
 	var parentMajor, parentMinor uint16
-	if n, err := fmt.Sscanf(cmd.Parent, "%x:%x", &parentMajor, &parentMinor); err != nil || n != 2 {
-		return fmt.Errorf("invalid parent handle format: %s", cmd.Parent)
+	if n, err := fmt.Sscanf(cmd.Parent, "%d:%d", &parentMajor, &parentMinor); err != nil || n != 2 {
+		return fmt.Errorf("invalid parent handle format: %s (error: %v, matched: %d)", cmd.Parent, err, n)
 	}
 	parentHandle := valueobjects.NewHandle(parentMajor, parentMinor)
 
-	// Generate filter handle
+	// Generate filter handle (use hex format for handles)
 	handle := valueobjects.NewHandle(0x800, 0x800)
 
 	var flowMajor, flowMinor uint16
-	if n, err := fmt.Sscanf(cmd.FlowID, "%x:%x", &flowMajor, &flowMinor); err != nil || n != 2 {
-		return fmt.Errorf("invalid flow ID format: %s", cmd.FlowID)
+	if n, err := fmt.Sscanf(cmd.FlowID, "%d:%d", &flowMajor, &flowMinor); err != nil || n != 2 {
+		return fmt.Errorf("invalid flow ID format: %s (error: %v, matched: %d)", cmd.FlowID, err, n)
 	}
 	flowID := valueobjects.NewHandle(flowMajor, flowMinor)
 

@@ -16,7 +16,7 @@ type Adapter interface {
 	GetQdiscs(device valueobjects.DeviceName) types.Result[[]QdiscInfo]
 
 	// Class operations
-	AddClass(ctx context.Context, class *entities.Class) error
+	AddClass(ctx context.Context, class interface{}) error
 	DeleteClass(device valueobjects.DeviceName, handle valueobjects.Handle) types.Result[Unit]
 	GetClasses(device valueobjects.DeviceName) types.Result[[]ClassInfo]
 

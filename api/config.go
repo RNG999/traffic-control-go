@@ -129,12 +129,12 @@ func (c *TrafficControlConfig) Validate() error {
 	}
 
 	// Validate rules reference existing classes
-	for _, rule := range c.Rules {
-		if rule.Target == "" {
-			return fmt.Errorf("rule %s: target is required", rule.Name)
+	for i := range c.Rules {
+		if c.Rules[i].Target == "" {
+			return fmt.Errorf("rule %s: target is required", c.Rules[i].Name)
 		}
-		if !classNames[rule.Target] {
-			return fmt.Errorf("rule %s: target class '%s' not found", rule.Name, rule.Target)
+		if !classNames[c.Rules[i].Target] {
+			return fmt.Errorf("rule %s: target class '%s' not found", c.Rules[i].Name, c.Rules[i].Target)
 		}
 	}
 
@@ -252,9 +252,9 @@ func (tc *TrafficController) createClassesFromConfig(classes []TrafficClassConfi
 func (tc *TrafficController) createRuleFromConfig(rule *TrafficRuleConfig) error {
 	// Find target class
 	var targetClass *TrafficClass
-	for _, class := range tc.classes {
-		if class.name == rule.Target {
-			targetClass = class
+	for i := range tc.classes {
+		if tc.classes[i].name == rule.Target {
+			targetClass = tc.classes[i]
 			break
 		}
 	}
@@ -280,17 +280,17 @@ func (tc *TrafficController) createRuleFromConfig(rule *TrafficRuleConfig) error
 		})
 	}
 
-	for _, port := range match.DestPort {
+	for i := range match.DestPort {
 		targetClass.filters = append(targetClass.filters, Filter{
 			filterType: DestinationPortFilter,
-			value:      port,
+			value:      match.DestPort[i],
 		})
 	}
 
-	for _, port := range match.SourcePort {
+	for i := range match.SourcePort {
 		targetClass.filters = append(targetClass.filters, Filter{
 			filterType: SourcePortFilter,
-			value:      port,
+			value:      match.SourcePort[i],
 		})
 	}
 
@@ -301,10 +301,10 @@ func (tc *TrafficController) createRuleFromConfig(rule *TrafficRuleConfig) error
 		})
 	}
 
-	for _, app := range match.Application {
+	for i := range match.Application {
 		targetClass.filters = append(targetClass.filters, Filter{
 			filterType: ApplicationFilter,
-			value:      app,
+			value:      match.Application[i],
 		})
 	}
 

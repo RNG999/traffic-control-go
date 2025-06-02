@@ -166,16 +166,16 @@ checksum:
 snapshot:
   name_template: "{{ incpatch .Version }}-next"
 
-# Docker images (optional)
-dockers:
-  - image_templates:
-      - "ghcr.io/rng999/traffic-control-go:{{ .Tag }}"
-      - "ghcr.io/rng999/traffic-control-go:latest"
-    dockerfile: Dockerfile
-    build_flag_templates:
-      - "--label=org.opencontainers.image.created={{.Date}}"
-      - "--label=org.opencontainers.image.title={{.ProjectName}}"
-      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
-      - "--label=org.opencontainers.image.version={{.Version}}"
-      - "--platform=linux/amd64"
+# Docker images (disabled for now due to build context issues)
+# dockers:
+#   - image_templates:
+#       - "ghcr.io/rng999/traffic-control-go:{{ .Tag }}"
+#       - "ghcr.io/rng999/traffic-control-go:latest"
+#     dockerfile: Dockerfile
+#     build_flag_templates:
+#       - "--label=org.opencontainers.image.created={{.Date}}"
+#       - "--label=org.opencontainers.image.title={{.ProjectName}}"
+#       - "--label=org.opencontainers.image.revision={{.FullCommit}}"
+#       - "--label=org.opencontainers.image.version={{.Version}}"
+#       - "--platform=linux/amd64"
 

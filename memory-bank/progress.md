@@ -157,3 +157,55 @@
 - NETEM qdisc実装
 - fw/flower filter実装
 - police action実装
+
+### 実装待ちTODO項目 (2025年6月1日更新)
+
+以下は現在のコードベースに含まれるTODOコメントで、将来の実装が必要な機能です：
+
+#### 🔧 **Statistics & Monitoring**
+- `internal/queries/handlers/statistics_handlers.go:129,161,419,465`
+  - 詳細統計情報のadapterインターフェース経由取得
+  - 現在は基本統計のみ、リアルタイム詳細データが必要
+  
+- `internal/application/statistics_service.go:128,168`
+  - adapterラッパーアクセスの適切な実装
+  - 統計サービスとネットリンク統合の改善
+
+#### 🔍 **Filter & Matching**
+- `internal/infrastructure/netlink/fw_filter.go:53`
+  - markベースフィルタリングのU32フィルタ実装
+  - firewallマーク統合による高度トラフィック分類
+
+- `internal/application/event_handlers.go:147`
+  - matchデータの適切なmatchオブジェクト変換
+  - 現在は基本的なcatch-allフィルタのみ
+
+#### 🏗️ **Architecture & Integration**
+- `internal/application/service.go:94`
+  - クエリハンドラーインターフェースのCQRSバス期待値合わせ
+  - 現在の型アサーション方式からより堅牢な実装へ
+
+- `internal/application/service.go:492`
+  - プロジェクション用イベント型処理修正
+  - イベントストアからプロジェクション更新の最適化
+
+#### 📋 **優先度と実装スケジュール**
+
+**High Priority (v0.2.0)**
+1. Statistics詳細実装 - 運用監視に必要
+2. Filter matching改善 - 高度トラフィック分類用
+
+**Medium Priority (v0.3.0)**  
+3. FW mark統合 - enterprise使用ケース
+4. CQRS bus改善 - アーキテクチャ改善
+
+**Low Priority (Future)**
+5. Projection最適化 - パフォーマンス改善
+
+#### 🎯 **実装ガイダンス**
+
+各TODO項目は以下の原則に従って実装予定：
+- **統計情報**: netlink統計APIを直接使用し、構造化データ提供
+- **フィルタ**: U32セレクタ構文を使用したmarkマッチング
+- **CQRS**: 型安全なハンドラー登録システム
+- **プロジェクション**: イベントバス経由の自動更新

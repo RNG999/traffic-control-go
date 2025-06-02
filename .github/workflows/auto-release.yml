@@ -1,0 +1,232 @@
+name: Auto Release with Date
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_type:
+        description: 'Release type'
+        required: true
+        default: 'patch'
+        type: choice
+        options:
+        - patch
+        - minor
+        - major
+      pre_release:
+        description: 'Pre-release (beta, alpha, etc.)'
+        required: false
+        type: string
+      custom_version:
+        description: 'Custom version (overrides release_type)'
+        required: false
+        type: string
+
+env:
+  GO_VERSION_DEFAULT: '1.23'
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  create-release:
+    runs-on: ubuntu-latest
+    outputs:
+      tag_name: ${{ steps.create_tag.outputs.tag_name }}
+      release_notes: ${{ steps.generate_notes.outputs.release_notes }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION_DEFAULT }}
+
+      - name: Run tests
+        run: make test
+
+      - name: Get current version
+        id: get_version
+        run: |
+          # Get the latest tag
+          LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+          echo "latest_tag=${LATEST_TAG}" >> $GITHUB_OUTPUT
+          
+          # Extract version numbers
+          VERSION=$(echo ${LATEST_TAG} | sed 's/^v//')
+          MAJOR=$(echo ${VERSION} | cut -d. -f1)
+          MINOR=$(echo ${VERSION} | cut -d. -f2)
+          PATCH=$(echo ${VERSION} | cut -d. -f3)
+          
+          echo "current_major=${MAJOR}" >> $GITHUB_OUTPUT
+          echo "current_minor=${MINOR}" >> $GITHUB_OUTPUT
+          echo "current_patch=${PATCH}" >> $GITHUB_OUTPUT
+
+      - name: Calculate new version
+        id: calc_version
+        run: |
+          if [ -n "${{ github.event.inputs.custom_version }}" ]; then
+            NEW_VERSION="${{ github.event.inputs.custom_version }}"
+          else
+            MAJOR=${{ steps.get_version.outputs.current_major }}
+            MINOR=${{ steps.get_version.outputs.current_minor }}
+            PATCH=${{ steps.get_version.outputs.current_patch }}
+            
+            case "${{ github.event.inputs.release_type }}" in
+              major)
+                MAJOR=$((MAJOR + 1))
+                MINOR=0
+                PATCH=0
+                ;;
+              minor)
+                MINOR=$((MINOR + 1))
+                PATCH=0
+                ;;
+              patch)
+                PATCH=$((PATCH + 1))
+                ;;
+            esac
+            
+            NEW_VERSION="${MAJOR}.${MINOR}.${PATCH}"
+          fi
+          
+          # Add pre-release suffix if specified
+          if [ -n "${{ github.event.inputs.pre_release }}" ]; then
+            NEW_VERSION="${NEW_VERSION}-${{ github.event.inputs.pre_release }}"
+          fi
+          
+          echo "new_version=${NEW_VERSION}" >> $GITHUB_OUTPUT
+
+      - name: Create tag with date
+        id: create_tag
+        run: |
+          NEW_VERSION="${{ steps.calc_version.outputs.new_version }}"
+          
+          # Get current date and time in JST
+          DATE_JST=$(TZ=Asia/Tokyo date '+%Y%m%d-%H%M')
+          
+          # Create tag with version and date
+          TAG_NAME="v${NEW_VERSION}"
+          TAG_NAME_WITH_DATE="v${NEW_VERSION}-${DATE_JST}"
+          
+          echo "tag_name=${TAG_NAME}" >> $GITHUB_OUTPUT
+          echo "tag_name_with_date=${TAG_NAME_WITH_DATE}" >> $GITHUB_OUTPUT
+          echo "build_date=${DATE_JST}" >> $GITHUB_OUTPUT
+
+      - name: Generate release notes
+        id: generate_notes
+        run: |
+          # Generate changelog from commits since last tag
+          LATEST_TAG="${{ steps.get_version.outputs.latest_tag }}"
+          
+          if [ "${LATEST_TAG}" = "v0.0.0" ]; then
+            COMMIT_RANGE="HEAD"
+          else
+            COMMIT_RANGE="${LATEST_TAG}..HEAD"
+          fi
+          
+          # Get commits and format them
+          RELEASE_NOTES=$(cat <<EOF
+          ## What's Changed
+          
+          ### Features & Improvements
+          $(git log ${COMMIT_RANGE} --pretty=format:"- %s (%h)" --grep="^feat" --grep="^add" --grep="^implement" --all-match || echo "- No new features")
+          
+          ### Bug Fixes
+          $(git log ${COMMIT_RANGE} --pretty=format:"- %s (%h)" --grep="^fix" || echo "- No bug fixes")
+          
+          ### Documentation
+          $(git log ${COMMIT_RANGE} --pretty=format:"- %s (%h)" --grep="^docs" || echo "- No documentation changes")
+          
+          ### Other Changes
+          $(git log ${COMMIT_RANGE} --pretty=format:"- %s (%h)" --grep="^refactor\|^perf\|^test\|^ci\|^build" || echo "- No other changes")
+          
+          ---
+          
+          **Release Date**: $(TZ=Asia/Tokyo date '+%Y-%m-%d %H:%M JST')
+          **Build Info**: Built from commit $(git rev-parse --short HEAD)
+          
+          ### Installation
+          
+          \`\`\`bash
+          # Download and install binary
+          curl -L https://github.com/rng999/traffic-control-go/releases/download/${{ steps.create_tag.outputs.tag_name }}/traffic-control-linux-amd64 -o traffic-control
+          chmod +x traffic-control
+          sudo mv traffic-control /usr/local/bin/
+          
+          # Or install via Go
+          go install github.com/rng999/traffic-control-go/cmd/traffic-control@${{ steps.create_tag.outputs.tag_name }}
+          \`\`\`
+          EOF
+          )
+          
+          # Save to file for use in release
+          echo "${RELEASE_NOTES}" > release_notes.md
+          echo "release_notes<<EOF" >> $GITHUB_OUTPUT
+          echo "${RELEASE_NOTES}" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Create and push tag
+        run: |
+          TAG_NAME="${{ steps.create_tag.outputs.tag_name }}"
+          BUILD_DATE="${{ steps.create_tag.outputs.build_date }}"
+          
+          # Configure git
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          
+          # Create annotated tag with build info
+          git tag -a "${TAG_NAME}" -m "Release ${TAG_NAME}
+
+          Build Date: ${BUILD_DATE} JST
+          Build Commit: $(git rev-parse HEAD)
+          Release Type: ${{ github.event.inputs.release_type }}
+          
+          Automated release created via GitHub Actions"
+          
+          # Push tag
+          git push origin "${TAG_NAME}"
+
+  release:
+    needs: create-release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION_DEFAULT }}
+
+      - name: Run GoReleaser
+        uses: goreleaser/goreleaser-action@v5
+        with:
+          distribution: goreleaser
+          version: latest
+          args: release --clean --notes=release_notes.md
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create release with notes
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ needs.create-release.outputs.tag_name }}
+          name: "Release ${{ needs.create-release.outputs.tag_name }}"
+          body: ${{ needs.create-release.outputs.release_notes }}
+          draft: false
+          prerelease: ${{ contains(github.event.inputs.pre_release, 'alpha') || contains(github.event.inputs.pre_release, 'beta') || contains(github.event.inputs.pre_release, 'rc') }}
+          generate_release_notes: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Update latest release
+        if: ${{ !contains(github.event.inputs.pre_release, 'alpha') && !contains(github.event.inputs.pre_release, 'beta') && !contains(github.event.inputs.pre_release, 'rc') }}
+        run: |
+          echo "✅ Released ${{ needs.create-release.outputs.tag_name }} as latest stable version"

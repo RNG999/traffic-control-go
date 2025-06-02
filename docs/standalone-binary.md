@@ -18,12 +18,12 @@ The `traffic-control` binary is a complete, standalone command-line tool for man
 ### Installation
 
 ```bash
-# Download and install
-curl -L https://github.com/YOUR_ORG/traffic-control-go/releases/latest/download/traffic-control-linux-amd64.tar.gz | tar -xz
+# Download and install v0.1.0
+curl -L https://github.com/rng999/traffic-control-go/releases/download/v0.1.0/traffic-control-linux-amd64.tar.gz | tar -xz
 sudo cp traffic-control /usr/local/bin/
 
-# Or build from source
-git clone https://github.com/YOUR_ORG/traffic-control-go.git
+# Or build from source (no build script needed!)
+git clone https://github.com/rng999/traffic-control-go.git
 cd traffic-control-go
 make install
 ```

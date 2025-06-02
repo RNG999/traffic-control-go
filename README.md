@@ -6,8 +6,9 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/rng999/traffic-control-go)](https://goreportcard.com/report/github.com/rng999/traffic-control-go)
 [![Go Reference](https://pkg.go.dev/badge/github.com/rng999/traffic-control-go.svg)](https://pkg.go.dev/github.com/rng999/traffic-control-go)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Release](https://img.shields.io/github/release/rng999/traffic-control-go.svg)](https://github.com/rng999/traffic-control-go/releases/latest)
 
-A human-readable Go library for Linux Traffic Control (TC).
+A human-readable Go library for Linux Traffic Control (TC) - **v0.1.0 Ready for Release!**
 
 ## Overview
 
@@ -22,7 +23,8 @@ This library provides an intuitive API for managing Linux Traffic Control, makin
 - **Event Sourcing**: SQLite-based persistent event store for configuration history
 - **Statistics**: Real-time traffic monitoring and metrics collection
 - **CLI Tool**: Standalone binary for command-line traffic control management
-- **Well-Tested**: Extensive unit and integration tests
+- **Well-Tested**: Extensive unit and integration tests with iperf3
+- **CI/CD Pipeline**: Fully automated testing and release workflows
 
 ## Quick Start
 
@@ -150,21 +152,27 @@ logger.Info("Traffic control operation started")
 
 ## Roadmap
 
+### v0.1.0 (Released! 🎉)
 - [x] Core library with human-readable API
 - [x] Basic TC operations (HTB, filters)
-- [x] **Structured Configuration API (YAML/JSON)**
-- [x] **Numeric Priority System (0-7)**
-- [x] **Comprehensive Logging System**
-- [x] **CI/CD Pipeline with GitHub Actions**
-- [x] **Extended Qdisc Support** (HTB, TBF, PRIO, FQ_CODEL)
-- [x] **SQLite Event Store** for persistent storage
-- [x] **Statistics Collection** and monitoring
-- [x] **Standalone CLI Binary** (traffic-control command)
-- [x] **GoReleaser & Release Please** for automated releases
+- [x] Structured Configuration API (YAML/JSON)
+- [x] Numeric Priority System (0-7)
+- [x] Comprehensive Logging System
+- [x] CI/CD Pipeline with GitHub Actions
+- [x] Extended Qdisc Support (HTB, TBF, PRIO, FQ_CODEL)
+- [x] SQLite Event Store for persistent storage
+- [x] Statistics Collection and monitoring
+- [x] Standalone CLI Binary (traffic-control command)
+- [x] GoReleaser & Release Please for automated releases
+
+### Future Releases
 - [ ] NETEM qdisc (network emulation)
 - [ ] fw/flower filter types
 - [ ] police/mirred actions
 - [ ] Performance optimization and benchmarks
+- [ ] REST API server mode
+- [ ] Kubernetes integration
+- [ ] Web UI dashboard
 
 ## Requirements
 
@@ -203,6 +211,7 @@ Apache License 2.0
 - Go 1.21 or higher
 - Linux system with Traffic Control support
 - Root privileges for integration tests
+- iperf3 installed for integration tests
 
 ### Quick Start
 ```bash
@@ -240,7 +249,7 @@ make test
 
 # Run specific test types
 make test-unit
-make test-integration
+make test-integration  # Requires root privileges and iperf3
 make test-examples
 
 # Run with coverage
@@ -249,8 +258,13 @@ make test-coverage
 # Run tests manually
 go test ./...
 go test -cover ./...
-go test -v ./test/integration/...
+sudo go test -v ./test/integration/...  # Integration tests require root
 ```
+
+### Integration Test Requirements
+- Root privileges (uses network namespaces and virtual interfaces)
+- iperf3 installed (`sudo apt-get install iperf3` or equivalent)
+- Linux kernel with veth support
 
 ## Logging
 
@@ -298,15 +312,17 @@ This project uses GitHub Actions for continuous integration and deployment:
 
 ### Pull Request Workflow
 - **Test Suite**: Runs on Go 1.21, 1.22, and 1.23
+- **Unit Tests**: Run on all platforms
+- **Integration Tests**: Run with root privileges on Linux runners
 - **Linting**: golangci-lint with comprehensive checks
 - **Security**: Gosec security scanner
-- **Coverage**: Codecov integration
+- **Coverage**: Codecov integration with detailed reports
 
 ### Release Workflow
 - **Multi-platform Builds**: Linux, macOS, Windows (amd64/arm64) via GoReleaser
 - **Automated Versioning**: Release Please for semantic versioning
 - **GitHub Releases**: Automated releases with binary attachments
-- **Version 0.X.Y**: Following semantic versioning for pre-1.0 releases
+- **Version v0.1.0**: First feature-complete release ready!
 
 ### CLI Tool Usage
 ```bash

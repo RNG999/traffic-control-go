@@ -2,13 +2,26 @@
 
 This document describes the testing strategy and how to run tests for the Traffic Control Go project.
 
+## Overview
+
+The project has comprehensive test coverage including:
+- **Unit Tests**: Test individual components without external dependencies
+- **Integration Tests**: Test real Traffic Control operations with iperf3
+- **Example Tests**: Verify documentation examples work correctly
+
+All tests are run automatically in the CI/CD pipeline, ensuring v0.1.0 release quality.
+
 ## Test Categories
 
 ### Unit Tests
 Standard Go unit tests that don't require special privileges or external dependencies.
 
 ```bash
-make test
+# Run unit tests only
+make test-unit
+
+# Run with coverage
+make test-coverage
 ```
 
 ### Integration Tests
@@ -25,7 +38,7 @@ sudo apt-get install iperf3
 sudo yum install iperf3
 
 # Run integration tests
-make test-integration
+sudo make test-integration
 ```
 
 ## Integration Test Details
@@ -82,15 +95,20 @@ CMD ["make", "test-integration"]
 ```
 
 ### CI/CD Integration
-Integration tests can be run in CI with appropriate permissions:
+Integration tests are automatically run in the GitHub Actions CI pipeline:
 
 ```yaml
 - name: Run Integration Tests
   run: |
     sudo apt-get update
     sudo apt-get install -y iperf3
-    make test-integration
+    sudo -E go test -v -tags=integration ./test/integration/...
 ```
+
+The CI pipeline runs tests on:
+- Multiple Go versions (1.21, 1.22, 1.23)
+- Ubuntu Linux with root privileges
+- Full iperf3 integration for realistic bandwidth testing
 
 ## Writing New Integration Tests
 

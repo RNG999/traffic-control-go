@@ -23,7 +23,7 @@ help: ## Show available commands
 	@echo "  make build               # Build both binaries"
 	@echo "  make test                # Run tests"
 	@echo "  make install             # Install to system"
-	@echo "  make release-auto VERSION=0.2.0  # Automated release (v202412021430)"
+	@echo "  make release-auto                # Automated release (v202412021430)"
 	@echo "  make release-with-date VERSION=0.2.0  # Manual release with date"
 
 # Core development commands
@@ -106,21 +106,21 @@ endif
 	@echo "✓ Release v$(BUILD_DATE) (version $(VERSION)) ready in $(BIN_DIR)/"
 
 release-auto: ## Trigger automated GitHub release
-ifndef VERSION
-	@echo "Usage: make release-auto VERSION=0.2.0 [PRE_RELEASE=beta]"
+	@echo "Usage: make release-auto [PRE_RELEASE=beta]"
 	@echo ""
 	@echo "Examples:"
-	@echo "  make release-auto VERSION=0.2.0           # Creates v202412021430 (v0.2.0)"
-	@echo "  make release-auto VERSION=1.0.0           # Creates v202412021430 (v1.0.0)"
-	@echo "  make release-auto VERSION=0.2.0 PRE_RELEASE=beta  # Creates v202412021430 (v0.2.0-beta)"
-	@exit 1
-endif
-	@echo "Triggering automated GitHub release for version $(VERSION)..."
+	@echo "  make release-auto                         # Creates v202412021430"
+	@echo "  make release-auto PRE_RELEASE=beta       # Creates v202412021430-beta"
+	@echo "  make release-auto PRE_RELEASE=rc1        # Creates v202412021430-rc1"
+	@echo ""
+	@echo "Note: Version and tag are unified as date-based vYYYYMMDDHHMM"
+	@echo ""
+	@echo "Triggering automated GitHub release..."
 	@if command -v gh >/dev/null 2>&1; then \
 		if [ -n "$(PRE_RELEASE)" ]; then \
-			gh workflow run auto-release.yml -f custom_version=$(VERSION) -f pre_release=$(PRE_RELEASE); \
+			gh workflow run auto-release.yml -f pre_release=$(PRE_RELEASE); \
 		else \
-			gh workflow run auto-release.yml -f custom_version=$(VERSION); \
+			gh workflow run auto-release.yml; \
 		fi; \
 		echo "✓ GitHub Actions workflow triggered"; \
 		echo "Check progress at: https://github.com/$(shell git config --get remote.origin.url | sed 's|.*github.com[:/]||' | sed 's|\.git||')/actions"; \

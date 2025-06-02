@@ -122,8 +122,8 @@ func (c *TrafficControlConfig) Validate() error {
 
 	// Validate class names are unique
 	classNames := make(map[string]bool)
-	for _, class := range c.Classes {
-		if err := validateClassConfig(&class, classNames, ""); err != nil {
+	for i := range c.Classes {
+		if err := validateClassConfig(&c.Classes[i], classNames, ""); err != nil {
 			return err
 		}
 	}
@@ -195,8 +195,8 @@ func (tc *TrafficController) ApplyConfig(config *TrafficControlConfig) error {
 	}
 
 	// Apply rules
-	for _, rule := range config.Rules {
-		if err := tc.createRuleFromConfig(&rule); err != nil {
+	for i := range config.Rules {
+		if err := tc.createRuleFromConfig(&config.Rules[i]); err != nil {
 			return err
 		}
 	}

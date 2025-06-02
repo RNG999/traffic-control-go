@@ -8,7 +8,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Release](https://img.shields.io/github/release/rng999/traffic-control-go.svg)](https://github.com/rng999/traffic-control-go/releases/latest)
 
-A human-readable Go library for Linux Traffic Control (TC) - **v0.1.0 Released! v0.2.0 with Improved API Coming Soon**
+A human-readable Go library for Linux Traffic Control (TC) - **v0.1.0 Released! Date-based Releases Available**
 
 ## Overview
 

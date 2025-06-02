@@ -107,14 +107,13 @@ jobs:
           NEW_VERSION="${{ steps.calc_version.outputs.new_version }}"
           
           # Get current date and time in JST
-          DATE_JST=$(TZ=Asia/Tokyo date '+%Y%m%d-%H%M')
+          DATE_JST=$(TZ=Asia/Tokyo date '+%Y%m%d%H%M')
           
-          # Create tag with version and date
-          TAG_NAME="v${NEW_VERSION}"
-          TAG_NAME_WITH_DATE="v${NEW_VERSION}-${DATE_JST}"
+          # Create simple date-based tag format: vYYYYMMDDHHMM
+          TAG_NAME="v${DATE_JST}"
           
           echo "tag_name=${TAG_NAME}" >> $GITHUB_OUTPUT
-          echo "tag_name_with_date=${TAG_NAME_WITH_DATE}" >> $GITHUB_OUTPUT
+          echo "version=${NEW_VERSION}" >> $GITHUB_OUTPUT
           echo "build_date=${DATE_JST}" >> $GITHUB_OUTPUT
 
       - name: Generate release notes
@@ -122,6 +121,8 @@ jobs:
         run: |
           # Generate changelog from commits since last tag
           LATEST_TAG="${{ steps.get_version.outputs.latest_tag }}"
+          NEW_VERSION="${{ steps.calc_version.outputs.new_version }}"
+          BUILD_DATE="${{ steps.create_tag.outputs.build_date }}"
           
           if [ "${LATEST_TAG}" = "v0.0.0" ]; then
             COMMIT_RANGE="HEAD"
@@ -131,7 +132,14 @@ jobs:
           
           # Get commits and format them
           RELEASE_NOTES=$(cat <<EOF
-          ## What's Changed
+          ## Traffic Control Go v${NEW_VERSION}
+          
+          **Release Tag**: ${{ steps.create_tag.outputs.tag_name }}
+          **Version**: ${NEW_VERSION}
+          **Build Date**: $(TZ=Asia/Tokyo date '+%Y-%m-%d %H:%M JST')
+          **Build Commit**: $(git rev-parse --short HEAD)
+          
+          ### What's Changed
           
           ### Features & Improvements
           $(git log ${COMMIT_RANGE} --pretty=format:"- %s (%h)" --grep="^feat" --grep="^add" --grep="^implement" --all-match || echo "- No new features")
@@ -146,9 +154,6 @@ jobs:
           $(git log ${COMMIT_RANGE} --pretty=format:"- %s (%h)" --grep="^refactor\|^perf\|^test\|^ci\|^build" || echo "- No other changes")
           
           ---
-          
-          **Release Date**: $(TZ=Asia/Tokyo date '+%Y-%m-%d %H:%M JST')
-          **Build Info**: Built from commit $(git rev-parse --short HEAD)
           
           ### Installation
           
@@ -173,6 +178,7 @@ jobs:
       - name: Create and push tag
         run: |
           TAG_NAME="${{ steps.create_tag.outputs.tag_name }}"
+          NEW_VERSION="${{ steps.create_tag.outputs.version }}"
           BUILD_DATE="${{ steps.create_tag.outputs.build_date }}"
           
           # Configure git
@@ -180,9 +186,10 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           
           # Create annotated tag with build info
-          git tag -a "${TAG_NAME}" -m "Release ${TAG_NAME}
+          git tag -a "${TAG_NAME}" -m "Release ${TAG_NAME} (v${NEW_VERSION})
 
-          Build Date: ${BUILD_DATE} JST
+          Version: ${NEW_VERSION}
+          Build Date: $(TZ=Asia/Tokyo date '+%Y-%m-%d %H:%M JST')
           Build Commit: $(git rev-parse HEAD)
           Release Type: ${{ github.event.inputs.release_type }}
           

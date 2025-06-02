@@ -199,10 +199,10 @@ func (a *RealNetlinkAdapter) AddClass(ctx context.Context, classEntity interface
 		nlClass.Cbuffer = class.Cburst()
 
 		a.logger.Debug("HTB class parameters",
-			logging.Int("rate", int(nlClass.Rate)),
-			logging.Int("ceil", int(nlClass.Ceil)),
-			logging.Int("buffer", int(nlClass.Buffer)),
-			logging.Int("cbuffer", int(nlClass.Cbuffer)),
+			logging.String("rate", fmt.Sprintf("%d", nlClass.Rate)),
+			logging.String("ceil", fmt.Sprintf("%d", nlClass.Ceil)),
+			logging.String("buffer", fmt.Sprintf("%d", nlClass.Buffer)),
+			logging.String("cbuffer", fmt.Sprintf("%d", nlClass.Cbuffer)),
 		)
 
 		if err := netlink.ClassAdd(nlClass); err != nil {

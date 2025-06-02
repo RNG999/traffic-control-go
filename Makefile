@@ -1,18 +1,10 @@
-# Traffic Control Go - Simplified Makefile
+# Traffic Control Go - Library Makefile
 
-.PHONY: help build test clean install dev release
+.PHONY: help test clean dev
 .DEFAULT_GOAL := help
 
 # Variables
-MAIN_BINARY := traffic-control
-DEMO_BINARY := tcctl
-BIN_DIR := bin
-VERSION := $(shell grep -o 'version = "[^"]*"' cmd/traffic-control/main.go | cut -d'"' -f2 2>/dev/null || echo "dev")
-BUILD_DATE := $(shell TZ=Asia/Tokyo date '+%Y%m%d%H%M')
-BUILD_TIME := $(shell TZ=Asia/Tokyo date '+%Y-%m-%d_%H:%M_JST')
-
-# Build flags
-LDFLAGS := -s -w -X main.version=$(VERSION) -X main.commit=$(shell git rev-parse --short HEAD 2>/dev/null || echo "unknown") -X main.buildDate=$(BUILD_TIME)
+VERSION := $(shell git describe --tags --always 2>/dev/null || echo "dev")
 
 help: ## Show available commands
 	@echo "Traffic Control Go - Available Commands:"

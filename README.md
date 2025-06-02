@@ -23,9 +23,8 @@ This library provides an intuitive API for managing Linux Traffic Control, makin
 - **Multiple Qdiscs**: HTB, TBF, PRIO, FQ_CODEL with complete CQRS integration
 - **Event Sourcing**: SQLite-based persistent event store for configuration history
 - **Statistics**: Real-time traffic monitoring and metrics collection
-- **CLI Tool**: Standalone binary for command-line traffic control management
 - **Well-Tested**: Extensive unit and integration tests with iperf3
-- **CI/CD Pipeline**: Fully automated testing and release workflows
+- **Production Ready**: Battle-tested API for enterprise applications
 
 ## Quick Start
 
@@ -265,8 +264,6 @@ logger.Info("Traffic control operation started")
 - [x] Extended Qdisc Support (HTB, TBF, PRIO, FQ_CODEL)
 - [x] SQLite Event Store for persistent storage
 - [x] Statistics Collection and monitoring
-- [x] Standalone CLI Binary (traffic-control command)
-- [x] GoReleaser & Release Please for automated releases
 
 ### v0.2.0 (In Development)
 - [x] **Improved API Design** - Clean method chaining without redundant And() calls
@@ -322,32 +319,22 @@ Apache License 2.0
 - Root privileges for integration tests
 - iperf3 installed for integration tests
 
-### Quick Start
+### Development Workflow
 ```bash
-# Set up development environment
-make dev-setup
+# Clone the repository
+git clone https://github.com/rng999/traffic-control-go
+cd traffic-control-go
 
-# Run all tests and checks
+# Run tests
+make test-unit          # Unit tests (no root required)
+sudo make test-integration  # Integration tests (requires root)
+
+# Format and lint
+make fmt
+make lint
+
+# Run all quality checks
 make check
-
-# Build for all platforms
-make build-all
-```
-
-### Available Make Targets
-```bash
-make help           # Show all available targets
-make build          # Build both binaries (traffic-control, tcctl)
-make test           # Run all tests
-make clean          # Clean build artifacts
-make install        # Install binaries to system
-make dev            # Set up development environment
-make fmt            # Format code
-make lint           # Run basic linting
-make check          # Run all quality checks
-make version        # Show current version
-make release-simple # Simple release (manual)
-make release-goreleaser # Release with GoReleaser
 ```
 
 ## Testing
@@ -417,7 +404,7 @@ For detailed logging documentation, see [docs/logging.md](docs/logging.md).
 
 ## CI/CD
 
-This project uses GitHub Actions for continuous integration and deployment:
+This project uses GitHub Actions for continuous integration:
 
 ### Pull Request Workflow
 - **Test Suite**: Runs on Go 1.21, 1.22, and 1.23
@@ -427,29 +414,9 @@ This project uses GitHub Actions for continuous integration and deployment:
 - **Security**: Gosec security scanner
 - **Coverage**: Codecov integration with detailed reports
 
-### Release Workflow
-- **Multi-platform Builds**: Linux, macOS, Windows (amd64/arm64) via GoReleaser
-- **Automated Versioning**: Release Please for semantic versioning
-- **GitHub Releases**: Automated releases with binary attachments
-- **Version v0.1.0**: First feature-complete release ready!
-
-### CLI Tool Usage
-```bash
-# Install the CLI tool
-make install
-
-# Basic traffic shaping with TBF
-sudo traffic-control tbf eth0 1:0 100Mbps
-
-# Priority scheduling with PRIO
-sudo traffic-control prio eth0 1:0 3
-
-# Fair queuing with FQ_CODEL
-sudo traffic-control fq_codel eth0 1:0 --target 1000 --ecn
-
-# Show statistics
-sudo traffic-control stats eth0
-
-# Show version
-traffic-control --version
-```
+### Quality Assurance
+- Comprehensive unit tests for all components
+- Integration tests with real network interfaces (veth pairs)
+- Bandwidth validation tests using iperf3
+- Event sourcing and CQRS pattern validation
+- Statistics collection accuracy tests

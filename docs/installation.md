@@ -3,15 +3,15 @@
 ## Prerequisites
 
 - Linux system with kernel 2.6.32 or later
-- Go 1.21 or later (for building from source)
-- Root privileges for network interface modifications
+- Go 1.21 or later
+- Root privileges or CAP_NET_ADMIN capability for traffic control operations
 - `tc` utility from `iproute2` package (usually pre-installed)
-- `iperf3` (for running integration tests)
+- `iperf3` (optional, for running integration tests)
 
 ## System Requirements
 
 ### Required Kernel Modules
-The following kernel modules must be available:
+The following kernel modules must be available for traffic control operations:
 - `sch_htb` - HTB (Hierarchical Token Bucket) qdisc
 - `sch_tbf` - TBF (Token Bucket Filter) qdisc  
 - `sch_prio` - PRIO (Priority) qdisc
@@ -28,111 +28,96 @@ sudo modprobe sch_htb sch_tbf sch_prio sch_fq_codel cls_u32
 ```
 
 ### Required Capabilities
-The application requires the following Linux capabilities:
+The library requires the following Linux capabilities when performing traffic control operations:
 - `CAP_NET_ADMIN` - Network administration operations
 
-## Installation Methods
+## Library Installation
 
-### Method 1: Download Pre-built Binary
+### Install as Go Module
 
 ```bash
-# Download the latest release
-wget https://github.com/rng999/traffic-control-go/releases/download/v0.1.0/traffic-control-linux-amd64.tar.gz
+# Add to your Go project
+go get github.com/rng999/traffic-control-go
 
-# Extract
-tar -xzf traffic-control-linux-amd64.tar.gz
-
-# Install to system path
-sudo cp traffic-control /usr/local/bin/
-sudo cp tcctl /usr/local/bin/
-
-# Verify installation
-traffic-control --version
-tcctl --version
+# Import in your code
+import "github.com/rng999/traffic-control-go/api"
 ```
 
-### Method 2: Build from Source
+### Build from Source
 
 ```bash
 # Clone the repository
 git clone https://github.com/rng999/traffic-control-go.git
 cd traffic-control-go
 
-# Build using make (no build.sh script needed!)
-make build
+# Run tests to verify functionality
+make test-unit          # Unit tests (no root required)
+sudo make test-integration  # Integration tests (requires root)
 
-# Install to system path
-sudo make install
-
-# Verify installation
-traffic-control --version
-tcctl --version
+# Install dependencies
+go mod download
 ```
 
-### Method 3: Install with Go
+## Usage in Your Application
 
-```bash
-# Install the main binary
-go install github.com/rng999/traffic-control-go/cmd/traffic-control@v0.1.0
+### Basic Example
 
-# Install the CLI tool
-go install github.com/rng999/traffic-control-go/cmd/tcctl@v0.1.0
+```go
+package main
+
+import (
+    "log"
+    "github.com/rng999/traffic-control-go/api"
+)
+
+func main() {
+    // Create traffic controller with Improved API
+    tc := api.NewImproved("eth0").
+        TotalBandwidth("1Gbps")
+    
+    // Configure traffic class
+    tc.Class("Web Traffic").
+        Guaranteed("100Mbps").
+        BurstTo("200Mbps").
+        Priority(4).
+        Ports(80, 443)
+    
+    // Apply configuration (requires root/CAP_NET_ADMIN)
+    if err := tc.Apply(); err != nil {
+        log.Fatalf("Failed to apply traffic control: %v", err)
+    }
+}
 ```
 
-## Post-Installation Setup
+### Running Your Application
 
-### 1. Verify Permissions
-Ensure the binaries have proper permissions:
 ```bash
-sudo chown root:root /usr/local/bin/traffic-control /usr/local/bin/tcctl
-sudo chmod 755 /usr/local/bin/traffic-control /usr/local/bin/tcctl
+# Run with root privileges
+sudo go run main.go
+
+# Or build and run
+go build -o myapp
+sudo ./myapp
+
+# Or set capabilities (alternative to sudo)
+sudo setcap cap_net_admin=+ep ./myapp
+./myapp
 ```
 
-### 2. Set up Sudoers (Optional)
-To allow specific users to run traffic-control without full sudo access:
+## Verification
 
+### Check Applied Configuration
 ```bash
-# Create a sudoers rule
-echo "%netadmin ALL=(root) NOPASSWD: /usr/local/bin/traffic-control" | sudo tee /etc/sudoers.d/traffic-control
-
-# Add users to the netadmin group
-sudo groupadd netadmin
-sudo usermod -a -G netadmin $USER
-```
-
-### 3. Bash Completion (Optional)
-```bash
-# Generate bash completion
-traffic-control completion bash | sudo tee /etc/bash_completion.d/traffic-control
-```
-
-## Quick Start
-
-### Basic Usage
-```bash
-# Show help
-traffic-control help
-
-# Configure simple rate limiting (requires sudo)
-sudo traffic-control tbf eth0 1:0 100Mbps
-
-# Show interface statistics
-sudo traffic-control stats eth0
-
-# Configure HTB with multiple classes
-sudo traffic-control htb eth0 1:0 1:999 \
-    --class 1:10,parent=1:,rate=60Mbps,ceil=80Mbps \
-    --class 1:20,parent=1:,rate=30Mbps,ceil=50Mbps
-```
-
-### Verification
-```bash
-# Check if configuration was applied
+# Show qdisc configuration
 tc qdisc show dev eth0
+
+# Show class configuration
 tc class show dev eth0
+
+# Show filter configuration
 tc filter show dev eth0
 
-# Monitor in real-time
+# Monitor statistics in real-time
 watch -n 1 'tc -s qdisc show dev eth0'
 ```
 
@@ -144,7 +129,7 @@ watch -n 1 'tc -s qdisc show dev eth0'
 ```bash
 Error: operation not permitted
 ```
-**Solution**: Run with sudo or ensure proper capabilities are set.
+**Solution**: Ensure your application runs with root privileges or CAP_NET_ADMIN capability.
 
 #### Module Not Found
 ```bash
@@ -168,61 +153,78 @@ ip link show
 ```bash
 Error: RTNETLINK answers: File exists
 ```
-**Solution**: Remove existing qdisc configuration:
+**Solution**: The library handles cleanup automatically, but you can manually clear existing configuration:
 ```bash
 sudo tc qdisc del dev eth0 root
 ```
 
 ### Debug Mode
-Enable verbose logging:
-```bash
-export TC_DEBUG=1
-sudo traffic-control tbf eth0 1:0 100Mbps
+Enable verbose logging in your application:
+```go
+import "github.com/rng999/traffic-control-go/pkg/logging"
+
+// Initialize logging
+logging.InitializeDevelopment()
+
+// Or with custom configuration
+logging.Initialize(&logging.Config{
+    Level:  "debug",
+    Format: "console",
+    Outputs: []string{"stdout"},
+})
 ```
 
-### Log Files
-Check system logs for detailed error information:
-```bash
-sudo journalctl -u traffic-control
-dmesg | grep -i traffic
-```
+### Integration with systemd
+If running as a service:
+```ini
+[Unit]
+Description=My Traffic Control Application
+After=network.target
 
-## Uninstallation
+[Service]
+Type=simple
+User=root
+ExecStart=/usr/local/bin/myapp
+Restart=on-failure
+RestartSec=5
 
-```bash
-# Remove binary
-sudo rm /usr/local/bin/traffic-control
+# Grant network admin capability
+AmbientCapabilities=CAP_NET_ADMIN
+CapabilityBoundingSet=CAP_NET_ADMIN
 
-# Remove sudoers rule (if created)
-sudo rm /etc/sudoers.d/traffic-control
-
-# Remove bash completion (if installed)
-sudo rm /etc/bash_completion.d/traffic-control
-
-# Clean up any remaining traffic control rules (if needed)
-sudo tc qdisc del dev eth0 root 2>/dev/null || true
+[Install]
+WantedBy=multi-user.target
 ```
 
 ## Security Considerations
 
 ### Network Access Control
-- Only grant network administration privileges to trusted users
-- Consider using dedicated service accounts for automated scripts
+- Only grant CAP_NET_ADMIN capability to trusted applications
+- Consider using dedicated service accounts
 - Monitor traffic control changes in production environments
 
-### Audit Trail
-- Enable audit logging for network configuration changes
-- Use configuration management tools for reproducible setups
-- Document all traffic control policies and their purposes
-
-### Network Isolation
+### Best Practices
+- Always validate configuration before applying
+- Implement proper error handling and rollback mechanisms
 - Test configurations in isolated environments first
-- Use network namespaces for development and testing
-- Implement rollback procedures for production changes
+- Use configuration management for reproducible setups
+
+### Container Environments
+When using in containers:
+```bash
+# Docker example
+docker run --cap-add=NET_ADMIN --network=host myapp
+
+# Kubernetes example
+securityContext:
+  capabilities:
+    add:
+    - NET_ADMIN
+```
 
 ## Next Steps
 
-- Read the [User Guide](user-guide.md) for detailed usage instructions
-- Check the [Examples](examples.md) for common configuration patterns
-- Review the [API Documentation](api.md) for programmatic usage
-- Join the community discussions for support and feature requests
+- Review the [API Documentation](../memory-bank/api-design.md) for detailed API usage
+- Check the [Examples](../examples/) directory for working code samples
+- Read about [Traffic Control Basics](traffic-control.md) to understand TC concepts
+- See [Priority Guide](priority-guide.md) for traffic prioritization strategies

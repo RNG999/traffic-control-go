@@ -1,19 +1,19 @@
-# Traffic Control Go Documentation
+# Traffic Control Go Library Documentation
 
 Welcome to the Traffic Control Go library documentation. This directory contains comprehensive documentation for understanding and using the library.
 
 ## Project Status
 
-🎉 **v0.1.0 is feature-complete and ready for release!**
-- All core features implemented
+🎉 **v0.1.0 - A human-readable Go library for Linux Traffic Control**
+- Complete API for programmatic traffic control
+- Both Classic and Improved API styles
 - Comprehensive test coverage (unit and integration)
-- CI/CD pipeline fully operational
-- No external build scripts - everything managed through Makefile
+- Production-ready for library integration
 
 ## Table of Contents
 
 ### Getting Started
-- [Installation Guide](installation.md) - System requirements and installation methods
+- [Installation Guide](installation.md) - Library installation and requirements
 - [Traffic Control Basics](traffic-control.md) - Understanding Linux Traffic Control fundamentals
 - [API Overview](../memory-bank/api-design.md) - Introduction to the human-readable API
 
@@ -27,7 +27,6 @@ Welcome to the Traffic Control Go library documentation. This directory contains
 - [Logging System](logging.md) - Comprehensive structured logging
 - [Testing Guide](testing.md) - Unit and integration testing with iperf3
 - [TC Feature Coverage](tc-feature-coverage.md) - Current implementation status and roadmap
-- [Standalone Binary](standalone-binary.md) - CLI tool usage guide
 
 ### Architecture
 - [System Architecture](../memory-bank/architecture-overview.md) - Library design and patterns
@@ -47,17 +46,13 @@ Welcome to the Traffic Control Go library documentation. This directory contains
 ## Quick Links
 
 - **Repository**: https://github.com/rng999/traffic-control-go
-- **Releases**: https://github.com/rng999/traffic-control-go/releases
+- **Go Package**: https://pkg.go.dev/github.com/rng999/traffic-control-go
 - **Issues**: https://github.com/rng999/traffic-control-go/issues
-- **Go Package**: `go get github.com/rng999/traffic-control-go`
-- **CLI Tool**: `make install` to install traffic-control binary
+- **Installation**: `go get github.com/rng999/traffic-control-go`
 
 ## Development Quick Reference
 
 ```bash
-# Build everything
-make build
-
 # Run all tests (requires root for integration tests)
 make test
 
@@ -67,17 +62,14 @@ make test-unit
 # Run integration tests (requires root and iperf3)
 sudo make test-integration
 
-# Install binaries
-sudo make install
-
-# Clean build artifacts
-make clean
-
 # Format and lint code
 make fmt
 make lint
 
-# Full pre-release check
+# Run tests with coverage
+make test-coverage
+
+# Full quality check
 make check
 ```
 

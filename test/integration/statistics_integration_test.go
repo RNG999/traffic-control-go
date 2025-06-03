@@ -155,7 +155,6 @@ func TestStatisticsIntegration(t *testing.T) {
 // TestStatisticsErrorHandling tests error scenarios
 func TestStatisticsErrorHandling(t *testing.T) {
 	t.Skip("Skipping due to syntax issues - needs refactoring")
-	return
 	// tc := api.NetworkInterface("nonexistent")
 	//
 	// // Test getting statistics for non-configured device
@@ -185,7 +184,6 @@ func TestStatisticsErrorHandling(t *testing.T) {
 // TestStatisticsPerformance tests the performance characteristics
 func TestStatisticsPerformance(t *testing.T) {
 	t.Skip("Skipping due to syntax issues - needs refactoring")
-	return
 	// tc := api.NetworkInterface("eth0")
 	//
 	// err := tc.Apply()
@@ -235,7 +233,6 @@ func setupMockStatistics(tc *api.TrafficController) {
 // TestStatisticsDataAccuracy tests that statistics accurately reflect the configuration
 func TestStatisticsDataAccuracy(t *testing.T) {
 	t.Skip("Skipping due to syntax issues - needs refactoring")
-	return
 	// t.Skip("Skipping statistics data accuracy test - handler registration issues")
 	// tc := api.NetworkInterface("eth0")
 	//

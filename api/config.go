@@ -223,17 +223,17 @@ func (tc *TrafficController) createClassesFromConfig(classes []TrafficClassConfi
 
 		// Apply maximum bandwidth
 		if classConfig.Maximum != "" {
-			builder = builder.WithSoftLimitBandwidth(classConfig.Maximum)
+			builder.WithSoftLimitBandwidth(classConfig.Maximum)
 		} else if defaults.BurstRatio > 1.0 {
 			// Calculate burst based on guaranteed and ratio
 			guaranteed := valueobjects.MustParseBandwidth(classConfig.Guaranteed)
 			burst := fmt.Sprintf("%dMbps", int(float64(guaranteed.MegabitsPerSecond())*defaults.BurstRatio))
-			builder = builder.WithSoftLimitBandwidth(burst)
+			builder.WithSoftLimitBandwidth(burst)
 		}
 
 		// Apply priority - required field
 		if classConfig.Priority != nil {
-			builder = builder.WithPriority(*classConfig.Priority)
+			builder.WithPriority(*classConfig.Priority)
 		}
 		// Note: validation will catch missing priority later
 

@@ -194,6 +194,9 @@ func (tc *TrafficController) ApplyConfig(config *TrafficControlConfig) error {
 		return err
 	}
 
+	// Finalize pending classes before applying rules
+	tc.finalizePendingClasses()
+
 	// Apply rules
 	for i := range config.Rules {
 		if err := tc.createRuleFromConfig(&config.Rules[i]); err != nil {
@@ -234,8 +237,8 @@ func (tc *TrafficController) createClassesFromConfig(classes []TrafficClassConfi
 		}
 		// Note: validation will catch missing priority later
 
-		// Store the builder
-		tc.classes = append(tc.classes, builder.class)
+		// The builder is automatically added to pendingBuilders in CreateTrafficClass
+		// No need to manually append to tc.classes here
 
 		// Create children
 		if len(classConfig.Children) > 0 {
@@ -300,7 +303,6 @@ func (tc *TrafficController) createRuleFromConfig(rule *TrafficRuleConfig) error
 			value:      match.Protocol,
 		})
 	}
-
 
 	return nil
 }

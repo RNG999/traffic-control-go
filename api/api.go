@@ -15,12 +15,12 @@ import (
 
 // TrafficController is the main entry point for traffic control configuration
 type TrafficController struct {
-	deviceName     string
-	totalBandwidth valueobjects.Bandwidth
-	classes        []*TrafficClass
+	deviceName      string
+	totalBandwidth  valueobjects.Bandwidth
+	classes         []*TrafficClass
 	pendingBuilders []*TrafficClassBuilder
-	logger         logging.Logger
-	service        *application.TrafficControlService
+	logger          logging.Logger
+	service         *application.TrafficControlService
 }
 
 // TrafficClass represents a traffic classification with its rules
@@ -100,10 +100,10 @@ func (tc *TrafficController) CreateTrafficClass(name string) *TrafficClassBuilde
 		controller: tc,
 		class:      class,
 	}
-	
+
 	// Add to pending builders list for automatic registration on Apply()
 	tc.pendingBuilders = append(tc.pendingBuilders, builder)
-	
+
 	return builder
 }
 
@@ -184,7 +184,6 @@ func (b *TrafficClassBuilder) ForPort(ports ...int) *TrafficClassBuilder {
 	return b
 }
 
-
 // ForProtocols adds protocol filters
 func (b *TrafficClassBuilder) ForProtocols(protocols ...string) *TrafficClassBuilder {
 	for _, protocol := range protocols {
@@ -200,7 +199,6 @@ func (b *TrafficClassBuilder) ForProtocols(protocols ...string) *TrafficClassBui
 func (b *TrafficClassBuilder) Apply() error {
 	return b.controller.Apply()
 }
-
 
 // CreateHTBQdisc creates an HTB (Hierarchical Token Bucket) qdisc with fluent interface
 func (tc *TrafficController) CreateHTBQdisc(handle, defaultClass string) *HTBQdiscBuilder {
@@ -405,7 +403,7 @@ func (tc *TrafficController) finalizePendingClasses() {
 func (tc *TrafficController) Apply() error {
 	// Finalize any pending class builders
 	tc.finalizePendingClasses()
-	
+
 	tc.logger.Info("Starting traffic control configuration application",
 		logging.String("operation", logging.OperationApplyConfig),
 		logging.Int("class_count", len(tc.classes)),

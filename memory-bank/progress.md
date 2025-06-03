@@ -1,5 +1,25 @@
 # Progress - プロジェクト進捗状況
 
+## 2025年6月3日 - CI Workflows Fixed for Library-Only
+
+### 🔧 **CI/CD修正完了**
+
+#### ✅ **不要なワークフロー削除**
+- build.yml削除（バイナリビルド不要）
+- release.yml削除（GoReleaserリリース不要）
+- Dockerfile削除（バイナリコンテナ不要）
+
+#### ✅ **CI最適化**
+- ci.ymlからGoReleaserチェック削除
+- Makefileをライブラリ専用に完全書き換え
+- 全テスト・リンティング・セキュリティチェック維持
+
+### 現在のプロジェクト状態
+- **フォーカス**: Go Library専用
+- **ブランチ**: `feature/automated-release-system`
+- **状態**: Library機能完全実装、CI修正完了、全テストPASS
+- **次のアクション**: PR作成・merge → 20250603リリース
+
 ## 2025年6月2日 - Library-Only Project Completion
 
 ### 🎉 **プロジェクト転換完了**

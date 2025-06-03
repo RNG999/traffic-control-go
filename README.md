@@ -1,14 +1,13 @@
 # Traffic Control Go
 
 [![CI](https://github.com/RNG999/traffic-control-go/actions/workflows/ci.yml/badge.svg)](https://github.com/RNG999/traffic-control-go/actions/workflows/ci.yml)
-[![Build](https://github.com/RNG999/traffic-control-go/actions/workflows/release.yml/badge.svg)](https://github.com/RNG999/traffic-control-go/actions/workflows/release.yml)
 [![codecov](https://codecov.io/gh/RNG999/traffic-control-go/branch/main/graph/badge.svg)](https://codecov.io/gh/RNG999/traffic-control-go)
 [![Go Report Card](https://goreportcard.com/badge/github.com/RNG999/traffic-control-go)](https://goreportcard.com/report/github.com/RNG999/traffic-control-go)
 [![Go Reference](https://pkg.go.dev/badge/github.com/RNG999/traffic-control-go.svg)](https://pkg.go.dev/github.com/RNG999/traffic-control-go)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Release](https://img.shields.io/github/release/RNG999/traffic-control-go.svg)](https://github.com/RNG999/traffic-control-go/releases/latest)
 
-A human-readable Go library for Linux Traffic Control (TC) - **v0.1.0 Released! Unified Date-based Versioning**
+A human-readable Go library for Linux Traffic Control (TC)
 
 ## Overview
 
@@ -17,7 +16,7 @@ This library provides an intuitive API for managing Linux Traffic Control, makin
 ## Features
 
 - **Improved Human-Readable API**: Clean, intuitive method chaining without redundant calls
-- **Dual API Design**: Classic API (v0.1.0) and Improved API (v0.2.0+) for better developer experience
+- **Dual API Design**: Classic API and Improved API for better developer experience
 - **Type-Safe**: Leverages Go's type system to prevent configuration errors
 - **Event-Driven**: Built with CQRS and Event Sourcing for configuration history
 - **Multiple Qdiscs**: HTB, TBF, PRIO, FQ_CODEL with complete CQRS integration
@@ -47,7 +46,7 @@ tc.Class("Database").
 tc.Apply()
 ```
 
-### Classic API (v0.1.0 - Still Supported)
+### Classic API (Still Supported)
 
 ```go
 import "github.com/rng999/traffic-control-go/api"

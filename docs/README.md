@@ -56,9 +56,6 @@ Welcome to the Traffic Control Go library documentation. This directory contains
 # Run all tests (requires root for integration tests)
 make test
 
-# Run only unit tests
-make test-unit
-
 # Run integration tests (requires root and iperf3)
 sudo make test-integration
 

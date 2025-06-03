@@ -21,101 +21,124 @@ func main() {
 	deviceName := "demo0"
 
 	fmt.Printf("1. Creating TrafficControl for device: %s\n", deviceName)
-	tc := api.New(deviceName)
+	tc := api.NetworkInterface(deviceName)
 	fmt.Println("✓ TrafficControl instance created")
 	fmt.Println()
 
-	// Demo 1: Token Bucket Filter (TBF) for simple rate limiting
-	fmt.Println("=== Demo 1: Token Bucket Filter (TBF) ===")
-	fmt.Println("TBF provides simple rate limiting with token bucket algorithm")
+	// Demo 1: Basic Traffic Control Setup
+	fmt.Println("=== Demo 1: Basic Traffic Control Setup ===")
+	fmt.Println("Setting up basic traffic control with HTB qdisc")
 
 	err := tc.
-		TBFQdisc("1:0", "100Mbps").
-		WithBuffer(32768).
-		WithLimit(10000).
-		WithBurst(1024).
+		WithHardLimitBandwidth("100Mbps").
+		CreateTrafficClass("Default").
+		WithGuaranteedBandwidth("100Mbps").
+		WithPriority(4).
+		Done().
 		Apply()
 
 	if err != nil {
-		log.Printf("Error applying TBF qdisc: %v", err)
+		log.Printf("Error applying traffic control: %v", err)
 	} else {
-		fmt.Println("✓ TBF qdisc configured successfully")
-		fmt.Println("  - Handle: 1:0")
-		fmt.Println("  - Rate: 100Mbps")
-		fmt.Println("  - Buffer: 32768 bytes")
-		fmt.Println("  - Limit: 10000 packets")
-		fmt.Println("  - Burst: 1024 bytes")
+		fmt.Println("✓ Basic traffic control configured successfully")
+		fmt.Println("  - Device: demo0")
+		fmt.Println("  - Total Bandwidth: 100Mbps")
+		fmt.Println("  - Default Class: Configured")
 	}
 	fmt.Println()
 
-	// Demo 2: Priority (PRIO) qdisc for simple priority classes
-	fmt.Println("=== Demo 2: Priority (PRIO) Qdisc ===")
-	fmt.Println("PRIO provides simple priority-based packet scheduling")
+	// Demo 2: Priority-based Traffic Classes
+	fmt.Println("=== Demo 2: Priority-based Traffic Classes ===")
+	fmt.Println("Setting up multiple traffic classes with different priorities")
 
-	err = tc.
-		PRIOQdisc("2:0", 3).
-		WithPriomap([]uint8{1, 2, 2, 2, 1, 2, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1}).
+	tc2 := api.NetworkInterface(deviceName)
+	err = tc2.
+		WithHardLimitBandwidth("1Gbps").
+		CreateTrafficClass("High Priority").
+		WithGuaranteedBandwidth("300Mbps").
+		WithPriority(1).
+		ForPort(22).
+		Done().
+		CreateTrafficClass("Normal Priority").
+		WithGuaranteedBandwidth("400Mbps").
+		WithPriority(4).
+		ForPort(80, 443).
+		Done().
+		CreateTrafficClass("Low Priority").
+		WithGuaranteedBandwidth("300Mbps").
+		WithPriority(6).
+		ForApplication("torrent").
+		Done().
 		Apply()
 
 	if err != nil {
-		log.Printf("Error applying PRIO qdisc: %v", err)
+		log.Printf("Error applying priority classes: %v", err)
 	} else {
-		fmt.Println("✓ PRIO qdisc configured successfully")
-		fmt.Println("  - Handle: 2:0")
-		fmt.Println("  - Bands: 3 (high, normal, low priority)")
-		fmt.Println("  - Priomap: Custom priority mapping")
+		fmt.Println("✓ Priority-based traffic classes configured successfully")
+		fmt.Println("  - High Priority: SSH traffic (priority 1)")
+		fmt.Println("  - Normal Priority: Web traffic (priority 4)")
+		fmt.Println("  - Low Priority: P2P traffic (priority 6)")
 	}
 	fmt.Println()
 
-	// Demo 3: Fair Queue CoDel (FQ_CODEL) for fair queuing with AQM
-	fmt.Println("=== Demo 3: Fair Queue CoDel (FQ_CODEL) ===")
-	fmt.Println("FQ_CODEL combines fair queuing with CoDel AQM for low latency")
+	// Demo 3: Bandwidth Shaping with Ceiling
+	fmt.Println("=== Demo 3: Bandwidth Shaping with Ceiling ===")
+	fmt.Println("Setting up traffic classes with guaranteed and maximum bandwidth")
 
-	err = tc.
-		FQCODELQdisc("3:0").
-		WithLimit(10240).
-		WithFlows(1024).
-		WithTarget(5000).     // 5ms target delay
-		WithInterval(100000). // 100ms interval
-		WithQuantum(1518).    // MTU + headers
-		WithECN(true).        // Enable ECN marking
+	tc3 := api.NetworkInterface(deviceName)
+	err = tc3.
+		WithHardLimitBandwidth("500Mbps").
+		CreateTrafficClass("Database").
+		WithGuaranteedBandwidth("150Mbps").
+		WithSoftLimitBandwidth("250Mbps").
+		WithPriority(2).
+		ForPort(3306, 5432).
+		Done().
+		CreateTrafficClass("Web Services").
+		WithGuaranteedBandwidth("200Mbps").
+		WithSoftLimitBandwidth("350Mbps").
+		WithPriority(3).
+		ForPort(80, 443, 8080).
+		Done().
 		Apply()
 
 	if err != nil {
-		log.Printf("Error applying FQ_CODEL qdisc: %v", err)
+		log.Printf("Error applying bandwidth shaping: %v", err)
 	} else {
-		fmt.Println("✓ FQ_CODEL qdisc configured successfully")
-		fmt.Println("  - Handle: 3:0")
-		fmt.Println("  - Limit: 10240 packets")
-		fmt.Println("  - Flows: 1024 queues")
-		fmt.Println("  - Target: 5ms")
-		fmt.Println("  - Interval: 100ms")
-		fmt.Println("  - Quantum: 1518 bytes")
-		fmt.Println("  - ECN: enabled")
+		fmt.Println("✓ Bandwidth shaping configured successfully")
+		fmt.Println("  - Database: 150Mbps guaranteed, 250Mbps ceiling")
+		fmt.Println("  - Web Services: 200Mbps guaranteed, 350Mbps ceiling")
+		fmt.Println("  - Borrowing: Enabled between classes")
 	}
 	fmt.Println()
 
-	// Demo 4: HTB with hierarchical classes (existing functionality)
-	fmt.Println("=== Demo 4: HTB with Hierarchical Classes ===")
-	fmt.Println("HTB provides hierarchical token bucket with borrowing")
+	// Demo 4: IP-based Traffic Classification
+	fmt.Println("=== Demo 4: IP-based Traffic Classification ===")
+	fmt.Println("Setting up traffic classes based on source/destination IPs")
 
-	err = tc.
-		HTBQdisc("4:0", "4:999").
-		HTBClass("4:0", "4:1", "parent", "100Mbps", "100Mbps").
-		HTBClass("4:1", "4:10", "high", "60Mbps", "80Mbps").
-		HTBClass("4:1", "4:20", "medium", "30Mbps", "50Mbps").
-		HTBClass("4:1", "4:30", "low", "10Mbps", "20Mbps").
+	tc4 := api.NetworkInterface(deviceName)
+	err = tc4.
+		WithHardLimitBandwidth("1Gbps").
+		CreateTrafficClass("Internal Traffic").
+		WithGuaranteedBandwidth("400Mbps").
+		WithSoftLimitBandwidth("600Mbps").
+		WithPriority(2).
+		ForSourceIPs("192.168.0.0/16", "10.0.0.0/8").
+		Done().
+		CreateTrafficClass("External Traffic").
+		WithGuaranteedBandwidth("300Mbps").
+		WithSoftLimitBandwidth("500Mbps").
+		WithPriority(4).
+		Done().
 		Apply()
 
 	if err != nil {
-		log.Printf("Error applying HTB hierarchy: %v", err)
+		log.Printf("Error applying IP-based classification: %v", err)
 	} else {
-		fmt.Println("✓ HTB hierarchy configured successfully")
-		fmt.Println("  - Root qdisc: 4:0 with default class 4:999")
-		fmt.Println("  - Parent class: 4:1 (100Mbps)")
-		fmt.Println("  - High priority: 4:10 (60Mbps, ceil 80Mbps)")
-		fmt.Println("  - Medium priority: 4:20 (30Mbps, ceil 50Mbps)")
-		fmt.Println("  - Low priority: 4:30 (10Mbps, ceil 20Mbps)")
+		fmt.Println("✓ IP-based traffic classification configured successfully")
+		fmt.Println("  - Internal Traffic: RFC1918 addresses (higher priority)")
+		fmt.Println("  - External Traffic: Public addresses (lower priority)")
+		fmt.Println("  - Bandwidth borrowing: Enabled")
 	}
 	fmt.Println()
 
@@ -124,35 +147,37 @@ func main() {
 	fmt.Println()
 
 	fmt.Println("Use Case 1: Home Internet Gateway")
-	fmt.Println("- Use TBF for simple bandwidth limiting on WAN interface")
-	fmt.Println("- Use PRIO for separating real-time traffic (VoIP, gaming)")
+	fmt.Println("- Set total bandwidth to match your ISP plan")
+	fmt.Println("- Prioritize real-time traffic (VoIP, gaming)")
 	fmt.Println()
 
 	fmt.Println("Use Case 2: Enterprise Network")
-	fmt.Println("- Use HTB for complex hierarchical bandwidth allocation")
-	fmt.Println("- Use FQ_CODEL for low-latency internal traffic")
+	fmt.Println("- Use hierarchical traffic classes for departments")
+	fmt.Println("- Guarantee minimum bandwidth for critical applications")
 	fmt.Println()
 
 	fmt.Println("Use Case 3: ISP Customer Management")
-	fmt.Println("- Use TBF for per-customer rate limiting")
-	fmt.Println("- Use HTB for service-level differentiation")
+	fmt.Println("- Set per-customer bandwidth limits")
+	fmt.Println("- Provide service-level differentiation")
 	fmt.Println()
 
 	fmt.Println("Use Case 4: Data Center")
-	fmt.Println("- Use FQ_CODEL for container/VM traffic isolation")
-	fmt.Println("- Use PRIO for network control traffic prioritization")
+	fmt.Println("- Isolate container/VM traffic with separate classes")
+	fmt.Println("- Prioritize network control traffic")
 	fmt.Println()
 
 	// Show configuration comparison
-	fmt.Println("=== Qdisc Type Comparison ===")
+	fmt.Println("=== Traffic Control Features ===")
 	fmt.Println()
 
-	fmt.Println("| Qdisc    | Use Case              | Complexity | Features                    |")
-	fmt.Println("|----------|----------------------|------------|------------------------------|")
-	fmt.Println("| TBF      | Simple rate limiting | Low        | Token bucket, burst          |")
-	fmt.Println("| PRIO     | Priority classes     | Low        | Static priorities            |")
-	fmt.Println("| HTB      | Hierarchical shaping | High       | Borrowing, guarantees        |")
-	fmt.Println("| FQ_CODEL | Fair queuing + AQM   | Medium     | Low latency, fairness        |")
+	fmt.Println("| Feature           | Description                      | Example Usage              |")
+	fmt.Println("|-------------------|----------------------------------|----------------------------|")
+	fmt.Println("| Guaranteed BW     | Minimum bandwidth allocation     | WithGuaranteedBandwidth()  |")
+	fmt.Println("| Maximum BW        | Bandwidth ceiling (burst)        | WithSoftLimitBandwidth()         |")
+	fmt.Println("| Priority          | Traffic prioritization (0-7)     | WithPriority()             |")
+	fmt.Println("| Port Filtering    | Match by TCP/UDP ports           | ForPort()                  |")
+	fmt.Println("| IP Filtering      | Match by source/dest IPs         | ForSourceIPs/ForDestIPs    |")
+	fmt.Println("| Protocol Match    | Match by protocol name           | ForProtocols()             |")
 	fmt.Println()
 
 	fmt.Println("=== Demo completed successfully! ===")
@@ -170,40 +195,58 @@ func main() {
 func ConfigureHomeGateway(tc *api.TrafficController, wanBandwidth string) error {
 	fmt.Println("Configuring home gateway traffic control...")
 
-	// Simple rate limiting on WAN interface with TBF
+	// Basic bandwidth limiting with prioritized traffic
 	err := tc.
-		TBFQdisc("1:0", wanBandwidth).
-		WithBuffer(32768).
+		WithHardLimitBandwidth(wanBandwidth).
+		CreateTrafficClass("VoIP").
+		WithGuaranteedBandwidth("1Mbps").
+		WithPriority(0).
+		ForPort(5060, 5061).
+		Done().
+		CreateTrafficClass("Gaming").
+		WithGuaranteedBandwidth("5Mbps").
+		WithPriority(1).
+		ForPort(3000, 4000).
+		Done().
+		CreateTrafficClass("Web").
+		WithGuaranteedBandwidth("10Mbps").
+		WithPriority(4).
+		ForPort(80, 443).
+		Done().
 		Apply()
 
 	if err != nil {
-		return fmt.Errorf("failed to configure WAN rate limiting: %w", err)
-	}
-
-	// Priority qdisc for LAN traffic separation
-	err = tc.
-		PRIOQdisc("2:0", 3).
-		Apply()
-
-	if err != nil {
-		return fmt.Errorf("failed to configure LAN prioritization: %w", err)
+		return fmt.Errorf("failed to configure home gateway traffic control: %w", err)
 	}
 
 	return nil
 }
 
-// ConfigureDataCenter sets up low-latency traffic control for data center
+// ConfigureDataCenter sets up traffic control for data center
 func ConfigureDataCenter(tc *api.TrafficController) error {
 	fmt.Println("Configuring data center traffic control...")
 
-	// FQ_CODEL for fair queuing and low latency
+	// High-performance traffic classes for data center
 	err := tc.
-		FQCODELQdisc("1:0").
-		WithLimit(20480).    // Higher limit for data center
-		WithFlows(2048).     // More flows for many connections
-		WithTarget(1000).    // 1ms target for low latency
-		WithInterval(50000). // 50ms interval
-		WithECN(true).       // Enable ECN for modern stacks
+		WithHardLimitBandwidth("10Gbps").
+		CreateTrafficClass("Database").
+		WithGuaranteedBandwidth("3Gbps").
+		WithSoftLimitBandwidth("5Gbps").
+		WithPriority(1).
+		ForPort(3306, 5432, 27017).
+		Done().
+		CreateTrafficClass("Application").
+		WithGuaranteedBandwidth("4Gbps").
+		WithSoftLimitBandwidth("7Gbps").
+		WithPriority(2).
+		ForPort(8080, 8443, 9000).
+		Done().
+		CreateTrafficClass("Storage").
+		WithGuaranteedBandwidth("2Gbps").
+		WithSoftLimitBandwidth("4Gbps").
+		WithPriority(3).
+		ForPort(2049, 445).
+		Done().
 		Apply()
 
 	return err
@@ -213,23 +256,27 @@ func ConfigureDataCenter(tc *api.TrafficController) error {
 func ConfigureISPCustomer(tc *api.TrafficController, customerPlan string) error {
 	fmt.Println("Configuring ISP customer traffic shaping...")
 
-	var rate, ceil string
+	var totalBW, guaranteedBW, maxBW string
 
 	switch customerPlan {
 	case "basic":
-		rate, ceil = "10Mbps", "15Mbps"
+		totalBW, guaranteedBW, maxBW = "10Mbps", "8Mbps", "12Mbps"
 	case "standard":
-		rate, ceil = "50Mbps", "75Mbps"
+		totalBW, guaranteedBW, maxBW = "50Mbps", "40Mbps", "60Mbps"
 	case "premium":
-		rate, ceil = "100Mbps", "150Mbps"
+		totalBW, guaranteedBW, maxBW = "100Mbps", "80Mbps", "120Mbps"
 	default:
 		return fmt.Errorf("unknown customer plan: %s", customerPlan)
 	}
 
-	// HTB for guaranteed rate with burst capability
+	// Customer traffic shaping with burst capability
 	err := tc.
-		HTBQdisc("1:0", "1:999").
-		HTBClass("1:0", "1:1", "customer", rate, ceil).
+		WithHardLimitBandwidth(totalBW).
+		CreateTrafficClass("Customer").
+		WithGuaranteedBandwidth(guaranteedBW).
+		WithSoftLimitBandwidth(maxBW).
+		WithPriority(4).
+		Done().
 		Apply()
 
 	return err

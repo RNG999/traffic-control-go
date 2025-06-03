@@ -11,27 +11,30 @@ import (
 
 func TestPrioritySettings(t *testing.T) {
 	t.Run("RequiredPriority", func(t *testing.T) {
-		controller := api.New("eth0")
-		controller.SetTotalBandwidth("1Gbps")
+		controller := api.NetworkInterface("eth0")
+		controller.WithHardLimitBandwidth("1Gbps")
 
 		// Test that missing priority causes an error
-		err := controller.CreateTrafficClass("no-priority").
+		controller.CreateTrafficClass("no-priority").
 			WithGuaranteedBandwidth("100Mbps").
 			// No priority set - should fail
-			Apply()
+			AddClass()
+
+		err := controller.Apply()
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "does not have a priority set")
 	})
 
 	t.Run("NumericPriorities", func(t *testing.T) {
-		controller := api.New("eth0")
-		controller.SetTotalBandwidth("1Gbps")
+		controller := api.NetworkInterface("eth0")
+		controller.WithHardLimitBandwidth("1Gbps")
 
 		// Test numeric priorities 0-7
 		for i := 0; i <= 7; i++ {
 			controller.CreateTrafficClass(fmt.Sprintf("priority_%d", i)).
 				WithGuaranteedBandwidth("100Mbps").
-				WithPriority(i)
+				WithPriority(i).
+				AddClass()
 		}
 
 		err := controller.Apply()
@@ -39,17 +42,19 @@ func TestPrioritySettings(t *testing.T) {
 	})
 
 	t.Run("PriorityBounds", func(t *testing.T) {
-		controller := api.New("eth0")
-		controller.SetTotalBandwidth("1Gbps")
+		controller := api.NetworkInterface("eth0")
+		controller.WithHardLimitBandwidth("1Gbps")
 
 		// Test that priorities are clamped to 0-7
 		controller.CreateTrafficClass("negative").
 			WithGuaranteedBandwidth("100Mbps").
-			WithPriority(-5) // Should become 0
+			WithPriority(-5). // Should become 0
+			AddClass()
 
 		controller.CreateTrafficClass("too_high").
 			WithGuaranteedBandwidth("100Mbps").
-			WithPriority(10) // Should become 7
+			WithPriority(10). // Should become 7
+			AddClass()
 
 		err := controller.Apply()
 		assert.NoError(t, err)
@@ -67,7 +72,7 @@ func TestConfigPriorities(t *testing.T) {
 			},
 		}
 
-		controller := api.New("eth0")
+		controller := api.NetworkInterface("eth0")
 		err := controller.ApplyConfig(config)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "does not have a priority set")
@@ -85,7 +90,7 @@ func TestConfigPriorities(t *testing.T) {
 			},
 		}
 
-		controller := api.New("eth0")
+		controller := api.NetworkInterface("eth0")
 		err := controller.ApplyConfig(config)
 		assert.NoError(t, err)
 	})

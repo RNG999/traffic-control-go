@@ -220,12 +220,12 @@ func (tc *TrafficController) createClassesFromConfig(classes []TrafficClassConfi
 
 		// Apply maximum bandwidth
 		if classConfig.Maximum != "" {
-			builder = builder.WithMaxBandwidth(classConfig.Maximum)
+			builder = builder.WithSoftLimitBandwidth(classConfig.Maximum)
 		} else if defaults.BurstRatio > 1.0 {
 			// Calculate burst based on guaranteed and ratio
 			guaranteed := valueobjects.MustParseBandwidth(classConfig.Guaranteed)
 			burst := fmt.Sprintf("%dMbps", int(float64(guaranteed.MegabitsPerSecond())*defaults.BurstRatio))
-			builder = builder.WithMaxBandwidth(burst)
+			builder = builder.WithSoftLimitBandwidth(burst)
 		}
 
 		// Apply priority - required field
@@ -322,7 +322,7 @@ func LoadAndApplyYAML(filename string, device string) error {
 		config.Device = device
 	}
 
-	tc := New(config.Device)
+	tc := NetworkInterface(config.Device)
 	return tc.ApplyConfig(config)
 }
 
@@ -337,7 +337,7 @@ func LoadAndApplyJSON(filename string, device string) error {
 		config.Device = device
 	}
 
-	tc := New(config.Device)
+	tc := NetworkInterface(config.Device)
 	return tc.ApplyConfig(config)
 }
 

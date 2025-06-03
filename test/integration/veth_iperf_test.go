@@ -59,14 +59,15 @@ func TestTrafficControlWithVethPair(t *testing.T) {
 	time.Sleep(2 * time.Second)
 
 	// Apply traffic control on veth0
-	tcController := api.New(veth0)
-	err = tcController.
-		SetTotalBandwidth("100mbit").
+	tcController := api.NetworkInterface(veth0)
+	tcController.WithHardLimitBandwidth("100mbit")
+	tcController.
 		CreateTrafficClass("limited").
 		WithGuaranteedBandwidth("10mbit").
 		WithPriority(4). // Normal priority
-		And().
-		Apply()
+		AddClass()
+
+	err = tcController.Apply()
 	require.NoError(t, err, "Failed to apply traffic control")
 
 	// Run iperf client

@@ -35,14 +35,15 @@ func TestBasicTCApplication(t *testing.T) {
 	require.NoError(t, err, "Failed to bring up interface")
 
 	// Apply traffic control
-	tcController := api.New(device)
-	err = tcController.
-		SetTotalBandwidth("100mbit").
+	tcController := api.NetworkInterface(device)
+	tcController.WithHardLimitBandwidth("100mbit")
+	tcController.
 		CreateTrafficClass("test").
 		WithGuaranteedBandwidth("50mbit").
 		WithPriority(4).
-		And().
-		Apply()
+		AddClass()
+
+	err = tcController.Apply()
 	require.NoError(t, err, "Failed to apply traffic control")
 
 	// Check if qdisc was created

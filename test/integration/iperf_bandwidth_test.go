@@ -88,14 +88,15 @@ func TestTrafficControlWithIperf3(t *testing.T) {
 			cleanupTC(t, device)
 
 			// Apply traffic control
-			tcController := api.New(device)
-			err := tcController.
-				SetTotalBandwidth(fmt.Sprintf("%dmbit", tc.limitMbps)).
+			tcController := api.NetworkInterface(device)
+			tcController.WithHardLimitBandwidth(fmt.Sprintf("%dmbit", tc.limitMbps))
+			tcController.
 				CreateTrafficClass("test_limit").
 				WithGuaranteedBandwidth(fmt.Sprintf("%dmbit", tc.limitMbps)).
 				WithPriority(4). // Normal priority
-				And().
-				Apply()
+				AddClass()
+
+			err := tcController.Apply()
 			require.NoError(t, err, "Failed to apply traffic control")
 
 			// Verify TC was applied
@@ -155,18 +156,20 @@ func TestTrafficControlPriority(t *testing.T) {
 	cleanupTC(t, device)
 
 	// Apply traffic control with priority classes
-	tcController := api.New(device)
-	err := tcController.
-		SetTotalBandwidth("20mbit").
+	tcController := api.NetworkInterface(device)
+	tcController.WithHardLimitBandwidth("20mbit")
+	tcController.
 		CreateTrafficClass("high_priority").
 		WithGuaranteedBandwidth("15mbit").
 		WithPriority(1).
-		And().
+		AddClass()
+	tcController.
 		CreateTrafficClass("low_priority").
 		WithGuaranteedBandwidth("5mbit").
 		WithPriority(7).
-		And().
-		Apply()
+		AddClass()
+
+	err := tcController.Apply()
 	require.NoError(t, err, "Failed to apply traffic control")
 
 	// Note: Full priority testing would require marking packets with different

@@ -16,22 +16,26 @@ import (
 func TestStatisticsIntegration(t *testing.T) {
 	t.Skip("Skipping statistics integration test - timing issues in CI")
 	// Create a traffic controller with mock adapter for testing
-	tc := api.New("eth0")
+	tc := api.NetworkInterface("eth0")
 
 	// Configure traffic control
-	err := tc.SetTotalBandwidth("10mbit").
+	tc.WithHardLimitBandwidth("10mbit")
+	tc.
 		CreateTrafficClass("web-traffic").
 		WithGuaranteedBandwidth("2mbit").
-		WithMaxBandwidth("5mbit").
+		WithSoftLimitBandwidth("5mbit").
 		WithPriority(1).
 		ForPort(80, 443).
-		And().
+		AddClass()
+	tc.
 		CreateTrafficClass("ssh-traffic").
 		WithGuaranteedBandwidth("1mbit").
-		WithMaxBandwidth("3mbit").
+		WithSoftLimitBandwidth("3mbit").
 		WithPriority(0).
 		ForPort(22).
-		Apply()
+		AddClass()
+
+	err := tc.Apply()
 
 	require.NoError(t, err)
 
@@ -152,7 +156,7 @@ func TestStatisticsIntegration(t *testing.T) {
 
 // TestStatisticsErrorHandling tests error scenarios
 func TestStatisticsErrorHandling(t *testing.T) {
-	tc := api.New("nonexistent")
+	tc := api.NetworkInterface("nonexistent")
 
 	// Test getting statistics for non-configured device
 	t.Run("NonExistentDevice", func(t *testing.T) {
@@ -181,15 +185,18 @@ func TestStatisticsErrorHandling(t *testing.T) {
 // TestStatisticsPerformance tests the performance characteristics
 func TestStatisticsPerformance(t *testing.T) {
 	t.Skip("Skipping statistics performance test - handler registration issues")
-	tc := api.New("eth0")
+	tc := api.NetworkInterface("eth0")
 
 	// Setup configuration
-	err := tc.SetTotalBandwidth("100mbit").
+	tc.WithHardLimitBandwidth("100mbit")
+	tc.
 		CreateTrafficClass("bulk").
 		WithGuaranteedBandwidth("10mbit").
-		WithMaxBandwidth("50mbit").
+		WithSoftLimitBandwidth("50mbit").
 		WithPriority(7).
-		Apply()
+		AddClass()
+
+	err := tc.Apply()
 	require.NoError(t, err)
 
 	setupMockStatistics(tc)
@@ -236,22 +243,26 @@ func setupMockStatistics(tc *api.TrafficController) {
 // TestStatisticsDataAccuracy tests that statistics accurately reflect the configuration
 func TestStatisticsDataAccuracy(t *testing.T) {
 	t.Skip("Skipping statistics data accuracy test - handler registration issues")
-	tc := api.New("eth0")
+	tc := api.NetworkInterface("eth0")
 
 	// Create a specific configuration
-	err := tc.SetTotalBandwidth("10mbit").
+	tc.WithHardLimitBandwidth("10mbit")
+	tc.
 		CreateTrafficClass("priority-traffic").
 		WithGuaranteedBandwidth("3mbit").
-		WithMaxBandwidth("7mbit").
+		WithSoftLimitBandwidth("7mbit").
 		WithPriority(1).
 		ForPort(22, 443).
-		And().
+		AddClass()
+	tc.
 		CreateTrafficClass("bulk-traffic").
 		WithGuaranteedBandwidth("2mbit").
-		WithMaxBandwidth("5mbit").
+		WithSoftLimitBandwidth("5mbit").
 		WithPriority(5).
 		ForPort(80).
-		Apply()
+		AddClass()
+
+	err := tc.Apply()
 	require.NoError(t, err)
 
 	setupMockStatistics(tc)

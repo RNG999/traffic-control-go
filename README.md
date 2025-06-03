@@ -15,8 +15,7 @@ This library provides an intuitive API for managing Linux Traffic Control, makin
 
 ## Features
 
-- **Improved Human-Readable API**: Clean, intuitive method chaining without redundant calls
-- **Dual API Design**: Classic API and Improved API for better developer experience
+- **Human-Readable API**: Clean, intuitive method chaining without redundant calls
 - **Type-Safe**: Leverages Go's type system to prevent configuration errors
 - **Event-Driven**: Built with CQRS and Event Sourcing for configuration history
 - **Multiple Qdiscs**: HTB, TBF, PRIO, FQ_CODEL with complete CQRS integration
@@ -27,12 +26,10 @@ This library provides an intuitive API for managing Linux Traffic Control, makin
 
 ## Quick Start
 
-### Improved API (Recommended)
-
 ```go
 import "github.com/rng999/traffic-control-go/api"
 
-// Create a traffic controller with the improved API
+// Create a traffic controller
 tc := api.NewImproved("eth0").
     TotalBandwidth("1Gbps")
 
@@ -45,31 +42,6 @@ tc.Class("Database").
 
 tc.Apply()
 ```
-
-### Classic API (Still Supported)
-
-```go
-import "github.com/rng999/traffic-control-go/api"
-
-// Classic API with And() calls
-controller := api.New("eth0").
-    SetTotalBandwidth("1Gbps")
-
-err := controller.
-    CreateTrafficClass("database").
-        WithGuaranteedBandwidth("100Mbps").
-        WithMaxBandwidth("200Mbps").
-        ForDestination("192.168.1.10").
-    Apply()
-```
-
-**Benefits of the Improved API:**
-- ✅ **No redundant And() calls** - cleaner method chaining
-- ✅ **Shorter method names** - `Guaranteed()` vs `WithGuaranteedBandwidth()`
-- ✅ **Natural flow** - configure controller first, then classes
-- ✅ **Variadic parameters** - `Ports(80, 443, 8080)` in one call
-- ✅ **Enhanced filtering** - IP ranges, protocols, multiple criteria
-- ✅ **Class reuse** - configure the same class incrementally
 
 Compare this to traditional TC commands:
 ```bash
@@ -87,7 +59,7 @@ This library focuses on providing a clean, intuitive API for Linux Traffic Contr
 - **Domain Entities**: Qdiscs, Classes, Filters as first-class objects
 - **Event Sourcing**: Track all configuration changes
 - **Netlink Integration**: Direct kernel communication for TC operations
-- **Multiple API Styles**: Chain API for programmatic use and Structured Configuration API for YAML/JSON configs
+- **Flexible Configuration**: Chain API for programmatic use and Structured Configuration API for YAML/JSON configs
 - **Structured Logging**: Comprehensive logging system with context-aware, structured logging built on Zap
 
 ## Installation

@@ -1,14 +1,13 @@
 # Traffic Control Go
 
-[![Test](https://github.com/rng999/traffic-control-go/actions/workflows/test.yml/badge.svg)](https://github.com/rng999/traffic-control-go/actions/workflows/test.yml)
-[![Build](https://github.com/rng999/traffic-control-go/actions/workflows/build.yml/badge.svg)](https://github.com/rng999/traffic-control-go/actions/workflows/build.yml)
-[![codecov](https://codecov.io/gh/rng999/traffic-control-go/branch/main/graph/badge.svg)](https://codecov.io/gh/rng999/traffic-control-go)
-[![Go Report Card](https://goreportcard.com/badge/github.com/rng999/traffic-control-go)](https://goreportcard.com/report/github.com/rng999/traffic-control-go)
-[![Go Reference](https://pkg.go.dev/badge/github.com/rng999/traffic-control-go.svg)](https://pkg.go.dev/github.com/rng999/traffic-control-go)
+[![CI](https://github.com/RNG999/traffic-control-go/actions/workflows/ci.yml/badge.svg)](https://github.com/RNG999/traffic-control-go/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/RNG999/traffic-control-go/branch/main/graph/badge.svg)](https://codecov.io/gh/RNG999/traffic-control-go)
+[![Go Report Card](https://goreportcard.com/badge/github.com/RNG999/traffic-control-go)](https://goreportcard.com/report/github.com/RNG999/traffic-control-go)
+[![Go Reference](https://pkg.go.dev/badge/github.com/RNG999/traffic-control-go.svg)](https://pkg.go.dev/github.com/RNG999/traffic-control-go)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Release](https://img.shields.io/github/release/rng999/traffic-control-go.svg)](https://github.com/rng999/traffic-control-go/releases/latest)
+[![Release](https://img.shields.io/github/release/RNG999/traffic-control-go.svg)](https://github.com/RNG999/traffic-control-go/releases/latest)
 
-A human-readable Go library for Linux Traffic Control (TC) - **v0.1.0 Released! Unified Date-based Versioning**
+A human-readable Go library for Linux Traffic Control (TC)
 
 ## Overview
 
@@ -16,25 +15,21 @@ This library provides an intuitive API for managing Linux Traffic Control, makin
 
 ## Features
 
-- **Improved Human-Readable API**: Clean, intuitive method chaining without redundant calls
-- **Dual API Design**: Classic API (v0.1.0) and Improved API (v0.2.0+) for better developer experience
+- **Human-Readable API**: Clean, intuitive method chaining without redundant calls
 - **Type-Safe**: Leverages Go's type system to prevent configuration errors
 - **Event-Driven**: Built with CQRS and Event Sourcing for configuration history
 - **Multiple Qdiscs**: HTB, TBF, PRIO, FQ_CODEL with complete CQRS integration
 - **Event Sourcing**: SQLite-based persistent event store for configuration history
 - **Statistics**: Real-time traffic monitoring and metrics collection
-- **CLI Tool**: Standalone binary for command-line traffic control management
 - **Well-Tested**: Extensive unit and integration tests with iperf3
-- **CI/CD Pipeline**: Fully automated testing and release workflows
+- **Production Ready**: Battle-tested API for enterprise applications
 
 ## Quick Start
-
-### Improved API (Recommended)
 
 ```go
 import "github.com/rng999/traffic-control-go/api"
 
-// Create a traffic controller with the improved API
+// Create a traffic controller
 tc := api.NewImproved("eth0").
     TotalBandwidth("1Gbps")
 
@@ -47,31 +42,6 @@ tc.Class("Database").
 
 tc.Apply()
 ```
-
-### Classic API (v0.1.0 - Still Supported)
-
-```go
-import "github.com/rng999/traffic-control-go/api"
-
-// Classic API with And() calls
-controller := api.New("eth0").
-    SetTotalBandwidth("1Gbps")
-
-err := controller.
-    CreateTrafficClass("database").
-        WithGuaranteedBandwidth("100Mbps").
-        WithMaxBandwidth("200Mbps").
-        ForDestination("192.168.1.10").
-    Apply()
-```
-
-**Benefits of the Improved API:**
-- ✅ **No redundant And() calls** - cleaner method chaining
-- ✅ **Shorter method names** - `Guaranteed()` vs `WithGuaranteedBandwidth()`
-- ✅ **Natural flow** - configure controller first, then classes
-- ✅ **Variadic parameters** - `Ports(80, 443, 8080)` in one call
-- ✅ **Enhanced filtering** - IP ranges, protocols, multiple criteria
-- ✅ **Class reuse** - configure the same class incrementally
 
 Compare this to traditional TC commands:
 ```bash
@@ -89,7 +59,7 @@ This library focuses on providing a clean, intuitive API for Linux Traffic Contr
 - **Domain Entities**: Qdiscs, Classes, Filters as first-class objects
 - **Event Sourcing**: Track all configuration changes
 - **Netlink Integration**: Direct kernel communication for TC operations
-- **Multiple API Styles**: Chain API for programmatic use and Structured Configuration API for YAML/JSON configs
+- **Flexible Configuration**: Chain API for programmatic use and Structured Configuration API for YAML/JSON configs
 - **Structured Logging**: Comprehensive logging system with context-aware, structured logging built on Zap
 
 ## Installation
@@ -265,8 +235,6 @@ logger.Info("Traffic control operation started")
 - [x] Extended Qdisc Support (HTB, TBF, PRIO, FQ_CODEL)
 - [x] SQLite Event Store for persistent storage
 - [x] Statistics Collection and monitoring
-- [x] Standalone CLI Binary (traffic-control command)
-- [x] GoReleaser & Release Please for automated releases
 
 ### v0.2.0 (In Development)
 - [x] **Improved API Design** - Clean method chaining without redundant And() calls
@@ -322,32 +290,22 @@ Apache License 2.0
 - Root privileges for integration tests
 - iperf3 installed for integration tests
 
-### Quick Start
+### Development Workflow
 ```bash
-# Set up development environment
-make dev-setup
+# Clone the repository
+git clone https://github.com/rng999/traffic-control-go
+cd traffic-control-go
 
-# Run all tests and checks
+# Run tests
+make test-unit          # Unit tests (no root required)
+sudo make test-integration  # Integration tests (requires root)
+
+# Format and lint
+make fmt
+make lint
+
+# Run all quality checks
 make check
-
-# Build for all platforms
-make build-all
-```
-
-### Available Make Targets
-```bash
-make help           # Show all available targets
-make build          # Build both binaries (traffic-control, tcctl)
-make test           # Run all tests
-make clean          # Clean build artifacts
-make install        # Install binaries to system
-make dev            # Set up development environment
-make fmt            # Format code
-make lint           # Run basic linting
-make check          # Run all quality checks
-make version        # Show current version
-make release-simple # Simple release (manual)
-make release-goreleaser # Release with GoReleaser
 ```
 
 ## Testing
@@ -417,7 +375,7 @@ For detailed logging documentation, see [docs/logging.md](docs/logging.md).
 
 ## CI/CD
 
-This project uses GitHub Actions for continuous integration and deployment:
+This project uses GitHub Actions for continuous integration:
 
 ### Pull Request Workflow
 - **Test Suite**: Runs on Go 1.21, 1.22, and 1.23
@@ -427,29 +385,9 @@ This project uses GitHub Actions for continuous integration and deployment:
 - **Security**: Gosec security scanner
 - **Coverage**: Codecov integration with detailed reports
 
-### Release Workflow
-- **Multi-platform Builds**: Linux, macOS, Windows (amd64/arm64) via GoReleaser
-- **Automated Versioning**: Release Please for semantic versioning
-- **GitHub Releases**: Automated releases with binary attachments
-- **Version v0.1.0**: First feature-complete release ready!
-
-### CLI Tool Usage
-```bash
-# Install the CLI tool
-make install
-
-# Basic traffic shaping with TBF
-sudo traffic-control tbf eth0 1:0 100Mbps
-
-# Priority scheduling with PRIO
-sudo traffic-control prio eth0 1:0 3
-
-# Fair queuing with FQ_CODEL
-sudo traffic-control fq_codel eth0 1:0 --target 1000 --ecn
-
-# Show statistics
-sudo traffic-control stats eth0
-
-# Show version
-traffic-control --version
-```
+### Quality Assurance
+- Comprehensive unit tests for all components
+- Integration tests with real network interfaces (veth pairs)
+- Bandwidth validation tests using iperf3
+- Event sourcing and CQRS pattern validation
+- Statistics collection accuracy tests

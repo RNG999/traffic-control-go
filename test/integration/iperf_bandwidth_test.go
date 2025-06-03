@@ -24,8 +24,8 @@ func TestTrafficControlWithIperf3(t *testing.T) {
 		t.Skip("Skipping iperf3 test in short mode")
 	}
 
-	// Check if running as root
-	if os.Geteuid() != 0 {
+	// Check if running as root (skip this check in CI)
+	if os.Getenv("CI") != "true" && os.Geteuid() != 0 {
 		t.Skip("Test requires root privileges")
 	}
 
@@ -93,8 +93,7 @@ func TestTrafficControlWithIperf3(t *testing.T) {
 			tcController.
 				CreateTrafficClass("test_limit").
 				WithGuaranteedBandwidth(fmt.Sprintf("%dmbit", tc.limitMbps)).
-				WithPriority(4). // Normal priority
-				AddClass()
+				WithPriority(4) // Normal priority
 
 			err := tcController.Apply()
 			require.NoError(t, err, "Failed to apply traffic control")
@@ -142,7 +141,7 @@ func TestTrafficControlPriority(t *testing.T) {
 		t.Skip("Skipping iperf3 test in short mode")
 	}
 
-	if os.Geteuid() != 0 {
+	if os.Getenv("CI") != "true" && os.Geteuid() != 0 {
 		t.Skip("Test requires root privileges")
 	}
 
@@ -161,20 +160,18 @@ func TestTrafficControlPriority(t *testing.T) {
 	tcController.
 		CreateTrafficClass("high_priority").
 		WithGuaranteedBandwidth("15mbit").
-		WithPriority(1).
-		AddClass()
+		WithPriority(1)
 	tcController.
 		CreateTrafficClass("low_priority").
 		WithGuaranteedBandwidth("5mbit").
-		WithPriority(7).
-		AddClass()
+		WithPriority(7)
 
 	err := tcController.Apply()
 	require.NoError(t, err, "Failed to apply traffic control")
 
 	// Note: Full priority testing would require marking packets with different
-	// priorities and running multiple iperf3 streams simultaneously.
-	// This is a simplified test that verifies the configuration applies successfully.
+	// priorities and running multiple iperf3 streams simultaneously
+	// This is a simplified test that verifies the configuration applies successfully
 
 	// Clean up
 	cleanupTC(t, device)

@@ -194,6 +194,9 @@ func (tc *TrafficController) ApplyConfig(config *TrafficControlConfig) error {
 		return err
 	}
 
+	// Finalize pending classes before applying rules
+	tc.finalizePendingClasses()
+
 	// Apply rules
 	for i := range config.Rules {
 		if err := tc.createRuleFromConfig(&config.Rules[i]); err != nil {
@@ -220,22 +223,22 @@ func (tc *TrafficController) createClassesFromConfig(classes []TrafficClassConfi
 
 		// Apply maximum bandwidth
 		if classConfig.Maximum != "" {
-			builder = builder.WithSoftLimitBandwidth(classConfig.Maximum)
+			builder.WithSoftLimitBandwidth(classConfig.Maximum)
 		} else if defaults.BurstRatio > 1.0 {
 			// Calculate burst based on guaranteed and ratio
 			guaranteed := valueobjects.MustParseBandwidth(classConfig.Guaranteed)
 			burst := fmt.Sprintf("%dMbps", int(float64(guaranteed.MegabitsPerSecond())*defaults.BurstRatio))
-			builder = builder.WithSoftLimitBandwidth(burst)
+			builder.WithSoftLimitBandwidth(burst)
 		}
 
 		// Apply priority - required field
 		if classConfig.Priority != nil {
-			builder = builder.WithPriority(*classConfig.Priority)
+			builder.WithPriority(*classConfig.Priority)
 		}
 		// Note: validation will catch missing priority later
 
-		// Store the builder
-		tc.classes = append(tc.classes, builder.class)
+		// The builder is automatically added to pendingBuilders in CreateTrafficClass
+		// No need to manually append to tc.classes here
 
 		// Create children
 		if len(classConfig.Children) > 0 {
@@ -298,13 +301,6 @@ func (tc *TrafficController) createRuleFromConfig(rule *TrafficRuleConfig) error
 		targetClass.filters = append(targetClass.filters, Filter{
 			filterType: ProtocolFilter,
 			value:      match.Protocol,
-		})
-	}
-
-	for i := range match.Application {
-		targetClass.filters = append(targetClass.filters, Filter{
-			filterType: ApplicationFilter,
-			value:      match.Application[i],
 		})
 	}
 

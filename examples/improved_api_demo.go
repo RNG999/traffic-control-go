@@ -37,8 +37,7 @@ func improvedExample() {
 		WithGuaranteedBandwidth("300Mbps").
 		WithSoftLimitBandwidth("500Mbps").
 		WithPriority(4).
-		ForPort(80, 443, 8080, 8443).
-		Done()
+		ForPort(80, 443, 8080, 8443)
 
 	// Configure database class
 	tc.CreateTrafficClass("Database").
@@ -46,8 +45,7 @@ func improvedExample() {
 		WithSoftLimitBandwidth("400Mbps").
 		WithPriority(2).
 		ForPort(3306, 5432, 1521).
-		ForDestinationIPs("192.168.1.10", "192.168.1.11").
-		Done()
+		ForDestinationIPs("192.168.1.10", "192.168.1.11")
 
 	// Configure management class
 	tc.CreateTrafficClass("Management").
@@ -55,10 +53,7 @@ func improvedExample() {
 		WithSoftLimitBandwidth("100Mbps").
 		WithPriority(1).
 		ForPort(22, 3389, 5900).
-		ForProtocols("ssh", "rdp", "vnc").
-		Done()
-
-	fmt.Printf("Configuration: Applied successfully\n")
+		ForProtocols("ssh", "rdp", "vnc")
 
 	// Apply configuration
 	if err := tc.Apply(); err != nil {

@@ -15,11 +15,12 @@ import (
 
 // TrafficController is the main entry point for traffic control configuration
 type TrafficController struct {
-	deviceName     string
-	totalBandwidth valueobjects.Bandwidth
-	classes        []*TrafficClass
-	logger         logging.Logger
-	service        *application.TrafficControlService
+	deviceName      string
+	totalBandwidth  valueobjects.Bandwidth
+	classes         []*TrafficClass
+	pendingBuilders []*TrafficClassBuilder
+	logger          logging.Logger
+	service         *application.TrafficControlService
 }
 
 // TrafficClass represents a traffic classification with its rules
@@ -49,7 +50,6 @@ const (
 	SourcePortFilter
 	DestinationPortFilter
 	ProtocolFilter
-	ApplicationFilter
 )
 
 // NetworkInterface creates a new traffic controller for a network interface
@@ -96,16 +96,22 @@ func (tc *TrafficController) CreateTrafficClass(name string) *TrafficClassBuilde
 		// priority is nil by default - must be set explicitly
 	}
 
-	return &TrafficClassBuilder{
+	builder := &TrafficClassBuilder{
 		controller: tc,
 		class:      class,
 	}
+
+	// Add to pending builders list for automatic registration on Apply()
+	tc.pendingBuilders = append(tc.pendingBuilders, builder)
+
+	return builder
 }
 
 // TrafficClassBuilder provides a fluent interface for building traffic classes
 type TrafficClassBuilder struct {
 	controller *TrafficController
 	class      *TrafficClass
+	finalized  bool
 }
 
 // WithGuaranteedBandwidth sets the minimum guaranteed bandwidth
@@ -178,17 +184,6 @@ func (b *TrafficClassBuilder) ForPort(ports ...int) *TrafficClassBuilder {
 	return b
 }
 
-// ForApplication adds an application-based filter (predefined port sets)
-func (b *TrafficClassBuilder) ForApplication(apps ...string) *TrafficClassBuilder {
-	for _, app := range apps {
-		b.class.filters = append(b.class.filters, Filter{
-			filterType: ApplicationFilter,
-			value:      app,
-		})
-	}
-	return b
-}
-
 // ForProtocols adds protocol filters
 func (b *TrafficClassBuilder) ForProtocols(protocols ...string) *TrafficClassBuilder {
 	for _, protocol := range protocols {
@@ -200,50 +195,9 @@ func (b *TrafficClassBuilder) ForProtocols(protocols ...string) *TrafficClassBui
 	return b
 }
 
-// AddClass completes the class configuration and adds it to the traffic controller
-func (b *TrafficClassBuilder) AddClass() *TrafficController {
-	b.controller.classes = append(b.controller.classes, b.class)
-	return b.controller
-}
-
 // Apply completes the builder and adds the class to the controller
 func (b *TrafficClassBuilder) Apply() error {
-	b.controller.classes = append(b.controller.classes, b.class)
 	return b.controller.Apply()
-}
-
-// PriorityGroupBuilder builds priority-based traffic groups
-type PriorityGroupBuilder struct {
-	controller *TrafficController //nolint:unused
-	priority   Priority           //nolint:unused
-	filters    []Filter
-}
-
-// ForSSH adds SSH traffic to this priority group
-func (p *PriorityGroupBuilder) ForSSH() *PriorityGroupBuilder {
-	p.filters = append(p.filters, Filter{
-		filterType: DestinationPortFilter,
-		value:      22,
-	})
-	return p
-}
-
-// ForHTTP adds HTTP traffic to this priority group
-func (p *PriorityGroupBuilder) ForHTTP() *PriorityGroupBuilder {
-	p.filters = append(p.filters, Filter{
-		filterType: DestinationPortFilter,
-		value:      80,
-	})
-	return p
-}
-
-// ForHTTPS adds HTTPS traffic to this priority group
-func (p *PriorityGroupBuilder) ForHTTPS() *PriorityGroupBuilder {
-	p.filters = append(p.filters, Filter{
-		filterType: DestinationPortFilter,
-		value:      443,
-	})
-	return p
 }
 
 // CreateHTBQdisc creates an HTB (Hierarchical Token Bucket) qdisc with fluent interface
@@ -434,8 +388,22 @@ func (b *FQCODELQdiscBuilder) Apply() error {
 	return b.controller.service.CreateFQCODELQdisc(ctx, b.controller.deviceName, b.handle, b.limit, b.flows, b.target, b.interval, b.quantum, b.ecn)
 }
 
+// finalizePendingClasses automatically registers all pending class builders
+func (tc *TrafficController) finalizePendingClasses() {
+	for _, builder := range tc.pendingBuilders {
+		if !builder.finalized {
+			tc.classes = append(tc.classes, builder.class)
+			builder.finalized = true
+		}
+	}
+	tc.pendingBuilders = nil // Clear pending builders
+}
+
 // Apply applies the configuration
 func (tc *TrafficController) Apply() error {
+	// Finalize any pending class builders
+	tc.finalizePendingClasses()
+
 	tc.logger.Info("Starting traffic control configuration application",
 		logging.String("operation", logging.OperationApplyConfig),
 		logging.Int("class_count", len(tc.classes)),
@@ -574,20 +542,6 @@ func (tc *TrafficController) buildFilterMatch(filter Filter) map[string]string {
 	case ProtocolFilter:
 		if proto, ok := filter.value.(string); ok {
 			match["protocol"] = proto
-		}
-	case ApplicationFilter:
-		// Convert known applications to port ranges
-		if app, ok := filter.value.(string); ok {
-			switch app {
-			case "ssh":
-				match["dst_port"] = "22"
-			case "http":
-				match["dst_port"] = "80"
-			case "https":
-				match["dst_port"] = "443"
-			case "dns":
-				match["dst_port"] = "53"
-			}
 		}
 	}
 

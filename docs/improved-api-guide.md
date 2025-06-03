@@ -1,37 +1,37 @@
-# API Guide - Human-Readable Traffic Control
+# API Guide - Traffic Control Library
 
-This document describes the current API design for traffic-control-go that provides clear, human-readable method names and bandwidth concepts.
+This document describes the current API design for traffic-control-go that provides a fluent interface for configuring Linux Traffic Control.
 
 ## Overview
 
-The API uses descriptive method names and clear bandwidth concepts to make traffic control configuration intuitive for developers.
+The API uses method chaining and builder patterns to make traffic control configuration intuitive and type-safe for developers.
 
 ## Current API Design
 
 ### Bandwidth Concepts
-- **Hard Limit**: Physical bandwidth limit (cannot be exceeded)
-- **Soft Limit**: Policy bandwidth limit (can be exceeded through borrowing)
-- **Guaranteed**: Minimum bandwidth reservation for a class
+- **Total Bandwidth**: Interface bandwidth limit (`WithHardLimitBandwidth`)
+- **Guaranteed**: Minimum bandwidth reservation for a class (`WithGuaranteedBandwidth`)
+- **Soft Limit**: Maximum bandwidth a class can use (`WithSoftLimitBandwidth`)
 
 ### API Example
 ```go
 // Create controller for network interface
 tc := api.NetworkInterface("eth0").
-    WithHardLimitBandwidth("1Gbps")  // Physical interface limit
+    WithHardLimitBandwidth("1Gbps")  // Interface bandwidth limit
 
 // Configure web services class
 tc.CreateTrafficClass("Web Services").
     WithGuaranteedBandwidth("300Mbps").     // Minimum guarantee
-    WithSoftLimitBandwidth("500Mbps").      // Policy limit (borrowing allowed)
-    WithPriority(4).                        // Normal priority
-    ForPort(80, 443).                       // HTTP/HTTPS traffic
-    AddClass()                              // Complete class configuration
+    WithSoftLimitBandwidth("500Mbps").      // Maximum bandwidth
+    WithPriority(4).                        // Normal priority (0-7)
+    ForPort(80, 443, 8080, 8443)           // HTTP/HTTPS traffic
 
 // Configure database class
 tc.CreateTrafficClass("Database").
     WithGuaranteedBandwidth("200Mbps").
     WithSoftLimitBandwidth("400Mbps").
     WithPriority(2).                        // High priority
+    ForDestinationIPs("192.168.1.10").     // Database server
     ForPort(3306, 5432).                    // MySQL, PostgreSQL
     AddClass()
 
@@ -55,7 +55,7 @@ tc.Apply()
 
 ### 3. Natural Configuration Flow
 - Configure the controller: `api.NetworkInterface("eth0").WithHardLimitBandwidth("1Gbps")`
-- Configure each class: `tc.CreateTrafficClass("name").WithGuaranteedBandwidth().WithPriority().AddClass()`
+- Configure each class: `tc.CreateTrafficClass("name").WithGuaranteedBandwidth().WithPriority()`
 - Apply configuration: `tc.Apply()`
 
 ### 4. Enhanced Filtering Options
@@ -169,12 +169,6 @@ builder.ForProtocols("ssh", "http", "https")
 builder.ForProtocols("dns", "ntp")
 ```
 
-#### `AddClass() *TrafficController`
-Completes the class configuration and adds it to the controller.
-
-```go
-builder.AddClass()  // Finalizes and adds the class
-```
 
 ## Usage Examples
 
@@ -202,40 +196,44 @@ tc.Apply()
 
 ### Complex Server Infrastructure
 ```go
-tc := api.NewImproved("bond0").
-    TotalBandwidth("40Gbps")
+tc := api.NetworkInterface("bond0").
+    WithHardLimitBandwidth("40Gbps")
 
 // Web tier
-tc.Class("Web Tier").
-    Guaranteed("15Gbps").
-    BurstTo("25Gbps").
-    Priority(2).
-    Ports(80, 443).
-    SourceIPs("10.0.1.0/24")
+tc.CreateTrafficClass("Web Tier").
+    WithGuaranteedBandwidth("15Gbps").
+    WithSoftLimitBandwidth("25Gbps").
+    WithPriority(2).
+    ForPort(80, 443).
+    ForSourceIPs("10.0.1.0/24").
+    AddClass()
 
 // Application tier
-tc.Class("App Tier").
-    Guaranteed("10Gbps").
-    BurstTo("20Gbps").
-    Priority(1).
-    Ports(8080, 8443, 9000).
-    SourceIPs("10.0.2.0/24", "10.0.3.0/24")
+tc.CreateTrafficClass("App Tier").
+    WithGuaranteedBandwidth("10Gbps").
+    WithSoftLimitBandwidth("20Gbps").
+    WithPriority(1).
+    ForPort(8080, 8443, 9000).
+    ForSourceIPs("10.0.2.0/24", "10.0.3.0/24").
+    AddClass()
 
 // Database tier
-tc.Class("DB Tier").
-    Guaranteed("8Gbps").
-    BurstTo("15Gbps").
-    Priority(0).
-    Ports(3306, 5432, 27017, 6379).
-    SourceIPs("10.0.4.0/24")
+tc.CreateTrafficClass("DB Tier").
+    WithGuaranteedBandwidth("8Gbps").
+    WithSoftLimitBandwidth("15Gbps").
+    WithPriority(0).
+    ForPort(3306, 5432, 27017, 6379).
+    ForSourceIPs("10.0.4.0/24").
+    AddClass()
 
 // Management
-tc.Class("Management").
-    Guaranteed("2Gbps").
-    BurstTo("5Gbps").
-    Priority(3).
-    Ports(22, 161, 162).
-    SourceIPs("10.0.100.0/24")
+tc.CreateTrafficClass("Management").
+    WithGuaranteedBandwidth("2Gbps").
+    WithSoftLimitBandwidth("5Gbps").
+    WithPriority(3).
+    ForPort(22, 161, 162).
+    ForSourceIPs("10.0.100.0/24").
+    AddClass()
 
 tc.Apply()
 ```
@@ -285,20 +283,26 @@ if err := tc.Apply(); err != nil {
 }
 ```
 
-## Migration from v0.1.0 API
+## API Methods Reference
 
-To migrate from the old API to the improved API:
+The current API provides these core methods:
 
-1. **Change the constructor**: `api.New()` → `api.NewImproved()`
-2. **Remove `And()` calls**: Delete all `.And()` method calls
-3. **Update method names**:
-   - `SetTotalBandwidth()` → `TotalBandwidth()`
-   - `CreateTrafficClass()` → `Class()`
-   - `WithGuaranteedBandwidth()` → `Guaranteed()`
-   - `WithBurstableTo()` → `BurstTo()`
-   - `ForPort()` → `Ports()`
-4. **Update structure**: Separate class configurations instead of chaining
-5. **Use variadic parameters**: `Ports(80, 443)` instead of multiple `ForPort()` calls
+### Controller Creation
+- `api.NetworkInterface(device)` - Create traffic controller
+- `.WithHardLimitBandwidth(bandwidth)` - Set interface bandwidth limit
+- `.Apply()` - Apply configuration to system
+
+### Class Configuration  
+- `.CreateTrafficClass(name)` - Start new traffic class
+- `.WithGuaranteedBandwidth(bandwidth)` - Set minimum bandwidth
+- `.WithSoftLimitBandwidth(bandwidth)` - Set maximum bandwidth
+- `.WithPriority(priority)` - Set priority (0-7, 0=highest)
+
+### Traffic Filtering
+- `.ForPort(ports...)` - Match by destination ports
+- `.ForSourceIPs(ips...)` - Match by source IP addresses
+- `.ForDestinationIPs(ips...)` - Match by destination IP addresses
+- `.ForProtocols(protocols...)` - Match by protocols
 
 ## Benefits
 

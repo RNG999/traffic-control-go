@@ -35,20 +35,21 @@ func main() {
 func basicExample() {
 	controller := api.NetworkInterface("eth0")
 
-	err := controller.
-		WithHardLimitBandwidth("100Mbps").
-		CreateTrafficClass("Web Services").
+	controller.WithHardLimitBandwidth("100Mbps")
+	
+	controller.CreateTrafficClass("Web Services").
 		WithGuaranteedBandwidth("30Mbps").
 		WithSoftLimitBandwidth("60Mbps").
 		WithPriority(4). // Normal priority
-		ForPort(80, 443).
-		Done().
-		CreateTrafficClass("SSH Management").
+		ForPort(80, 443)
+		
+	controller.CreateTrafficClass("SSH Management").
 		WithGuaranteedBandwidth("5Mbps").
 		WithSoftLimitBandwidth("10Mbps").
 		WithPriority(1). // High priority
-		ForPort(22).
-		Apply()
+		ForPort(22)
+
+	err := controller.Apply()
 
 	if err != nil {
 		log.Printf("Configuration error: %v", err)
@@ -60,27 +61,24 @@ func basicExample() {
 func priorityExample() {
 	controller := api.NetworkInterface("eth0")
 
-	// Configure priority groups separately
 	controller.WithHardLimitBandwidth("1Gbps")
 
-	// This is a conceptual example - the actual implementation would need
-	// proper integration between priority groups and the controller
-	err := controller.
-		CreateTrafficClass("High Priority").
+	controller.CreateTrafficClass("High Priority").
 		WithGuaranteedBandwidth("300Mbps").
 		WithPriority(1). // High priority
-		ForPort(22).     // SSH
-		Done().
-		CreateTrafficClass("Medium Priority").
+		ForPort(22)      // SSH
+		
+	controller.CreateTrafficClass("Medium Priority").
 		WithGuaranteedBandwidth("500Mbps").
 		WithPriority(4).  // Medium priority
-		ForPort(80, 443). // HTTP/HTTPS
-		Done().
-		CreateTrafficClass("Low Priority").
+		ForPort(80, 443)  // HTTP/HTTPS
+		
+	controller.CreateTrafficClass("Low Priority").
 		WithGuaranteedBandwidth("200Mbps").
 		WithPriority(6). // Low priority
-		ForApplication("torrent").
-		Apply()
+		ForPort(6881, 6882, 6883, 6884, 6885) // BitTorrent ports
+
+	err := controller.Apply()
 
 	if err != nil {
 		log.Printf("Configuration error: %v", err)

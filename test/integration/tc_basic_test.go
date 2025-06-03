@@ -15,7 +15,7 @@ import (
 
 // TestBasicTCApplication tests if TC rules are actually applied
 func TestBasicTCApplication(t *testing.T) {
-	if os.Geteuid() != 0 {
+	if os.Getenv("CI") != "true" && os.Geteuid() != 0 {
 		t.Skip("Test requires root privileges")
 	}
 
@@ -40,8 +40,7 @@ func TestBasicTCApplication(t *testing.T) {
 	tcController.
 		CreateTrafficClass("test").
 		WithGuaranteedBandwidth("50mbit").
-		WithPriority(4).
-		AddClass()
+		WithPriority(4)
 
 	err = tcController.Apply()
 	require.NoError(t, err, "Failed to apply traffic control")

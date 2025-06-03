@@ -191,7 +191,7 @@ func TestApplyConfig(t *testing.T) {
 		config := &api.TrafficControlConfig{
 			Version:   "1.0",
 			Device:    "eth0",
-			Bandwidth: "100Mbps",
+			Bandwidth: "200Mbps",
 			Classes: []api.TrafficClassConfig{
 				{
 					Name:       "high",
@@ -296,7 +296,7 @@ func TestConfigurationExamples(t *testing.T) {
 		config := &api.TrafficControlConfig{
 			Version:   "1.0",
 			Device:    "eth0",
-			Bandwidth: "100Mbps",
+			Bandwidth: "200Mbps",
 			Classes: []api.TrafficClassConfig{
 				{Name: "streaming", Guaranteed: "40Mbps", Priority: &[]int{1}[0]},
 				{Name: "gaming", Guaranteed: "30Mbps", Priority: &[]int{1}[0]},

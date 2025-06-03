@@ -16,9 +16,8 @@ func TestPrioritySettings(t *testing.T) {
 
 		// Test that missing priority causes an error
 		controller.CreateTrafficClass("no-priority").
-			WithGuaranteedBandwidth("100Mbps").
+			WithGuaranteedBandwidth("100Mbps")
 			// No priority set - should fail
-			AddClass()
 
 		err := controller.Apply()
 		assert.Error(t, err)
@@ -33,8 +32,7 @@ func TestPrioritySettings(t *testing.T) {
 		for i := 0; i <= 7; i++ {
 			controller.CreateTrafficClass(fmt.Sprintf("priority_%d", i)).
 				WithGuaranteedBandwidth("100Mbps").
-				WithPriority(i).
-				AddClass()
+				WithPriority(i)
 		}
 
 		err := controller.Apply()
@@ -48,13 +46,11 @@ func TestPrioritySettings(t *testing.T) {
 		// Test that priorities are clamped to 0-7
 		controller.CreateTrafficClass("negative").
 			WithGuaranteedBandwidth("100Mbps").
-			WithPriority(-5). // Should become 0
-			AddClass()
+			WithPriority(-5) // Should become 0
 
 		controller.CreateTrafficClass("too_high").
 			WithGuaranteedBandwidth("100Mbps").
-			WithPriority(10). // Should become 7
-			AddClass()
+			WithPriority(10) // Should become 7
 
 		err := controller.Apply()
 		assert.NoError(t, err)

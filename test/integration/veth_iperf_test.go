@@ -21,7 +21,7 @@ func TestTrafficControlWithVethPair(t *testing.T) {
 		t.Skip("Skipping veth test in short mode")
 	}
 
-	if os.Geteuid() != 0 {
+	if os.Getenv("CI") != "true" && os.Geteuid() != 0 {
 		t.Skip("Test requires root privileges")
 	}
 
@@ -64,8 +64,7 @@ func TestTrafficControlWithVethPair(t *testing.T) {
 	tcController.
 		CreateTrafficClass("limited").
 		WithGuaranteedBandwidth("10mbit").
-		WithPriority(4). // Normal priority
-		AddClass()
+		WithPriority(4) // Normal priority
 
 	err = tcController.Apply()
 	require.NoError(t, err, "Failed to apply traffic control")
@@ -91,7 +90,7 @@ func TestBurstTraffic(t *testing.T) {
 		t.Skip("Skipping burst test in short mode")
 	}
 
-	if os.Geteuid() != 0 {
+	if os.Getenv("CI") != "true" && os.Geteuid() != 0 {
 		t.Skip("Test requires root privileges")
 	}
 
@@ -121,37 +120,44 @@ func TestBurstTraffic(t *testing.T) {
 // Helper functions for veth tests
 
 func createVethPair(veth0, veth1 string) error {
-	// Create network namespace
+	// Create network namespace first
 	if err := exec.Command("ip", "netns", "add", "tc-test-ns").Run(); err != nil {
-		// Ignore if already exists
+		return fmt.Errorf("failed to create namespace: %w", err)
 	}
 
 	// Create veth pair
-	cmd := exec.Command("ip", "link", "add", veth0, "type", "veth", "peer", "name", veth1)
-	if err := cmd.Run(); err != nil {
+	if err := exec.Command("ip", "link", "add", veth0, "type", "veth", "peer", "name", veth1).Run(); err != nil {
 		return fmt.Errorf("failed to create veth pair: %w", err)
 	}
 
 	// Move veth1 to namespace
-	cmd = exec.Command("ip", "link", "set", veth1, "netns", "tc-test-ns")
-	return cmd.Run()
+	if err := exec.Command("ip", "link", "set", veth1, "netns", "tc-test-ns").Run(); err != nil {
+		return fmt.Errorf("failed to move veth1 to namespace: %w", err)
+	}
+
+	return nil
 }
 
 func configureVethIPs(veth0, veth1 string) error {
-	// Configure veth0
-	cmds := [][]string{
-		{"ip", "addr", "add", "192.168.100.1/24", "dev", veth0},
-		{"ip", "link", "set", veth0, "up"},
-		// Configure veth1 in namespace
-		{"ip", "netns", "exec", "tc-test-ns", "ip", "addr", "add", "192.168.100.2/24", "dev", veth1},
-		{"ip", "netns", "exec", "tc-test-ns", "ip", "link", "set", veth1, "up"},
-		{"ip", "netns", "exec", "tc-test-ns", "ip", "link", "set", "lo", "up"},
+	// Configure veth0 (host side)
+	if err := exec.Command("ip", "addr", "add", "192.168.100.1/24", "dev", veth0).Run(); err != nil {
+		return fmt.Errorf("failed to add IP to veth0: %w", err)
+	}
+	if err := exec.Command("ip", "link", "set", veth0, "up").Run(); err != nil {
+		return fmt.Errorf("failed to bring up veth0: %w", err)
 	}
 
-	for _, args := range cmds {
-		if err := exec.Command(args[0], args[1:]...).Run(); err != nil {
-			return fmt.Errorf("failed to run %v: %w", args, err)
-		}
+	// Configure veth1 (namespace side)
+	if err := exec.Command("ip", "netns", "exec", "tc-test-ns", "ip", "addr", "add", "192.168.100.2/24", "dev", veth1).Run(); err != nil {
+		return fmt.Errorf("failed to add IP to veth1: %w", err)
+	}
+	if err := exec.Command("ip", "netns", "exec", "tc-test-ns", "ip", "link", "set", veth1, "up").Run(); err != nil {
+		return fmt.Errorf("failed to bring up veth1: %w", err)
+	}
+
+	// Bring up loopback in namespace
+	if err := exec.Command("ip", "netns", "exec", "tc-test-ns", "ip", "link", "set", "lo", "up").Run(); err != nil {
+		return fmt.Errorf("failed to bring up loopback: %w", err)
 	}
 
 	return nil
@@ -164,3 +170,4 @@ func cleanupVeth(veth0, veth1 string) {
 	// Delete namespace
 	_ = exec.Command("ip", "netns", "del", "tc-test-ns").Run()
 }
+

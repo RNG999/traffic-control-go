@@ -90,10 +90,10 @@ func TestTrafficControlWithIperf3(t *testing.T) {
 			// Apply traffic control
 			tcController := api.NetworkInterface(device)
 			tcController.WithHardLimitBandwidth(fmt.Sprintf("%dmbit", tc.limitMbps))
-			tcController
-				.CreateTrafficClass("test_limit")
-				.WithGuaranteedBandwidth(fmt.Sprintf("%dmbit", tc.limitMbps))
-				.WithPriority(4). // Normal priority
+			tcController.
+				CreateTrafficClass("test_limit").
+				WithGuaranteedBandwidth(fmt.Sprintf("%dmbit", tc.limitMbps)).
+				WithPriority(4) // Normal priority
 
 			err := tcController.Apply()
 			require.NoError(t, err, "Failed to apply traffic control")
@@ -157,14 +157,14 @@ func TestTrafficControlPriority(t *testing.T) {
 	// Apply traffic control with priority classes
 	tcController := api.NetworkInterface(device)
 	tcController.WithHardLimitBandwidth("20mbit")
-	tcController
-		.CreateTrafficClass("high_priority")
-		.WithGuaranteedBandwidth("15mbit")
-		.WithPriority(1)
-	tcController
-		.CreateTrafficClass("low_priority")
-		.WithGuaranteedBandwidth("5mbit")
-		.WithPriority(7)
+	tcController.
+		CreateTrafficClass("high_priority").
+		WithGuaranteedBandwidth("15mbit").
+		WithPriority(1)
+	tcController.
+		CreateTrafficClass("low_priority").
+		WithGuaranteedBandwidth("5mbit").
+		WithPriority(7)
 
 	err := tcController.Apply()
 	require.NoError(t, err, "Failed to apply traffic control")

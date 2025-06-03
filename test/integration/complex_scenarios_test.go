@@ -127,7 +127,7 @@ func TestComplexHTBHierarchy(t *testing.T) {
 }
 
 // TestMultipleFiltersWithPriority tests filter ordering and priority
-func TestMultipleFilters.WithPriority(t *testing.T) {
+func TestMultipleFiltersWithPriority(t *testing.T) {
 	adapter := netlink.NewMockAdapter()
 	device := valueobjects.MustNewDeviceName("eth0")
 

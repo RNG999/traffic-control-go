@@ -37,10 +37,10 @@ func TestBasicTCApplication(t *testing.T) {
 	// Apply traffic control
 	tcController := api.NetworkInterface(device)
 	tcController.WithHardLimitBandwidth("100mbit")
-	tcController
-		.CreateTrafficClass("test")
-		.WithGuaranteedBandwidth("50mbit")
-		.WithPriority(4)
+	tcController.
+		CreateTrafficClass("test").
+		WithGuaranteedBandwidth("50mbit").
+		WithPriority(4)
 
 	err = tcController.Apply()
 	require.NoError(t, err, "Failed to apply traffic control")

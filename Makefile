@@ -7,26 +7,16 @@
 VERSION := $(shell git describe --tags --always 2>/dev/null || echo "dev")
 
 help: ## Show available commands
-	@echo "Traffic Control Go - Available Commands:"
+	@echo "Traffic Control Go Library - Available Commands:"
 	@echo ""
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "  %-15s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 	@echo ""
 	@echo "Examples:"
-	@echo "  make build               # Build both binaries"
 	@echo "  make test                # Run tests"
-	@echo "  make install             # Install to system"
-	@echo "  make release-auto                # Automated release (v202412021430)"
-	@echo "  make release-with-date VERSION=0.2.0  # Manual release with date"
+	@echo "  make test-coverage       # Run tests with coverage"
+	@echo "  make lint                # Run linting"
 
 # Core development commands
-build: ## Build both binaries
-	@mkdir -p $(BIN_DIR)
-	@echo "Building $(MAIN_BINARY)..."
-	@go build -ldflags "$(LDFLAGS)" -o $(BIN_DIR)/$(MAIN_BINARY) ./cmd/traffic-control
-	@echo "Building $(DEMO_BINARY)..."
-	@go build -ldflags "$(LDFLAGS)" -o $(BIN_DIR)/$(DEMO_BINARY) ./cmd/tcctl
-	@echo "✓ Build completed"
-
 test: ## Run tests
 	@go test -v ./...
 
@@ -40,14 +30,8 @@ test-integration: ## Run integration tests (requires root and iperf3)
 	@sudo go test -v -tags=integration ./test/integration/...
 
 clean: ## Clean build artifacts
-	@rm -rf $(BIN_DIR) dist release coverage.out
+	@rm -rf dist coverage.out coverage.html
 	@echo "✓ Cleaned"
-
-install: build ## Install binaries to system
-	@echo "Installing to /usr/local/bin..."
-	@sudo cp $(BIN_DIR)/$(MAIN_BINARY) /usr/local/bin/
-	@sudo cp $(BIN_DIR)/$(DEMO_BINARY) /usr/local/bin/
-	@echo "✓ Installed"
 
 # Development helpers
 dev: ## Set up development environment
@@ -58,9 +42,13 @@ dev: ## Set up development environment
 fmt: ## Format code
 	@go fmt ./...
 
-lint: ## Run basic linting
-	@go vet ./...
-	@echo "✓ Linting completed"
+lint: ## Run linting
+	@if command -v golangci-lint >/dev/null 2>&1; then \
+		golangci-lint run; \
+	else \
+		go vet ./...; \
+		echo "✓ Basic linting completed (install golangci-lint for comprehensive checks)"; \
+	fi
 
 security: ## Run security scanner
 	@if command -v gosec >/dev/null 2>&1; then \
@@ -71,84 +59,29 @@ security: ## Run security scanner
 
 check: fmt lint test ## Run all quality checks
 
-# Version management (simplified)
+# Version management
 version: ## Show current version
 	@echo "Current version: $(VERSION)"
 
-# Release management (enhanced with date support)
-release-simple: ## Simple release (manual)
-ifndef VERSION
-	@echo "Usage: make release-simple VERSION=0.2.0"
-	@exit 1
-endif
-	@echo "Creating simple release $(VERSION)..."
-	@$(MAKE) clean test build
-	@echo "✓ Release $(VERSION) ready in $(BIN_DIR)/"
+# Documentation
+docs: ## Generate documentation
+	@echo "Generating documentation..."
+	@go doc -all > docs/api-reference.txt
+	@echo "✓ Documentation generated"
 
-release-with-date: ## Create release with date tag
-ifndef VERSION
-	@echo "Usage: make release-with-date VERSION=0.2.0"
-	@exit 1
-endif
-	@echo "Creating release $(VERSION) with date $(BUILD_DATE)..."
-	@$(MAKE) clean test build
-	@echo "Version: $(VERSION)"
-	@echo "Build Date: $(BUILD_TIME)"
-	@echo "Commit: $(shell git rev-parse --short HEAD)"
-	@echo ""
-	@echo "To create a git tag with date:"
-	@echo "  git tag -a v$(BUILD_DATE) -m 'Release v$(VERSION) built on $(BUILD_TIME)'"
-	@echo "  git push origin v$(BUILD_DATE)"
-	@echo ""
-	@echo "✓ Release v$(BUILD_DATE) (version $(VERSION)) ready in $(BIN_DIR)/"
-
-release-auto: ## Trigger automated GitHub release
-	@echo "Usage: make release-auto [PRE_RELEASE=beta]"
-	@echo ""
-	@echo "Examples:"
-	@echo "  make release-auto                         # Creates v202412021430"
-	@echo "  make release-auto PRE_RELEASE=beta       # Creates v202412021430-beta"
-	@echo "  make release-auto PRE_RELEASE=rc1        # Creates v202412021430-rc1"
-	@echo ""
-	@echo "Note: Version and tag are unified as date-based vYYYYMMDDHHMM"
-	@echo ""
-	@echo "Triggering automated GitHub release..."
-	@if command -v gh >/dev/null 2>&1; then \
-		if [ -n "$(PRE_RELEASE)" ]; then \
-			gh workflow run auto-release.yml -f pre_release=$(PRE_RELEASE); \
-		else \
-			gh workflow run auto-release.yml; \
-		fi; \
-		echo "✓ GitHub Actions workflow triggered"; \
-		echo "Check progress at: https://github.com/$(shell git config --get remote.origin.url | sed 's|.*github.com[:/]||' | sed 's|\.git||')/actions"; \
-	else \
-		echo "GitHub CLI (gh) not found. Please install it or use GitHub web interface."; \
-		echo "Manually trigger workflow at: https://github.com/$(shell git config --get remote.origin.url | sed 's|.*github.com[:/]||' | sed 's|\.git||')/actions/workflows/auto-release.yml"; \
-	fi
-
-release-goreleaser: ## Release with GoReleaser (requires setup)
-	@if ! command -v goreleaser >/dev/null 2>&1; then \
-		echo "GoReleaser not found. Install with: go install github.com/goreleaser/goreleaser@latest"; \
-		exit 1; \
-	fi
-	@goreleaser build --snapshot --clean
-	@echo "✓ GoReleaser build completed"
-
-# Advanced (optional - only if needed)
-build-all: ## Build for multiple platforms
-	@mkdir -p $(BIN_DIR)
-	@echo "Building for multiple platforms..."
-	@GOOS=linux GOARCH=amd64 go build -ldflags "$(LDFLAGS)" -o $(BIN_DIR)/$(MAIN_BINARY)-linux-amd64 ./cmd/traffic-control
-	@GOOS=darwin GOARCH=amd64 go build -ldflags "$(LDFLAGS)" -o $(BIN_DIR)/$(MAIN_BINARY)-darwin-amd64 ./cmd/traffic-control
-	@GOOS=windows GOARCH=amd64 go build -ldflags "$(LDFLAGS)" -o $(BIN_DIR)/$(MAIN_BINARY)-windows-amd64.exe ./cmd/traffic-control
-	@echo "✓ Multi-platform build completed"
-
-docker: ## Build Docker image
-	@docker build -t traffic-control-go .
+# Examples
+examples: ## Build and test examples
+	@echo "Testing examples..."
+	@go run examples/basic_demo.go
+	@go run examples/priority_demo.go
+	@go run examples/qdisc_types_demo.go
+	@go run examples/statistics_demo.go
+	@go run examples/improved_api_demo.go
+	@echo "✓ All examples tested"
 
 # Quick info
 info: ## Show project info
-	@echo "Project: Traffic Control Go"
+	@echo "Project: Traffic Control Go Library"
 	@echo "Version: $(VERSION)"
-	@echo "Binaries: $(MAIN_BINARY), $(DEMO_BINARY)"
 	@echo "Go version: $(shell go version)"
+	@echo "Type: Go Library (import github.com/RNG999/traffic-control-go)"

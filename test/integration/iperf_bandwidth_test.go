@@ -6,11 +6,13 @@ package integration_test
 import (
 	"context"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"regexp"
 	"strconv"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -220,6 +222,203 @@ func findTestInterface(t *testing.T) string {
 	}
 
 	return ""
+}
+
+// TestMultipleClassesConcurrent tests multiple traffic classes running concurrently
+func TestMultipleClassesConcurrent(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping concurrent test in short mode")
+	}
+
+	if os.Getenv("CI") != "true" && os.Geteuid() != 0 {
+		t.Skip("Test requires root privileges")
+	}
+
+	if _, err := exec.LookPath("iperf3"); err != nil {
+		t.Skip("iperf3 not installed, skipping test")
+	}
+
+	device := findTestInterface(t)
+	if device == "" {
+		t.Skip("No suitable network interface found for testing")
+	}
+
+	// Start iperf3 servers on different ports
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	// Server 1 on port 5201
+	server1 := exec.CommandContext(ctx, "iperf3", "-s", "-p", "5201", "-1")
+	go func() { _ = server1.Run() }()
+
+	// Server 2 on port 5202
+	server2 := exec.CommandContext(ctx, "iperf3", "-s", "-p", "5202", "-1")
+	go func() { _ = server2.Run() }()
+
+	time.Sleep(2 * time.Second)
+
+	// Apply traffic control with two classes
+	tcController := api.NetworkInterface(device)
+	tcController.WithHardLimitBandwidth("100mbit")
+
+	// High priority class - 60% bandwidth
+	tcController.CreateTrafficClass("high-priority").
+		WithGuaranteedBandwidth("60mbit").
+		WithSoftLimitBandwidth("80mbit").
+		WithPriority(1).
+		ForPort(5201)
+
+	// Low priority class - 20% bandwidth
+	tcController.CreateTrafficClass("low-priority").
+		WithGuaranteedBandwidth("20mbit").
+		WithSoftLimitBandwidth("40mbit").
+		WithPriority(6).
+		ForPort(5202)
+
+	err := tcController.Apply()
+	require.NoError(t, err, "Failed to apply traffic control")
+
+	// Run concurrent iperf3 tests
+	var wg sync.WaitGroup
+	var highBandwidth, lowBandwidth float64
+	var highErr, lowErr error
+
+	wg.Add(2)
+
+	// High priority traffic
+	go func() {
+		defer wg.Done()
+		cmd := exec.Command("iperf3", "-c", "localhost", "-p", "5201", "-t", "10", "-f", "m")
+		output, err := cmd.CombinedOutput()
+		if err != nil {
+			highErr = err
+			return
+		}
+		highBandwidth = parseIperf3Bandwidth(t, string(output))
+	}()
+
+	// Low priority traffic
+	go func() {
+		defer wg.Done()
+		// Start slightly later to ensure both are running concurrently
+		time.Sleep(1 * time.Second)
+		cmd := exec.Command("iperf3", "-c", "localhost", "-p", "5202", "-t", "8", "-f", "m")
+		output, err := cmd.CombinedOutput()
+		if err != nil {
+			lowErr = err
+			return
+		}
+		lowBandwidth = parseIperf3Bandwidth(t, string(output))
+	}()
+
+	wg.Wait()
+
+	require.NoError(t, highErr, "High priority iperf3 failed")
+	require.NoError(t, lowErr, "Low priority iperf3 failed")
+
+	t.Logf("High priority bandwidth: %.2f Mbps", highBandwidth)
+	t.Logf("Low priority bandwidth: %.2f Mbps", lowBandwidth)
+
+	// High priority should get significantly more bandwidth
+	require.Greater(t, highBandwidth, lowBandwidth*1.5, 
+		"High priority should get at least 1.5x more bandwidth than low priority")
+	
+	// High priority should be close to its guaranteed bandwidth
+	require.Greater(t, highBandwidth, 50.0, "High priority bandwidth too low")
+	
+	// Low priority should be limited
+	require.Less(t, lowBandwidth, 30.0, "Low priority bandwidth too high")
+}
+
+// TestDynamicBandwidthChange tests changing bandwidth limits during active traffic
+func TestDynamicBandwidthChange(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping dynamic test in short mode")
+	}
+
+	if os.Getenv("CI") != "true" && os.Geteuid() != 0 {
+		t.Skip("Test requires root privileges")
+	}
+
+	if _, err := exec.LookPath("iperf3"); err != nil {
+		t.Skip("iperf3 not installed, skipping test")
+	}
+
+	device := findTestInterface(t)
+	if device == "" {
+		t.Skip("No suitable network interface found for testing")
+	}
+
+	// Start iperf3 server
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	server := exec.CommandContext(ctx, "iperf3", "-s", "-p", "5201")
+	err := server.Start()
+	require.NoError(t, err, "Failed to start iperf3 server")
+	defer func() { _ = server.Process.Kill() }()
+
+	time.Sleep(1 * time.Second)
+
+	// Initial traffic control - 50mbit
+	tcController := api.NetworkInterface(device)
+	tcController.WithHardLimitBandwidth("100mbit")
+	tcController.CreateTrafficClass("dynamic").
+		WithGuaranteedBandwidth("50mbit").
+		WithPriority(4)
+
+	err = tcController.Apply()
+	require.NoError(t, err, "Failed to apply initial traffic control")
+
+	// Start long-running iperf3 client in background
+	clientCtx, clientCancel := context.WithCancel(context.Background())
+	defer clientCancel()
+
+	client := exec.CommandContext(clientCtx, "iperf3", "-c", "localhost", "-p", "5201", "-t", "20", "-i", "1")
+	clientPipe, err := client.StdoutPipe()
+	require.NoError(t, err)
+	
+	err = client.Start()
+	require.NoError(t, err, "Failed to start iperf3 client")
+
+	// Let it run for 5 seconds with initial settings
+	time.Sleep(5 * time.Second)
+
+	// Change bandwidth to 20mbit
+	t.Log("Changing bandwidth limit to 20mbit")
+	tcController = api.NetworkInterface(device)
+	tcController.WithHardLimitBandwidth("100mbit")
+	tcController.CreateTrafficClass("dynamic").
+		WithGuaranteedBandwidth("20mbit").
+		WithPriority(4)
+
+	err = tcController.Apply()
+	require.NoError(t, err, "Failed to apply new traffic control")
+
+	// Let it run for another 5 seconds
+	time.Sleep(5 * time.Second)
+
+	// Change bandwidth to 80mbit
+	t.Log("Changing bandwidth limit to 80mbit")
+	tcController = api.NetworkInterface(device)
+	tcController.WithHardLimitBandwidth("100mbit")
+	tcController.CreateTrafficClass("dynamic").
+		WithGuaranteedBandwidth("80mbit").
+		WithPriority(4)
+
+	err = tcController.Apply()
+	require.NoError(t, err, "Failed to apply new traffic control")
+
+	// Let it finish
+	time.Sleep(5 * time.Second)
+	clientCancel()
+	
+	// Read output
+	output, _ := io.ReadAll(clientPipe)
+	_ = client.Wait()
+
+	t.Logf("Dynamic bandwidth test output:\n%s", string(output))
+	// Visual inspection of output should show bandwidth changes
 }
 
 func parseIperf3Bandwidth(t *testing.T, output string) float64 {

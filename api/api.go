@@ -3,7 +3,6 @@ package api
 import (
 	"context"
 	"fmt"
-	"runtime"
 	"time"
 
 	"github.com/rng999/traffic-control-go/internal/application"
@@ -19,6 +18,7 @@ type TrafficController struct {
 	deviceName     string
 	totalBandwidth valueobjects.Bandwidth
 	classes        []*TrafficClass
+	pendingBuilders []*TrafficClassBuilder
 	logger         logging.Logger
 	service        *application.TrafficControlService
 }
@@ -101,8 +101,8 @@ func (tc *TrafficController) CreateTrafficClass(name string) *TrafficClassBuilde
 		class:      class,
 	}
 	
-	// Set finalizer to automatically register class when builder is no longer referenced
-	runtime.SetFinalizer(builder, (*TrafficClassBuilder).finalize)
+	// Add to pending builders list for automatic registration on Apply()
+	tc.pendingBuilders = append(tc.pendingBuilders, builder)
 	
 	return builder
 }
@@ -196,18 +196,8 @@ func (b *TrafficClassBuilder) ForProtocols(protocols ...string) *TrafficClassBui
 	return b
 }
 
-// finalize automatically registers the class when builder chain is complete
-func (b *TrafficClassBuilder) finalize() {
-	if !b.finalized {
-		b.controller.classes = append(b.controller.classes, b.class)
-		b.finalized = true
-		runtime.SetFinalizer(b, nil) // Clear the finalizer
-	}
-}
-
 // Apply completes the builder and adds the class to the controller
 func (b *TrafficClassBuilder) Apply() error {
-	b.finalize()
 	return b.controller.Apply()
 }
 
@@ -400,8 +390,22 @@ func (b *FQCODELQdiscBuilder) Apply() error {
 	return b.controller.service.CreateFQCODELQdisc(ctx, b.controller.deviceName, b.handle, b.limit, b.flows, b.target, b.interval, b.quantum, b.ecn)
 }
 
+// finalizePendingClasses automatically registers all pending class builders
+func (tc *TrafficController) finalizePendingClasses() {
+	for _, builder := range tc.pendingBuilders {
+		if !builder.finalized {
+			tc.classes = append(tc.classes, builder.class)
+			builder.finalized = true
+		}
+	}
+	tc.pendingBuilders = nil // Clear pending builders
+}
+
 // Apply applies the configuration
 func (tc *TrafficController) Apply() error {
+	// Finalize any pending class builders
+	tc.finalizePendingClasses()
+	
 	tc.logger.Info("Starting traffic control configuration application",
 		logging.String("operation", logging.OperationApplyConfig),
 		logging.Int("class_count", len(tc.classes)),

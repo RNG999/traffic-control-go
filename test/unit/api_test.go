@@ -137,7 +137,7 @@ func TestFilterTypes(t *testing.T) {
 		WithPriority(4).
 		ForDestination("192.168.1.1").
 		ForSource("10.0.0.1").
-		ForPort(80, 443, 8080).
+		ForPort(80, 443, 8080)
 
 	err := controller.Apply()
 

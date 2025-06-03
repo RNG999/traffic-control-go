@@ -19,27 +19,24 @@ func TestBasicTrafficControlUsage(t *testing.T) {
 	controller.WithHardLimitBandwidth("100Mbps")
 
 	controller.
-		CreateTrafficClass("Critical Services").
-		WithGuaranteedBandwidth("20Mbps").
-		WithSoftLimitBandwidth("40Mbps").
-		WithPriority(1). // High priority
-		ForPort(22, 443).
-		AddClass()
+		.CreateTrafficClass("Critical Services")
+		.WithGuaranteedBandwidth("20Mbps")
+		.WithSoftLimitBandwidth("40Mbps")
+		.WithPriority(1). // High priority
+		.ForPort(22, 443)
 
 	controller.
-		CreateTrafficClass("Web Traffic").
-		WithGuaranteedBandwidth("30Mbps").
-		WithSoftLimitBandwidth("60Mbps").
-		WithPriority(4). // Normal priority
-		ForPort(80, 443).
-		AddClass()
+		.CreateTrafficClass("Web Traffic")
+		.WithGuaranteedBandwidth("30Mbps")
+		.WithSoftLimitBandwidth("60Mbps")
+		.WithPriority(4). // Normal priority
+		.ForPort(80, 443)
 
 	controller.
-		CreateTrafficClass("Background").
-		WithGuaranteedBandwidth("10Mbps").
-		WithPriority(6). // Low priority
-		ForDestination("192.168.1.100").
-		AddClass()
+		.CreateTrafficClass("Background")
+		.WithGuaranteedBandwidth("10Mbps")
+		.WithPriority(6). // Low priority
+		.ForDestination("192.168.1.100")
 
 	err := controller.Apply()
 
@@ -55,16 +52,14 @@ func TestInvalidConfiguration(t *testing.T) {
 	controller.WithHardLimitBandwidth("100Mbps")
 
 	controller.
-		CreateTrafficClass("Service1").
-		WithGuaranteedBandwidth("60Mbps").
-		WithPriority(4).
-		AddClass()
+		.CreateTrafficClass("Service1")
+		.WithGuaranteedBandwidth("60Mbps")
+		.WithPriority(4)
 
 	controller.
-		CreateTrafficClass("Service2").
-		WithGuaranteedBandwidth("50Mbps").
-		WithPriority(4).
-		AddClass()
+		.CreateTrafficClass("Service2")
+		.WithGuaranteedBandwidth("50Mbps")
+		.WithPriority(4)
 
 	err := controller.Apply()
 
@@ -79,11 +74,11 @@ func TestInvalidBandwidthLimits(t *testing.T) {
 
 	// Test guaranteed > max bandwidth
 	err := controller.
-		WithHardLimitBandwidth("100Mbps").
-		CreateTrafficClass("Invalid").
-		WithGuaranteedBandwidth("50Mbps").
-		WithSoftLimitBandwidth("30Mbps").
-		WithPriority(4).
+		WithHardLimitBandwidth("100Mbps")
+		.CreateTrafficClass("Invalid")
+		.WithGuaranteedBandwidth("50Mbps")
+		.WithSoftLimitBandwidth("30Mbps")
+		.WithPriority(4)
 		Apply()
 
 	// Should fail due to guaranteed > max
@@ -97,9 +92,9 @@ func TestMissingTotalBandwidth(t *testing.T) {
 
 	// Test missing total bandwidth
 	err := controller.
-		CreateTrafficClass("Service").
-		WithGuaranteedBandwidth("10Mbps").
-		WithPriority(4).
+		.CreateTrafficClass("Service")
+		.WithGuaranteedBandwidth("10Mbps")
+		.WithPriority(4)
 		Apply()
 
 	// Should fail due to missing total bandwidth

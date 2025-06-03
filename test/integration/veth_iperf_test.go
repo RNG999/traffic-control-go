@@ -61,11 +61,10 @@ func TestTrafficControlWithVethPair(t *testing.T) {
 	// Apply traffic control on veth0
 	tcController := api.NetworkInterface(veth0)
 	tcController.WithHardLimitBandwidth("100mbit")
-	tcController.
-		CreateTrafficClass("limited").
-		WithGuaranteedBandwidth("10mbit").
-		WithPriority(4). // Normal priority
-		AddClass()
+	tcController
+		.CreateTrafficClass("limited")
+		.WithGuaranteedBandwidth("10mbit")
+		.WithPriority(4). // Normal priority
 
 	err = tcController.Apply()
 	require.NoError(t, err, "Failed to apply traffic control")
@@ -149,7 +148,7 @@ func configureVethIPs(veth0, veth1 string) error {
 	}
 
 	for _, args := range cmds {
-		if err := exec.Command(args[0], args[1:]...).Run(); err != nil {
+		if err := exec.Command(args[0], args[1:]..).Run(); err != nil {
 			return fmt.Errorf("failed to run %v: %w", args, err)
 		}
 	}

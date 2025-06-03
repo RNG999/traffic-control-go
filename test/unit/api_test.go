@@ -14,12 +14,10 @@ func TestTrafficControllerValidation(t *testing.T) {
 		controller := api.NetworkInterface("eth0")
 
 		controller.WithHardLimitBandwidth("100Mbps")
-		controller.
-			CreateTrafficClass("Test").
+		controller.CreateTrafficClass("Test").
 			WithGuaranteedBandwidth("50Mbps").
 			WithSoftLimitBandwidth("80Mbps").
-			WithPriority(4).
-			AddClass()
+			WithPriority(4)
 
 		err := controller.Apply()
 
@@ -29,11 +27,9 @@ func TestTrafficControllerValidation(t *testing.T) {
 	t.Run("MissingTotalBandwidth", func(t *testing.T) {
 		controller := api.NetworkInterface("eth0")
 
-		controller.
-			CreateTrafficClass("Test").
+		controller.CreateTrafficClass("Test").
 			WithGuaranteedBandwidth("50Mbps").
-			WithPriority(4).
-			AddClass()
+			WithPriority(4)
 
 		err := controller.Apply()
 
@@ -45,16 +41,12 @@ func TestTrafficControllerValidation(t *testing.T) {
 		controller := api.NetworkInterface("eth0")
 
 		controller.WithHardLimitBandwidth("100Mbps")
-		controller.
-			CreateTrafficClass("Class1").
+		controller.CreateTrafficClass("Class1").
 			WithGuaranteedBandwidth("60Mbps").
-			WithPriority(4).
-			AddClass()
-		controller.
-			CreateTrafficClass("Class2").
+			WithPriority(4)
+		controller.CreateTrafficClass("Class2").
 			WithGuaranteedBandwidth("50Mbps").
-			WithPriority(4).
-			AddClass()
+			WithPriority(4)
 
 		err := controller.Apply()
 
@@ -66,12 +58,10 @@ func TestTrafficControllerValidation(t *testing.T) {
 		controller := api.NetworkInterface("eth0")
 
 		controller.WithHardLimitBandwidth("100Mbps")
-		controller.
-			CreateTrafficClass("Test").
+		controller.CreateTrafficClass("Test").
 			WithGuaranteedBandwidth("50Mbps").
 			WithSoftLimitBandwidth("150Mbps").
-			WithPriority(4).
-			AddClass()
+			WithPriority(4)
 
 		err := controller.Apply()
 
@@ -84,12 +74,10 @@ func TestTrafficControllerValidation(t *testing.T) {
 		controller := api.NetworkInterface("eth0")
 
 		controller.WithHardLimitBandwidth("100Mbps")
-		controller.
-			CreateTrafficClass("Test").
+		controller.CreateTrafficClass("Test").
 			WithGuaranteedBandwidth("60Mbps").
 			WithSoftLimitBandwidth("50Mbps").
-			WithPriority(4).
-			AddClass()
+			WithPriority(4)
 
 		err := controller.Apply()
 
@@ -105,20 +93,16 @@ func TestBuilderPatterns(t *testing.T) {
 
 		// Test fluent interface
 		controller.WithHardLimitBandwidth("100Mbps")
-		controller.
-			CreateTrafficClass("Web").
+		controller.CreateTrafficClass("Web").
 			WithGuaranteedBandwidth("30Mbps").
 			WithSoftLimitBandwidth("60Mbps").
 			WithPriority(1). // High priority
 			ForPort(80, 443).
-			ForDestination("192.168.1.10").
-			AddClass()
-		controller.
-			CreateTrafficClass("SSH").
+			ForDestination("192.168.1.10")
+		controller.CreateTrafficClass("SSH").
 			WithGuaranteedBandwidth("5Mbps").
 			WithPriority(6). // Low priority
-			ForPort(22, 2222).
-			AddClass()
+			ForPort(22, 2222)
 
 		// Should not panic and should be chainable
 		require.NotNil(t, controller)
@@ -129,21 +113,15 @@ func TestBuilderPatterns(t *testing.T) {
 
 		// Test priority setting
 		controller.WithHardLimitBandwidth("1Gbps")
-		controller.
-			CreateTrafficClass("Critical").
+		controller.CreateTrafficClass("Critical").
 			WithGuaranteedBandwidth("100Mbps").
-			WithPriority(0). // Highest priority
-			AddClass()
-		controller.
-			CreateTrafficClass("Normal").
+			WithPriority(0) // Highest priority
+		controller.CreateTrafficClass("Normal").
 			WithGuaranteedBandwidth("100Mbps").
-			WithPriority(4). // Must set explicit priority
-			AddClass()
-		controller.
-			CreateTrafficClass("Background").
+			WithPriority(4) // Must set explicit priority
+		controller.CreateTrafficClass("Background").
 			WithGuaranteedBandwidth("100Mbps").
-			WithPriority(7). // Lowest priority
-			AddClass()
+			WithPriority(7) // Lowest priority
 
 		require.NotNil(t, controller)
 	})
@@ -154,15 +132,12 @@ func TestFilterTypes(t *testing.T) {
 
 	// Test all filter types compile correctly
 	controller.WithHardLimitBandwidth("100Mbps")
-	controller.
-		CreateTrafficClass("AllFilters").
+	controller.CreateTrafficClass("AllFilters").
 		WithGuaranteedBandwidth("10Mbps").
 		WithPriority(4).
 		ForDestination("192.168.1.1").
 		ForSource("10.0.0.1").
 		ForPort(80, 443, 8080).
-		ForApplication("http", "ssh").
-		AddClass()
 
 	err := controller.Apply()
 

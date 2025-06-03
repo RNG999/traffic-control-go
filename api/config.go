@@ -301,12 +301,6 @@ func (tc *TrafficController) createRuleFromConfig(rule *TrafficRuleConfig) error
 		})
 	}
 
-	for i := range match.Application {
-		targetClass.filters = append(targetClass.filters, Filter{
-			filterType: ApplicationFilter,
-			value:      match.Application[i],
-		})
-	}
 
 	return nil
 }

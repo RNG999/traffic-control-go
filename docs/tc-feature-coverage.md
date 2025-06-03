@@ -137,8 +137,10 @@
 8. **connmark** - Connection marking
 
 #### Statistics and Monitoring
-- ❌ Real qdisc statistics retrieval
-- ❌ Real class statistics retrieval
+- ✅ Real qdisc statistics retrieval
+- ✅ Real class statistics retrieval
+- ✅ Real-time traffic monitoring
+- ✅ Statistics collection service
 - ❌ Filter hit counts
 - ❌ Dropped packet counts
 - ❌ Backlog information
@@ -158,7 +160,8 @@ Based on common TC usage patterns:
 - **Filters**: ~15% coverage (basic U32 only)
 - **Actions**: 0% coverage
 - **Classes**: ~60% coverage (HTB only, but well-implemented)
-- **Overall**: ~20-25% of TC functionality
+- **Statistics**: ~70% coverage (qdisc and class stats implemented)
+- **Overall**: ~25-30% of TC functionality
 
 ### 🎯 Priority Implementation Recommendations
 

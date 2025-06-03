@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"fmt"
+	"runtime"
 	"time"
 
 	"github.com/rng999/traffic-control-go/internal/application"
@@ -49,7 +50,6 @@ const (
 	SourcePortFilter
 	DestinationPortFilter
 	ProtocolFilter
-	ApplicationFilter
 )
 
 // NetworkInterface creates a new traffic controller for a network interface
@@ -96,16 +96,22 @@ func (tc *TrafficController) CreateTrafficClass(name string) *TrafficClassBuilde
 		// priority is nil by default - must be set explicitly
 	}
 
-	return &TrafficClassBuilder{
+	builder := &TrafficClassBuilder{
 		controller: tc,
 		class:      class,
 	}
+	
+	// Set finalizer to automatically register class when builder is no longer referenced
+	runtime.SetFinalizer(builder, (*TrafficClassBuilder).finalize)
+	
+	return builder
 }
 
 // TrafficClassBuilder provides a fluent interface for building traffic classes
 type TrafficClassBuilder struct {
 	controller *TrafficController
 	class      *TrafficClass
+	finalized  bool
 }
 
 // WithGuaranteedBandwidth sets the minimum guaranteed bandwidth
@@ -178,16 +184,6 @@ func (b *TrafficClassBuilder) ForPort(ports ...int) *TrafficClassBuilder {
 	return b
 }
 
-// ForApplication adds an application-based filter (predefined port sets)
-func (b *TrafficClassBuilder) ForApplication(apps ...string) *TrafficClassBuilder {
-	for _, app := range apps {
-		b.class.filters = append(b.class.filters, Filter{
-			filterType: ApplicationFilter,
-			value:      app,
-		})
-	}
-	return b
-}
 
 // ForProtocols adds protocol filters
 func (b *TrafficClassBuilder) ForProtocols(protocols ...string) *TrafficClassBuilder {
@@ -200,51 +196,21 @@ func (b *TrafficClassBuilder) ForProtocols(protocols ...string) *TrafficClassBui
 	return b
 }
 
-// AddClass completes the class configuration and adds it to the traffic controller
-func (b *TrafficClassBuilder) AddClass() *TrafficController {
-	b.controller.classes = append(b.controller.classes, b.class)
-	return b.controller
+// finalize automatically registers the class when builder chain is complete
+func (b *TrafficClassBuilder) finalize() {
+	if !b.finalized {
+		b.controller.classes = append(b.controller.classes, b.class)
+		b.finalized = true
+		runtime.SetFinalizer(b, nil) // Clear the finalizer
+	}
 }
 
 // Apply completes the builder and adds the class to the controller
 func (b *TrafficClassBuilder) Apply() error {
-	b.controller.classes = append(b.controller.classes, b.class)
+	b.finalize()
 	return b.controller.Apply()
 }
 
-// PriorityGroupBuilder builds priority-based traffic groups
-type PriorityGroupBuilder struct {
-	controller *TrafficController //nolint:unused
-	priority   Priority           //nolint:unused
-	filters    []Filter
-}
-
-// ForSSH adds SSH traffic to this priority group
-func (p *PriorityGroupBuilder) ForSSH() *PriorityGroupBuilder {
-	p.filters = append(p.filters, Filter{
-		filterType: DestinationPortFilter,
-		value:      22,
-	})
-	return p
-}
-
-// ForHTTP adds HTTP traffic to this priority group
-func (p *PriorityGroupBuilder) ForHTTP() *PriorityGroupBuilder {
-	p.filters = append(p.filters, Filter{
-		filterType: DestinationPortFilter,
-		value:      80,
-	})
-	return p
-}
-
-// ForHTTPS adds HTTPS traffic to this priority group
-func (p *PriorityGroupBuilder) ForHTTPS() *PriorityGroupBuilder {
-	p.filters = append(p.filters, Filter{
-		filterType: DestinationPortFilter,
-		value:      443,
-	})
-	return p
-}
 
 // CreateHTBQdisc creates an HTB (Hierarchical Token Bucket) qdisc with fluent interface
 func (tc *TrafficController) CreateHTBQdisc(handle, defaultClass string) *HTBQdiscBuilder {
@@ -574,20 +540,6 @@ func (tc *TrafficController) buildFilterMatch(filter Filter) map[string]string {
 	case ProtocolFilter:
 		if proto, ok := filter.value.(string); ok {
 			match["protocol"] = proto
-		}
-	case ApplicationFilter:
-		// Convert known applications to port ranges
-		if app, ok := filter.value.(string); ok {
-			switch app {
-			case "ssh":
-				match["dst_port"] = "22"
-			case "http":
-				match["dst_port"] = "80"
-			case "https":
-				match["dst_port"] = "443"
-			case "dns":
-				match["dst_port"] = "53"
-			}
 		}
 	}
 

@@ -20,20 +20,18 @@ func TestStatisticsIntegration(t *testing.T) {
 
 	// Configure traffic control
 	tc.WithHardLimitBandwidth("10mbit")
-	tc.
-		CreateTrafficClass("web-traffic").
-		WithGuaranteedBandwidth("2mbit").
-		WithSoftLimitBandwidth("5mbit").
-		WithPriority(1).
-		ForPort(80, 443).
-		AddClass()
-	tc.
-		CreateTrafficClass("ssh-traffic").
-		WithGuaranteedBandwidth("1mbit").
-		WithSoftLimitBandwidth("3mbit").
-		WithPriority(0).
-		ForPort(22).
-		AddClass()
+	tc
+		.CreateTrafficClass("web-traffic")
+		.WithGuaranteedBandwidth("2mbit")
+		.WithSoftLimitBandwidth("5mbit")
+		.WithPriority(1)
+		.ForPort(80, 443)
+	tc
+		.CreateTrafficClass("ssh-traffic")
+		.WithGuaranteedBandwidth("1mbit")
+		.WithSoftLimitBandwidth("3mbit")
+		.WithPriority(0)
+		.ForPort(22)
 
 	err := tc.Apply()
 
@@ -189,12 +187,11 @@ func TestStatisticsPerformance(t *testing.T) {
 
 	// Setup configuration
 	tc.WithHardLimitBandwidth("100mbit")
-	tc.
-		CreateTrafficClass("bulk").
-		WithGuaranteedBandwidth("10mbit").
-		WithSoftLimitBandwidth("50mbit").
-		WithPriority(7).
-		AddClass()
+	tc
+		.CreateTrafficClass("bulk")
+		.WithGuaranteedBandwidth("10mbit")
+		.WithSoftLimitBandwidth("50mbit")
+		.WithPriority(7)
 
 	err := tc.Apply()
 	require.NoError(t, err)
@@ -225,10 +222,10 @@ func TestStatisticsPerformance(t *testing.T) {
 func setupMockStatistics(tc *api.TrafficController) {
 	// In a real implementation, we would extract the netlink adapter
 	// and configure it with mock data. For now, this is a placeholder
-	// that would work with the mock adapter to set up realistic statistics.
+	// that would work with the mock adapter to set up realistic statistics
 
 	// This would typically involve:
-	// 1. Getting the service from the traffic controller
+	// 1. Getting the service from the traffic controller.
 	// 2. Extracting the netlink adapter
 	// 3. If it's a mock adapter, setting up mock qdisc/class/filter data
 	// 4. Populating realistic statistics numbers
@@ -247,20 +244,18 @@ func TestStatisticsDataAccuracy(t *testing.T) {
 
 	// Create a specific configuration
 	tc.WithHardLimitBandwidth("10mbit")
-	tc.
-		CreateTrafficClass("priority-traffic").
-		WithGuaranteedBandwidth("3mbit").
-		WithSoftLimitBandwidth("7mbit").
-		WithPriority(1).
-		ForPort(22, 443).
-		AddClass()
-	tc.
-		CreateTrafficClass("bulk-traffic").
-		WithGuaranteedBandwidth("2mbit").
-		WithSoftLimitBandwidth("5mbit").
-		WithPriority(5).
-		ForPort(80).
-		AddClass()
+	tc
+		.CreateTrafficClass("priority-traffic")
+		.WithGuaranteedBandwidth("3mbit")
+		.WithSoftLimitBandwidth("7mbit")
+		.WithPriority(1)
+		.ForPort(22, 443)
+	tc
+		.CreateTrafficClass("bulk-traffic")
+		.WithGuaranteedBandwidth("2mbit")
+		.WithSoftLimitBandwidth("5mbit")
+		.WithPriority(5)
+		.ForPort(80)
 
 	err := tc.Apply()
 	require.NoError(t, err)

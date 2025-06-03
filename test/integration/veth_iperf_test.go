@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"regexp"
+	"strconv"
 	"testing"
 	"time"
 
@@ -21,7 +23,7 @@ func TestTrafficControlWithVethPair(t *testing.T) {
 		t.Skip("Skipping veth test in short mode")
 	}
 
-	if os.Geteuid() != 0 {
+	if os.Getenv("CI") != "true" && os.Geteuid() != 0 {
 		t.Skip("Test requires root privileges")
 	}
 
@@ -90,7 +92,7 @@ func TestBurstTraffic(t *testing.T) {
 		t.Skip("Skipping burst test in short mode")
 	}
 
-	if os.Geteuid() != 0 {
+	if os.Getenv("CI") != "true" && os.Geteuid() != 0 {
 		t.Skip("Test requires root privileges")
 	}
 
@@ -156,10 +158,81 @@ func configureVethIPs(veth0, veth1 string) error {
 	return nil
 }
 
+func createVethPair(veth0, veth1 string) error {
+	// Create network namespace first
+	if err := exec.Command("ip", "netns", "add", "tc-test-ns").Run(); err != nil {
+		return fmt.Errorf("failed to create namespace: %w", err)
+	}
+
+	// Create veth pair
+	if err := exec.Command("ip", "link", "add", veth0, "type", "veth", "peer", "name", veth1).Run(); err != nil {
+		return fmt.Errorf("failed to create veth pair: %w", err)
+	}
+
+	// Move veth1 to namespace
+	if err := exec.Command("ip", "link", "set", veth1, "netns", "tc-test-ns").Run(); err != nil {
+		return fmt.Errorf("failed to move veth1 to namespace: %w", err)
+	}
+
+	return nil
+}
+
+func configureVethIPs(veth0, veth1 string) error {
+	// Configure veth0 (host side)
+	if err := exec.Command("ip", "addr", "add", "192.168.100.1/24", "dev", veth0).Run(); err != nil {
+		return fmt.Errorf("failed to add IP to veth0: %w", err)
+	}
+	if err := exec.Command("ip", "link", "set", veth0, "up").Run(); err != nil {
+		return fmt.Errorf("failed to bring up veth0: %w", err)
+	}
+
+	// Configure veth1 (namespace side)
+	if err := exec.Command("ip", "netns", "exec", "tc-test-ns", "ip", "addr", "add", "192.168.100.2/24", "dev", veth1).Run(); err != nil {
+		return fmt.Errorf("failed to add IP to veth1: %w", err)
+	}
+	if err := exec.Command("ip", "netns", "exec", "tc-test-ns", "ip", "link", "set", veth1, "up").Run(); err != nil {
+		return fmt.Errorf("failed to bring up veth1: %w", err)
+	}
+
+	// Bring up loopback in namespace
+	if err := exec.Command("ip", "netns", "exec", "tc-test-ns", "ip", "link", "set", "lo", "up").Run(); err != nil {
+		return fmt.Errorf("failed to bring up loopback: %w", err)
+	}
+
+	return nil
+}
+
 func cleanupVeth(veth0, veth1 string) {
 	// Delete veth pair (this also removes veth1 from namespace)
 	_ = exec.Command("ip", "link", "del", veth0).Run()
 
 	// Delete namespace
 	_ = exec.Command("ip", "netns", "del", "tc-test-ns").Run()
+}
+
+func parseIperf3Bandwidth(t *testing.T, output string) float64 {
+	// Parse iperf3 output to extract bandwidth
+	// Look for lines like:
+	// [  4]   0.00-5.00   sec  6.25 MBytes  10.5 Mbits/sec                  sender
+	// [  4]   0.00-5.04   sec  6.12 MBytes  10.2 Mbits/sec                  receiver
+
+	// We want the receiver bandwidth as it's more accurate for our test
+	re := regexp.MustCompile(`\[\s*\d+\]\s+[\d.-]+-[\d.-]+\s+sec\s+[\d.]+\s+\w+\s+([\d.]+)\s+Mbits/sec\s+receiver`)
+	matches := re.FindStringSubmatch(output)
+
+	if len(matches) < 2 {
+		// Try sender if receiver not found
+		re = regexp.MustCompile(`\[\s*\d+\]\s+[\d.-]+-[\d.-]+\s+sec\s+[\d.]+\s+\w+\s+([\d.]+)\s+Mbits/sec\s+sender`)
+		matches = re.FindStringSubmatch(output)
+	}
+
+	if len(matches) < 2 {
+		t.Logf("Could not parse bandwidth from iperf3 output:\n%s", output)
+		t.Fatal("Failed to parse iperf3 bandwidth")
+	}
+
+	bandwidth, err := strconv.ParseFloat(matches[1], 64)
+	require.NoError(t, err, "Failed to parse bandwidth value: %s", matches[1])
+
+	return bandwidth
 }

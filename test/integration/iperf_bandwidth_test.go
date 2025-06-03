@@ -24,8 +24,8 @@ func TestTrafficControlWithIperf3(t *testing.T) {
 		t.Skip("Skipping iperf3 test in short mode")
 	}
 
-	// Check if running as root
-	if os.Geteuid() != 0 {
+	// Check if running as root (skip this check in CI)
+	if os.Getenv("CI") != "true" && os.Geteuid() != 0 {
 		t.Skip("Test requires root privileges")
 	}
 
@@ -141,7 +141,7 @@ func TestTrafficControlPriority(t *testing.T) {
 		t.Skip("Skipping iperf3 test in short mode")
 	}
 
-	if os.Geteuid() != 0 {
+	if os.Getenv("CI") != "true" && os.Geteuid() != 0 {
 		t.Skip("Test requires root privileges")
 	}
 

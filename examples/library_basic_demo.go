@@ -95,7 +95,7 @@ func testValidation() {
 	// Test missing total bandwidth
 	tc1 := api.NewImproved("eth0")
 	tc1.Class("Test").Guaranteed("100Mbps").Priority(4)
-	
+
 	err1 := tc1.Apply()
 	if err1 != nil {
 		fmt.Printf("✓ Validation works: %s\n", err1.Error())
@@ -104,7 +104,7 @@ func testValidation() {
 	// Test missing guaranteed bandwidth
 	tc2 := api.NewImproved("eth0").TotalBandwidth("1Gbps")
 	tc2.Class("Test").Priority(4)
-	
+
 	err2 := tc2.Apply()
 	if err2 != nil {
 		fmt.Printf("✓ Validation works: %s\n", err2.Error())
@@ -113,7 +113,7 @@ func testValidation() {
 	// Test missing priority
 	tc3 := api.NewImproved("eth0").TotalBandwidth("1Gbps")
 	tc3.Class("Test").Guaranteed("100Mbps")
-	
+
 	err3 := tc3.Apply()
 	if err3 != nil {
 		fmt.Printf("✓ Validation works: %s\n", err3.Error())

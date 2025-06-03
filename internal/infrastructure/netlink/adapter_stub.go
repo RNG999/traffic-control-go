@@ -22,7 +22,7 @@ type RealNetlinkAdapter struct {
 func NewRealNetlinkAdapter() *RealNetlinkAdapter {
 	logger := logging.WithComponent(logging.ComponentNetlink)
 	logger.Warn("Traffic control operations are not supported on this platform")
-	
+
 	return &RealNetlinkAdapter{
 		logger: logger,
 	}

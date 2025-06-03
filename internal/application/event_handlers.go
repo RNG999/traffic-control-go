@@ -71,7 +71,7 @@ func (s *TrafficControlService) handleClassCreated(ctx context.Context, event in
 			logging.String("handle", e.Handle.String()),
 		)
 		return nil
-		
+
 	case *events.HTBClassCreatedEvent:
 		s.logger.Info("Applying HTB class to netlink",
 			logging.String("device", e.DeviceName.String()),
@@ -85,32 +85,32 @@ func (s *TrafficControlService) handleClassCreated(ctx context.Context, event in
 		// Note: HTB events don't have priority in the event, using default priority
 		priority := entities.Priority(4) // Normal priority
 		class := entities.NewHTBClass(e.DeviceName, e.Handle, e.Parent, e.Name, priority)
-		
+
 		// Set rate and ceil bandwidth
 		class.SetRate(e.Rate)
-		
+
 		// If ceil is 0 or not set, default to rate (HTB requirement)
 		if e.Ceil.BitsPerSecond() == 0 {
 			class.SetCeil(e.Rate)
 		} else {
 			class.SetCeil(e.Ceil)
 		}
-		
+
 		// Set burst values if provided, otherwise calculate them
 		if e.Burst > 0 {
 			class.SetBurst(e.Burst)
 		} else {
 			class.SetBurst(class.CalculateBurst())
 		}
-		
+
 		if e.Cburst > 0 {
 			class.SetCburst(e.Cburst)
 		} else {
 			class.SetCburst(class.CalculateCburst())
 		}
-		
+
 		return s.netlinkAdapter.AddClass(ctx, class)
-		
+
 	default:
 		// Not a class event we handle
 		return nil
@@ -135,13 +135,13 @@ func (s *TrafficControlService) handleFilterCreated(ctx context.Context, event i
 
 	// Create filter entity directly from event data (no string parsing needed)
 	filter := entities.NewFilter(e.DeviceName, e.Parent, e.Priority, e.Handle)
-	
+
 	// Set flow ID
 	filter.SetFlowID(e.FlowID)
-	
+
 	// Set protocol
 	filter.SetProtocol(e.Protocol)
-	
+
 	// Add matches from event data
 	for _, matchData := range e.Matches {
 		// TODO: Convert match data to proper match objects

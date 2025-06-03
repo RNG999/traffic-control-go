@@ -81,15 +81,15 @@ func (tc *ImprovedController) Class(name string) *ImprovedClass {
 func (c *ImprovedClass) Guaranteed(bandwidth string) *ImprovedClass {
 	bw, err := valueobjects.NewBandwidth(bandwidth)
 	if err != nil {
-		c.controller.logger.Error("Invalid guaranteed bandwidth", 
-			logging.String("class", c.name), 
-			logging.String("bandwidth", bandwidth), 
+		c.controller.logger.Error("Invalid guaranteed bandwidth",
+			logging.String("class", c.name),
+			logging.String("bandwidth", bandwidth),
 			logging.Error(err))
 		return c
 	}
 	c.guaranteedBandwidth = &bw
-	c.controller.logger.Info("Setting guaranteed bandwidth", 
-		logging.String("class", c.name), 
+	c.controller.logger.Info("Setting guaranteed bandwidth",
+		logging.String("class", c.name),
 		logging.String("bandwidth", bandwidth))
 	return c
 }
@@ -98,15 +98,15 @@ func (c *ImprovedClass) Guaranteed(bandwidth string) *ImprovedClass {
 func (c *ImprovedClass) BurstTo(bandwidth string) *ImprovedClass {
 	bw, err := valueobjects.NewBandwidth(bandwidth)
 	if err != nil {
-		c.controller.logger.Error("Invalid burst bandwidth", 
-			logging.String("class", c.name), 
-			logging.String("bandwidth", bandwidth), 
+		c.controller.logger.Error("Invalid burst bandwidth",
+			logging.String("class", c.name),
+			logging.String("bandwidth", bandwidth),
 			logging.Error(err))
 		return c
 	}
 	c.burstBandwidth = &bw
-	c.controller.logger.Info("Setting burst bandwidth", 
-		logging.String("class", c.name), 
+	c.controller.logger.Info("Setting burst bandwidth",
+		logging.String("class", c.name),
 		logging.String("bandwidth", bandwidth))
 	return c
 }
@@ -114,15 +114,15 @@ func (c *ImprovedClass) BurstTo(bandwidth string) *ImprovedClass {
 // Priority sets the priority for the current class (0-7, where 0 is highest)
 func (c *ImprovedClass) Priority(priority int) *ImprovedClass {
 	if priority < 0 || priority > 7 {
-		c.controller.logger.Error("Invalid priority", 
-			logging.String("class", c.name), 
+		c.controller.logger.Error("Invalid priority",
+			logging.String("class", c.name),
 			logging.Int("priority", priority))
 		return c
 	}
 	p := Priority(priority)
 	c.priority = &p
-	c.controller.logger.Info("Setting priority", 
-		logging.String("class", c.name), 
+	c.controller.logger.Info("Setting priority",
+		logging.String("class", c.name),
 		logging.Int("priority", priority))
 	return c
 }
@@ -130,8 +130,8 @@ func (c *ImprovedClass) Priority(priority int) *ImprovedClass {
 // Ports adds port-based filtering to the current class
 func (c *ImprovedClass) Ports(ports ...int) *ImprovedClass {
 	c.ports = append(c.ports, ports...)
-	c.controller.logger.Info("Adding port filters", 
-		logging.String("class", c.name), 
+	c.controller.logger.Info("Adding port filters",
+		logging.String("class", c.name),
 		logging.String("ports", fmt.Sprintf("%v", ports)))
 	return c
 }
@@ -139,8 +139,8 @@ func (c *ImprovedClass) Ports(ports ...int) *ImprovedClass {
 // SourceIPs adds source IP-based filtering to the current class
 func (c *ImprovedClass) SourceIPs(ips ...string) *ImprovedClass {
 	c.sourceIPs = append(c.sourceIPs, ips...)
-	c.controller.logger.Info("Adding source IP filters", 
-		logging.String("class", c.name), 
+	c.controller.logger.Info("Adding source IP filters",
+		logging.String("class", c.name),
 		logging.String("ips", fmt.Sprintf("%v", ips)))
 	return c
 }
@@ -148,8 +148,8 @@ func (c *ImprovedClass) SourceIPs(ips ...string) *ImprovedClass {
 // DestIPs adds destination IP-based filtering to the current class
 func (c *ImprovedClass) DestIPs(ips ...string) *ImprovedClass {
 	c.destIPs = append(c.destIPs, ips...)
-	c.controller.logger.Info("Adding destination IP filters", 
-		logging.String("class", c.name), 
+	c.controller.logger.Info("Adding destination IP filters",
+		logging.String("class", c.name),
 		logging.String("ips", fmt.Sprintf("%v", ips)))
 	return c
 }
@@ -157,16 +157,16 @@ func (c *ImprovedClass) DestIPs(ips ...string) *ImprovedClass {
 // Protocols adds protocol-based filtering to the current class
 func (c *ImprovedClass) Protocols(protocols ...string) *ImprovedClass {
 	c.protocols = append(c.protocols, protocols...)
-	c.controller.logger.Info("Adding protocol filters", 
-		logging.String("class", c.name), 
+	c.controller.logger.Info("Adding protocol filters",
+		logging.String("class", c.name),
 		logging.String("protocols", fmt.Sprintf("%v", protocols)))
 	return c
 }
 
 // Apply finalizes the configuration and applies it to the system
 func (tc *ImprovedController) Apply() error {
-	tc.logger.Info("Starting traffic control configuration application", 
-		logging.String("device", tc.deviceName), 
+	tc.logger.Info("Starting traffic control configuration application",
+		logging.String("device", tc.deviceName),
 		logging.Int("class_count", len(tc.classes)))
 
 	// Validation
@@ -190,9 +190,9 @@ func (tc *ImprovedController) Apply() error {
 	// TODO: Convert to internal structures and apply
 	// This would integrate with the existing TrafficControlService
 
-	tc.logger.Info("Traffic control configuration applied successfully", 
-		logging.String("device", tc.deviceName), 
-		logging.String("total_bandwidth", tc.totalBandwidth.String()), 
+	tc.logger.Info("Traffic control configuration applied successfully",
+		logging.String("device", tc.deviceName),
+		logging.String("total_bandwidth", tc.totalBandwidth.String()),
 		logging.Int("classes_applied", len(tc.classes)))
 
 	return nil

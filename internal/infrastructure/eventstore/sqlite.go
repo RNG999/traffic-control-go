@@ -290,7 +290,7 @@ func (s *SQLiteEventStore) serializeEvent(event events.DomainEvent) (string, err
 func (s *SQLiteEventStore) deserializeEvent(aggregateID, eventType, eventData string, version int, occurredAt time.Time) (events.DomainEvent, error) {
 	// This is a simplified version - in production, you'd have a registry of event types
 	// and proper deserialization logic for each event type
-	
+
 	// For now, we'll create a generic event wrapper
 	var data map[string]interface{}
 	if err := json.Unmarshal([]byte(eventData), &data); err != nil {
@@ -316,10 +316,10 @@ type GenericEvent struct {
 	data        map[string]interface{}
 }
 
-func (e *GenericEvent) AggregateID() string     { return e.aggregateID }
-func (e *GenericEvent) EventType() string       { return e.eventType }
-func (e *GenericEvent) EventVersion() int       { return e.version }
-func (e *GenericEvent) Timestamp() time.Time    { return e.timestamp }
+func (e *GenericEvent) AggregateID() string          { return e.aggregateID }
+func (e *GenericEvent) EventType() string            { return e.eventType }
+func (e *GenericEvent) EventVersion() int            { return e.version }
+func (e *GenericEvent) Timestamp() time.Time         { return e.timestamp }
 func (e *GenericEvent) Data() map[string]interface{} { return e.data }
 
 // Ensure SQLiteEventStore implements EventStore

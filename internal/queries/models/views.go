@@ -17,20 +17,20 @@ type QdiscView struct {
 
 // ClassView is a read model for classes
 type ClassView struct {
-	DeviceName          string                 `json:"device_name"`
-	Handle              string                 `json:"handle"`
-	Parent              string                 `json:"parent"`
-	Type                string                 `json:"type"`
-	Name                string                 `json:"name"`
-	Rate                string                 `json:"rate"`
-	Ceil                string                 `json:"ceil"`
-	Priority            int                    `json:"priority,omitempty"`
-	Parameters          map[string]interface{} `json:"parameters,omitempty"`
+	DeviceName string                 `json:"device_name"`
+	Handle     string                 `json:"handle"`
+	Parent     string                 `json:"parent"`
+	Type       string                 `json:"type"`
+	Name       string                 `json:"name"`
+	Rate       string                 `json:"rate"`
+	Ceil       string                 `json:"ceil"`
+	Priority   int                    `json:"priority,omitempty"`
+	Parameters map[string]interface{} `json:"parameters,omitempty"`
 	// Legacy fields for compatibility
-	GuaranteedBandwidth string                 `json:"guaranteed_bandwidth,omitempty"`
-	MaxBandwidth        string                 `json:"max_bandwidth,omitempty"`
-	CurrentBandwidth    string                 `json:"current_bandwidth,omitempty"`
-	DroppedPackets      uint64                 `json:"dropped_packets,omitempty"`
+	GuaranteedBandwidth string `json:"guaranteed_bandwidth,omitempty"`
+	MaxBandwidth        string `json:"max_bandwidth,omitempty"`
+	CurrentBandwidth    string `json:"current_bandwidth,omitempty"`
+	DroppedPackets      uint64 `json:"dropped_packets,omitempty"`
 }
 
 // FilterView is a read model for filters
@@ -193,61 +193,61 @@ type ConfigurationView struct {
 
 // DeviceStatisticsView represents statistics for a device
 type DeviceStatisticsView struct {
-	DeviceName     string                    `json:"device_name"`
-	Timestamp      string                    `json:"timestamp"`
-	QdiscStats     []QdiscStatisticsView     `json:"qdisc_stats"`
-	ClassStats     []ClassStatisticsView     `json:"class_stats"`
-	FilterStats    []FilterStatisticsView    `json:"filter_stats"`
-	LinkStats      LinkStatisticsView        `json:"link_stats"`
+	DeviceName  string                 `json:"device_name"`
+	Timestamp   string                 `json:"timestamp"`
+	QdiscStats  []QdiscStatisticsView  `json:"qdisc_stats"`
+	ClassStats  []ClassStatisticsView  `json:"class_stats"`
+	FilterStats []FilterStatisticsView `json:"filter_stats"`
+	LinkStats   LinkStatisticsView     `json:"link_stats"`
 }
 
 // QdiscStatisticsView represents qdisc statistics with metadata
 type QdiscStatisticsView struct {
-	Handle         string                     `json:"handle"`
-	Type           string                     `json:"type"`
-	BytesSent      uint64                     `json:"bytes_sent"`
-	PacketsSent    uint64                     `json:"packets_sent"`
-	BytesDropped   uint64                     `json:"bytes_dropped"`
-	Overlimits     uint64                     `json:"overlimits"`
-	Requeues       uint64                     `json:"requeues"`
-	Backlog        uint32                     `json:"backlog"`
-	QueueLength    uint32                     `json:"queue_length"`
-	DetailedStats  map[string]interface{}     `json:"detailed_stats,omitempty"`
+	Handle        string                 `json:"handle"`
+	Type          string                 `json:"type"`
+	BytesSent     uint64                 `json:"bytes_sent"`
+	PacketsSent   uint64                 `json:"packets_sent"`
+	BytesDropped  uint64                 `json:"bytes_dropped"`
+	Overlimits    uint64                 `json:"overlimits"`
+	Requeues      uint64                 `json:"requeues"`
+	Backlog       uint32                 `json:"backlog"`
+	QueueLength   uint32                 `json:"queue_length"`
+	DetailedStats map[string]interface{} `json:"detailed_stats,omitempty"`
 }
 
 // ClassStatisticsView represents class statistics with metadata
 type ClassStatisticsView struct {
-	Handle         string                     `json:"handle"`
-	Parent         string                     `json:"parent"`
-	Name           string                     `json:"name"`
-	BytesSent      uint64                     `json:"bytes_sent"`
-	PacketsSent    uint64                     `json:"packets_sent"`
-	BytesDropped   uint64                     `json:"bytes_dropped"`
-	Overlimits     uint64                     `json:"overlimits"`
-	BacklogBytes   uint64                     `json:"backlog_bytes"`
-	BacklogPackets uint64                     `json:"backlog_packets"`
-	RateBPS        uint64                     `json:"rate_bps"`
-	DetailedStats  map[string]interface{}     `json:"detailed_stats,omitempty"`
+	Handle         string                 `json:"handle"`
+	Parent         string                 `json:"parent"`
+	Name           string                 `json:"name"`
+	BytesSent      uint64                 `json:"bytes_sent"`
+	PacketsSent    uint64                 `json:"packets_sent"`
+	BytesDropped   uint64                 `json:"bytes_dropped"`
+	Overlimits     uint64                 `json:"overlimits"`
+	BacklogBytes   uint64                 `json:"backlog_bytes"`
+	BacklogPackets uint64                 `json:"backlog_packets"`
+	RateBPS        uint64                 `json:"rate_bps"`
+	DetailedStats  map[string]interface{} `json:"detailed_stats,omitempty"`
 }
 
 // FilterStatisticsView represents filter statistics with metadata
 type FilterStatisticsView struct {
-	Parent         string                     `json:"parent"`
-	Priority       uint16                     `json:"priority"`
-	Protocol       string                     `json:"protocol"`
-	Handle         string                     `json:"handle"`
-	MatchCount     int                        `json:"match_count"`
-	FlowID         string                     `json:"flow_id"`
+	Parent     string `json:"parent"`
+	Priority   uint16 `json:"priority"`
+	Protocol   string `json:"protocol"`
+	Handle     string `json:"handle"`
+	MatchCount int    `json:"match_count"`
+	FlowID     string `json:"flow_id"`
 }
 
 // LinkStatisticsView represents network interface statistics
 type LinkStatisticsView struct {
-	RxBytes        uint64                     `json:"rx_bytes"`
-	TxBytes        uint64                     `json:"tx_bytes"`
-	RxPackets      uint64                     `json:"rx_packets"`
-	TxPackets      uint64                     `json:"tx_packets"`
-	RxErrors       uint64                     `json:"rx_errors"`
-	TxErrors       uint64                     `json:"tx_errors"`
-	RxDropped      uint64                     `json:"rx_dropped"`
-	TxDropped      uint64                     `json:"tx_dropped"`
+	RxBytes   uint64 `json:"rx_bytes"`
+	TxBytes   uint64 `json:"tx_bytes"`
+	RxPackets uint64 `json:"rx_packets"`
+	TxPackets uint64 `json:"tx_packets"`
+	RxErrors  uint64 `json:"rx_errors"`
+	TxErrors  uint64 `json:"tx_errors"`
+	RxDropped uint64 `json:"rx_dropped"`
+	TxDropped uint64 `json:"tx_dropped"`
 }

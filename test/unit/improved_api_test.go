@@ -56,7 +56,7 @@ func TestImprovedAPI_MultipleClasses(t *testing.T) {
 		Protocols("ftp", "rsync")
 
 	config := tc.String()
-	
+
 	// Verify all classes are present
 	assert.Contains(t, config, "High Priority")
 	assert.Contains(t, config, "Normal Priority")
@@ -79,11 +79,11 @@ func TestImprovedAPI_ClassReuse(t *testing.T) {
 		Ports(443, 8080)
 
 	config := tc.String()
-	
+
 	// Should only have one class
 	assert.Contains(t, config, "Classes: 1")
 	assert.Contains(t, config, "Web Services")
-	
+
 	// Should have all ports (80 from first call, 443, 8080 from second)
 	assert.Contains(t, config, "ports=[80 443 8080]")
 }
@@ -210,13 +210,13 @@ func TestImprovedAPI_ComplexScenario(t *testing.T) {
 	config := tc.String()
 	assert.Contains(t, config, "Classes: 3")
 	assert.Contains(t, config, "Total Bandwidth: 40.0Gbps")
-	
+
 	// Verify each class has required settings
 	lines := strings.Split(config, "\n")
 	webFound := false
 	dbFound := false
 	mgmtFound := false
-	
+
 	for _, line := range lines {
 		if strings.Contains(line, "Web Tier:") {
 			assert.Contains(t, line, "guaranteed=15.0Gbps")
@@ -234,7 +234,7 @@ func TestImprovedAPI_ComplexScenario(t *testing.T) {
 			mgmtFound = true
 		}
 	}
-	
+
 	assert.True(t, webFound, "Web Tier configuration not found")
 	assert.True(t, dbFound, "DB Tier configuration not found")
 	assert.True(t, mgmtFound, "Management configuration not found")

@@ -183,14 +183,14 @@ func NewTBFQdisc(device valueobjects.DeviceName, handle valueobjects.Handle, rat
 	if burstValue > math.MaxUint32 {
 		burstValue = math.MaxUint32
 	}
-	
+
 	return &TBFQdisc{
 		Qdisc:  qdisc,
 		rate:   rate,
 		buffer: 32768, // default buffer size
 		limit:  10000, // default limit
 		// #nosec G115 -- overflow check performed above
-		burst:  uint32(burstValue), // default burst (1/250th of rate)
+		burst: uint32(burstValue), // default burst (1/250th of rate)
 	}
 }
 
@@ -237,8 +237,8 @@ func (t *TBFQdisc) SetBurst(burst uint32) {
 // PRIOQdisc represents a Priority qdisc
 type PRIOQdisc struct {
 	*Qdisc
-	bands    uint8
-	priomap  []uint8
+	bands   uint8
+	priomap []uint8
 }
 
 // NewPRIOQdisc creates a new PRIO qdisc

@@ -128,8 +128,8 @@ func TestStatisticsIntegration(t *testing.T) {
 
 // TestStatisticsErrorHandling tests error scenarios
 func TestStatisticsErrorHandling(t *testing.T) {
-	// Syntax issues have been fixed, re-enabling test
-	return // TODO: Implement test logic
+	// TODO: Implement test logic when query handlers are available
+	t.Log("TestStatisticsErrorHandling: placeholder test")
 	// tc := api.NetworkInterface("nonexistent")
 	//
 	// // Test getting statistics for non-configured device
@@ -158,8 +158,8 @@ func TestStatisticsErrorHandling(t *testing.T) {
 
 // TestStatisticsPerformance tests the performance characteristics
 func TestStatisticsPerformance(t *testing.T) {
-	// Syntax issues have been fixed, re-enabling test
-	return // TODO: Implement test logic
+	// TODO: Implement test logic when query handlers are available
+	t.Log("TestStatisticsPerformance: placeholder test")
 	// tc := api.NetworkInterface("eth0")
 	//
 	// err := tc.Apply()
@@ -208,8 +208,8 @@ func setupMockStatistics(tc *api.TrafficController) {
 
 // TestStatisticsDataAccuracy tests that statistics accurately reflect the configuration
 func TestStatisticsDataAccuracy(t *testing.T) {
-	// Syntax issues have been fixed, re-enabling test
-	return // TODO: Implement test logic
+	// TODO: Implement test logic when query handlers are available
+	t.Log("TestStatisticsDataAccuracy: placeholder test")
 	// tc := api.NetworkInterface("eth0")
 	//
 	// // Create a specific configuration

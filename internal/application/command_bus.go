@@ -34,7 +34,7 @@ func NewCommandBus(service *TrafficControlService) *CommandBus {
 func (cb *CommandBus) Register(commandType string, handler CommandHandler) {
 	cb.mu.Lock()
 	defer cb.mu.Unlock()
-	
+
 	cb.handlers[commandType] = handler
 	cb.logger.Debug("Registered command handler", logging.String("type", commandType))
 }
@@ -50,10 +50,10 @@ func (cb *CommandBus) Execute(ctx context.Context, commandType string, command i
 	}
 
 	cb.logger.Debug("Executing command", logging.String("type", commandType))
-	
+
 	// Execute the command
 	if err := handler.Handle(ctx, command); err != nil {
-		cb.logger.Error("Command execution failed", 
+		cb.logger.Error("Command execution failed",
 			logging.String("type", commandType),
 			logging.Error(err))
 		return err
@@ -77,7 +77,7 @@ func (cb *CommandBus) publishCommandEvents(ctx context.Context, commandType stri
 	// Get the latest events from event store and publish them
 	// This is a simplified version - in production, you'd track which events
 	// were created by the command
-	
+
 	switch commandType {
 	case "CreateHTBQdisc":
 		return cb.service.eventBus.Publish(ctx, "QdiscCreated", nil)

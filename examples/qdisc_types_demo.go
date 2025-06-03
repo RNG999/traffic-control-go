@@ -1,3 +1,4 @@
+//go:build ignore
 // +build ignore
 
 package main
@@ -27,14 +28,14 @@ func main() {
 	// Demo 1: Token Bucket Filter (TBF) for simple rate limiting
 	fmt.Println("=== Demo 1: Token Bucket Filter (TBF) ===")
 	fmt.Println("TBF provides simple rate limiting with token bucket algorithm")
-	
+
 	err := tc.
 		TBFQdisc("1:0", "100Mbps").
 		WithBuffer(32768).
 		WithLimit(10000).
 		WithBurst(1024).
 		Apply()
-	
+
 	if err != nil {
 		log.Printf("Error applying TBF qdisc: %v", err)
 	} else {
@@ -50,12 +51,12 @@ func main() {
 	// Demo 2: Priority (PRIO) qdisc for simple priority classes
 	fmt.Println("=== Demo 2: Priority (PRIO) Qdisc ===")
 	fmt.Println("PRIO provides simple priority-based packet scheduling")
-	
+
 	err = tc.
 		PRIOQdisc("2:0", 3).
 		WithPriomap([]uint8{1, 2, 2, 2, 1, 2, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1}).
 		Apply()
-	
+
 	if err != nil {
 		log.Printf("Error applying PRIO qdisc: %v", err)
 	} else {
@@ -69,17 +70,17 @@ func main() {
 	// Demo 3: Fair Queue CoDel (FQ_CODEL) for fair queuing with AQM
 	fmt.Println("=== Demo 3: Fair Queue CoDel (FQ_CODEL) ===")
 	fmt.Println("FQ_CODEL combines fair queuing with CoDel AQM for low latency")
-	
+
 	err = tc.
 		FQCODELQdisc("3:0").
 		WithLimit(10240).
 		WithFlows(1024).
-		WithTarget(5000).    // 5ms target delay
+		WithTarget(5000).     // 5ms target delay
 		WithInterval(100000). // 100ms interval
-		WithQuantum(1518).   // MTU + headers
-		WithECN(true).       // Enable ECN marking
+		WithQuantum(1518).    // MTU + headers
+		WithECN(true).        // Enable ECN marking
 		Apply()
-	
+
 	if err != nil {
 		log.Printf("Error applying FQ_CODEL qdisc: %v", err)
 	} else {
@@ -97,7 +98,7 @@ func main() {
 	// Demo 4: HTB with hierarchical classes (existing functionality)
 	fmt.Println("=== Demo 4: HTB with Hierarchical Classes ===")
 	fmt.Println("HTB provides hierarchical token bucket with borrowing")
-	
+
 	err = tc.
 		HTBQdisc("4:0", "4:999").
 		HTBClass("4:0", "4:1", "parent", "100Mbps", "100Mbps").
@@ -105,7 +106,7 @@ func main() {
 		HTBClass("4:1", "4:20", "medium", "30Mbps", "50Mbps").
 		HTBClass("4:1", "4:30", "low", "10Mbps", "20Mbps").
 		Apply()
-	
+
 	if err != nil {
 		log.Printf("Error applying HTB hierarchy: %v", err)
 	} else {
@@ -145,7 +146,7 @@ func main() {
 	// Show configuration comparison
 	fmt.Println("=== Qdisc Type Comparison ===")
 	fmt.Println()
-	
+
 	fmt.Println("| Qdisc    | Use Case              | Complexity | Features                    |")
 	fmt.Println("|----------|----------------------|------------|------------------------------|")
 	fmt.Println("| TBF      | Simple rate limiting | Low        | Token bucket, burst          |")
@@ -168,13 +169,13 @@ func main() {
 // ConfigureHomeGateway sets up traffic control for a home internet gateway
 func ConfigureHomeGateway(tc *api.TrafficController, wanBandwidth string) error {
 	fmt.Println("Configuring home gateway traffic control...")
-	
+
 	// Simple rate limiting on WAN interface with TBF
 	err := tc.
 		TBFQdisc("1:0", wanBandwidth).
 		WithBuffer(32768).
 		Apply()
-	
+
 	if err != nil {
 		return fmt.Errorf("failed to configure WAN rate limiting: %w", err)
 	}
@@ -183,7 +184,7 @@ func ConfigureHomeGateway(tc *api.TrafficController, wanBandwidth string) error 
 	err = tc.
 		PRIOQdisc("2:0", 3).
 		Apply()
-	
+
 	if err != nil {
 		return fmt.Errorf("failed to configure LAN prioritization: %w", err)
 	}
@@ -194,26 +195,26 @@ func ConfigureHomeGateway(tc *api.TrafficController, wanBandwidth string) error 
 // ConfigureDataCenter sets up low-latency traffic control for data center
 func ConfigureDataCenter(tc *api.TrafficController) error {
 	fmt.Println("Configuring data center traffic control...")
-	
+
 	// FQ_CODEL for fair queuing and low latency
 	err := tc.
 		FQCODELQdisc("1:0").
-		WithLimit(20480).     // Higher limit for data center
-		WithFlows(2048).      // More flows for many connections
-		WithTarget(1000).     // 1ms target for low latency
-		WithInterval(50000).  // 50ms interval
-		WithECN(true).        // Enable ECN for modern stacks
+		WithLimit(20480).    // Higher limit for data center
+		WithFlows(2048).     // More flows for many connections
+		WithTarget(1000).    // 1ms target for low latency
+		WithInterval(50000). // 50ms interval
+		WithECN(true).       // Enable ECN for modern stacks
 		Apply()
-	
+
 	return err
 }
 
 // ConfigureISPCustomer sets up per-customer traffic shaping
 func ConfigureISPCustomer(tc *api.TrafficController, customerPlan string) error {
 	fmt.Println("Configuring ISP customer traffic shaping...")
-	
+
 	var rate, ceil string
-	
+
 	switch customerPlan {
 	case "basic":
 		rate, ceil = "10Mbps", "15Mbps"
@@ -230,6 +231,6 @@ func ConfigureISPCustomer(tc *api.TrafficController, customerPlan string) error 
 		HTBQdisc("1:0", "1:999").
 		HTBClass("1:0", "1:1", "customer", rate, ceil).
 		Apply()
-	
+
 	return err
 }

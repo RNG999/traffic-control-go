@@ -233,7 +233,7 @@ func (tc *TrafficController) HTBQdisc(handle, defaultClass string) *HTBQdiscBuil
 	}
 }
 
-// TBFQdisc creates a TBF qdisc with fluent interface  
+// TBFQdisc creates a TBF qdisc with fluent interface
 func (tc *TrafficController) TBFQdisc(handle, rate string) *TBFQdiscBuilder {
 	return &TBFQdiscBuilder{
 		controller: tc,
@@ -298,19 +298,19 @@ func (b *HTBQdiscBuilder) HTBClass(parent, handle, name, rate, ceil string) *HTB
 
 func (b *HTBQdiscBuilder) Apply() error {
 	ctx := context.Background()
-	
+
 	// Create HTB qdisc
 	if err := b.controller.service.CreateHTBQdisc(ctx, b.controller.deviceName, b.handle, b.defaultClass); err != nil {
 		return fmt.Errorf("failed to create HTB qdisc: %w", err)
 	}
-	
+
 	// Create classes
 	for _, class := range b.classes {
 		if err := b.controller.service.CreateHTBClass(ctx, b.controller.deviceName, class.parent, class.handle, class.rate, class.ceil); err != nil {
 			return fmt.Errorf("failed to create HTB class %s: %w", class.name, err)
 		}
 	}
-	
+
 	return nil
 }
 
@@ -446,7 +446,7 @@ func (tc *TrafficController) Apply() error {
 	// Create classes
 	for i, class := range tc.classes {
 		classID := fmt.Sprintf("1:%d", i+10) // Start class IDs at 1:10
-		parent := "1:0" // Parent is the root qdisc
+		parent := "1:0"                      // Parent is the root qdisc
 
 		tc.logger.Debug("Creating HTB class",
 			logging.String("class_name", class.name),

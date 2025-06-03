@@ -32,7 +32,7 @@ func NewEventBus(service *TrafficControlService) *EventBus {
 func (eb *EventBus) Subscribe(eventType string, handler EventHandler) {
 	eb.mu.Lock()
 	defer eb.mu.Unlock()
-	
+
 	eb.handlers[eventType] = append(eb.handlers[eventType], handler)
 	eb.logger.Debug("Subscribed to event", logging.String("type", eventType))
 }

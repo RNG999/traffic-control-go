@@ -10,12 +10,12 @@ import (
 
 // TrafficControlReadModel represents the current state of traffic control configuration
 type TrafficControlReadModel struct {
-	DeviceName string                          `json:"device_name"`
-	Qdiscs     []QdiscReadModel               `json:"qdiscs"`
-	Classes    []ClassReadModel               `json:"classes"`
-	Filters    []FilterReadModel              `json:"filters"`
-	LastUpdate int64                          `json:"last_update"`
-	Version    int                            `json:"version"`
+	DeviceName string            `json:"device_name"`
+	Qdiscs     []QdiscReadModel  `json:"qdiscs"`
+	Classes    []ClassReadModel  `json:"classes"`
+	Filters    []FilterReadModel `json:"filters"`
+	LastUpdate int64             `json:"last_update"`
+	Version    int               `json:"version"`
 }
 
 // QdiscReadModel represents a qdisc in the read model
@@ -93,7 +93,7 @@ func (p *TrafficControlProjection) handleQdiscCreated(ctx context.Context, event
 	// Get or create read model
 	var model TrafficControlReadModel
 	modelID := fmt.Sprintf("tc:%s", event.DeviceName)
-	
+
 	if err := p.store.Get(ctx, "traffic-control", modelID, &model); err != nil {
 		// Create new model if not exists
 		model = TrafficControlReadModel{
@@ -137,7 +137,7 @@ func (p *TrafficControlProjection) handleClassCreated(ctx context.Context, event
 	// Get or create read model
 	var model TrafficControlReadModel
 	modelID := fmt.Sprintf("tc:%s", event.DeviceName)
-	
+
 	if err := p.store.Get(ctx, "traffic-control", modelID, &model); err != nil {
 		// Create new model if not exists
 		model = TrafficControlReadModel{
@@ -184,7 +184,7 @@ func (p *TrafficControlProjection) handleFilterCreated(ctx context.Context, even
 	// Get or create read model
 	var model TrafficControlReadModel
 	modelID := fmt.Sprintf("tc:%s", event.DeviceName)
-	
+
 	if err := p.store.Get(ctx, "traffic-control", modelID, &model); err != nil {
 		// Create new model if not exists
 		model = TrafficControlReadModel{

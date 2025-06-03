@@ -134,7 +134,7 @@ func serverInfrastructureExample() {
 	tc.Class("DB Tier").
 		Guaranteed("8Gbps").
 		BurstTo("15Gbps").
-		Priority(0). // Highest priority for database
+		Priority(0).                    // Highest priority for database
 		Ports(3306, 5432, 27017, 6379). // MySQL, PostgreSQL, MongoDB, Redis
 		SourceIPs("10.0.4.0/24")
 
@@ -152,7 +152,7 @@ func serverInfrastructureExample() {
 		BurstTo("5Gbps").
 		Priority(3).
 		Ports(22, 161, 162, 514, 5601). // SSH, SNMP, Syslog, Kibana
-		SourceIPs("10.0.100.0/24") // Management subnet
+		SourceIPs("10.0.100.0/24")      // Management subnet
 
 	fmt.Printf("Server Infrastructure Configuration:\n%s\n", tc.String())
 

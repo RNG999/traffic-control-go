@@ -46,7 +46,6 @@ type CreateFQCODELQdiscCommand struct {
 	ECN        bool
 }
 
-
 // CreateHTBClassCommand creates an HTB class
 type CreateHTBClassCommand struct {
 	DeviceName string
@@ -55,7 +54,6 @@ type CreateHTBClassCommand struct {
 	Rate       string
 	Ceil       string
 }
-
 
 // CreateFilterCommand creates a filter
 type CreateFilterCommand struct {
@@ -66,7 +64,6 @@ type CreateFilterCommand struct {
 	FlowID     string
 	Match      map[string]string
 }
-
 
 // DeleteQdiscCommand deletes a qdisc
 type DeleteQdiscCommand struct {

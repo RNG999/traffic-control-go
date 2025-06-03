@@ -9,8 +9,8 @@ import (
 
 // MemoryReadModelStore is an in-memory implementation of ReadModelStore
 type MemoryReadModelStore struct {
-	mu    sync.RWMutex
-	data  map[string]map[string][]byte // collection -> id -> json data
+	mu   sync.RWMutex
+	data map[string]map[string][]byte // collection -> id -> json data
 }
 
 // NewMemoryReadModelStore creates a new in-memory read model store

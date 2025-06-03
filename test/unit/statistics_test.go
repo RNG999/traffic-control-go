@@ -13,7 +13,7 @@ import (
 func TestMockAdapter_BasicFunctionality(t *testing.T) {
 	// Setup
 	adapter := netlink.NewMockAdapter()
-	
+
 	// Test device
 	device, err := valueobjects.NewDevice("eth0")
 	require.NoError(t, err)
@@ -28,7 +28,7 @@ func TestMockAdapter_BasicFunctionality(t *testing.T) {
 func TestMockAdapter_QdiscStatistics(t *testing.T) {
 	// Setup
 	adapter := netlink.NewMockAdapter()
-	
+
 	device, err := valueobjects.NewDevice("eth0")
 	require.NoError(t, err)
 
@@ -41,9 +41,9 @@ func TestMockAdapter_QdiscStatistics(t *testing.T) {
 		Overlimits:   10,
 		Requeues:     5,
 	}
-	
+
 	adapter.SetQdiscStatistics(device, handle, stats)
-	
+
 	// Verify we can set statistics without errors
 	assert.True(t, true) // Basic test that no panics occur
 }
@@ -51,7 +51,7 @@ func TestMockAdapter_QdiscStatistics(t *testing.T) {
 func TestMockAdapter_ClassStatistics(t *testing.T) {
 	// Setup
 	adapter := netlink.NewMockAdapter()
-	
+
 	device, err := valueobjects.NewDevice("eth0")
 	require.NoError(t, err)
 
@@ -66,9 +66,9 @@ func TestMockAdapter_ClassStatistics(t *testing.T) {
 		BacklogBytes:   5000,
 		BacklogPackets: 50,
 	}
-	
+
 	adapter.SetClassStatistics(device, handle, stats)
-	
+
 	// Verify we can set statistics without errors
 	assert.True(t, true) // Basic test that no panics occur
 }

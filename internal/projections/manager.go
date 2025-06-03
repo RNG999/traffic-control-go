@@ -33,7 +33,7 @@ func (m *Manager) Register(projection Projection) {
 	defer m.mu.Unlock()
 
 	m.projections = append(m.projections, projection)
-	m.logger.Info("Registered projection", 
+	m.logger.Info("Registered projection",
 		logging.String("name", projection.GetName()))
 }
 
@@ -72,7 +72,7 @@ func (m *Manager) RebuildProjections(ctx context.Context) error {
 		if err := projection.Reset(ctx); err != nil {
 			return fmt.Errorf("failed to reset projection %s: %w", projection.GetName(), err)
 		}
-		m.logger.Debug("Reset projection", 
+		m.logger.Debug("Reset projection",
 			logging.String("name", projection.GetName()))
 	}
 
@@ -82,7 +82,7 @@ func (m *Manager) RebuildProjections(ctx context.Context) error {
 		return fmt.Errorf("failed to get all events: %w", err)
 	}
 
-	m.logger.Info("Processing events for rebuild", 
+	m.logger.Info("Processing events for rebuild",
 		logging.Int("event_count", len(allEvents)))
 
 	// Process each event through all projections

@@ -19,15 +19,15 @@ import (
 // TrafficControlService is the main application service that coordinates
 // between the API layer, CQRS handlers, and infrastructure
 type TrafficControlService struct {
-	eventStore         eventstore.EventStoreWithContext
-	netlinkAdapter     netlink.Adapter
-	commandBus         *CommandBus
-	queryBus           *QueryBus
-	eventBus           *EventBus
-	projectionManager  *projections.Manager
-	readModelStore     projections.ReadModelStore
-	statisticsService  *StatisticsService
-	logger             logging.Logger
+	eventStore        eventstore.EventStoreWithContext
+	netlinkAdapter    netlink.Adapter
+	commandBus        *CommandBus
+	queryBus          *QueryBus
+	eventBus          *EventBus
+	projectionManager *projections.Manager
+	readModelStore    projections.ReadModelStore
+	statisticsService *StatisticsService
+	logger            logging.Logger
 }
 
 // NewTrafficControlService creates a new traffic control service
@@ -369,11 +369,11 @@ func parseHandle(handleStr string) (valueobjects.Handle, error) {
 // convertApplicationStatsToView converts application model to view model
 func convertApplicationStatsToView(stats *DeviceStatistics) qmodels.DeviceStatisticsView {
 	view := qmodels.DeviceStatisticsView{
-		DeviceName:     stats.DeviceName,
-		Timestamp:      stats.Timestamp.Format(time.RFC3339),
-		QdiscStats:     make([]qmodels.QdiscStatisticsView, 0, len(stats.QdiscStats)),
-		ClassStats:     make([]qmodels.ClassStatisticsView, 0, len(stats.ClassStats)),
-		FilterStats:    make([]qmodels.FilterStatisticsView, 0, len(stats.FilterStats)),
+		DeviceName:  stats.DeviceName,
+		Timestamp:   stats.Timestamp.Format(time.RFC3339),
+		QdiscStats:  make([]qmodels.QdiscStatisticsView, 0, len(stats.QdiscStats)),
+		ClassStats:  make([]qmodels.ClassStatisticsView, 0, len(stats.ClassStats)),
+		FilterStats: make([]qmodels.FilterStatisticsView, 0, len(stats.FilterStats)),
 		LinkStats: qmodels.LinkStatisticsView{
 			RxBytes:   stats.LinkStats.RxBytes,
 			TxBytes:   stats.LinkStats.TxBytes,
@@ -389,14 +389,14 @@ func convertApplicationStatsToView(stats *DeviceStatistics) qmodels.DeviceStatis
 	// Convert qdisc statistics
 	for _, qdisc := range stats.QdiscStats {
 		qdiscView := qmodels.QdiscStatisticsView{
-			Handle:         qdisc.Handle,
-			Type:           qdisc.Type,
-			BytesSent:      qdisc.Stats.BytesSent,
-			PacketsSent:    qdisc.Stats.PacketsSent,
-			BytesDropped:   qdisc.Stats.BytesDropped,
-			Overlimits:     qdisc.Stats.Overlimits,
-			Requeues:       qdisc.Stats.Requeues,
-			DetailedStats:  make(map[string]interface{}),
+			Handle:        qdisc.Handle,
+			Type:          qdisc.Type,
+			BytesSent:     qdisc.Stats.BytesSent,
+			PacketsSent:   qdisc.Stats.PacketsSent,
+			BytesDropped:  qdisc.Stats.BytesDropped,
+			Overlimits:    qdisc.Stats.Overlimits,
+			Requeues:      qdisc.Stats.Requeues,
+			DetailedStats: make(map[string]interface{}),
 		}
 
 		if qdisc.DetailedStats != nil {

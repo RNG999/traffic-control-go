@@ -8,8 +8,6 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"regexp"
-	"strconv"
 	"testing"
 	"time"
 
@@ -122,43 +120,6 @@ func TestBurstTraffic(t *testing.T) {
 // Helper functions for veth tests
 
 func createVethPair(veth0, veth1 string) error {
-	// Create network namespace
-	if err := exec.Command("ip", "netns", "add", "tc-test-ns").Run(); err != nil {
-		// Ignore if already exists
-	}
-
-	// Create veth pair
-	cmd := exec.Command("ip", "link", "add", veth0, "type", "veth", "peer", "name", veth1)
-	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("failed to create veth pair: %w", err)
-	}
-
-	// Move veth1 to namespace
-	cmd = exec.Command("ip", "link", "set", veth1, "netns", "tc-test-ns")
-	return cmd.Run()
-}
-
-func configureVethIPs(veth0, veth1 string) error {
-	// Configure veth0
-	cmds := [][]string{
-		{"ip", "addr", "add", "192.168.100.1/24", "dev", veth0},
-		{"ip", "link", "set", veth0, "up"},
-		// Configure veth1 in namespace
-		{"ip", "netns", "exec", "tc-test-ns", "ip", "addr", "add", "192.168.100.2/24", "dev", veth1},
-		{"ip", "netns", "exec", "tc-test-ns", "ip", "link", "set", veth1, "up"},
-		{"ip", "netns", "exec", "tc-test-ns", "ip", "link", "set", "lo", "up"},
-	}
-
-	for _, args := range cmds {
-		if err := exec.Command(args[0], args[1:]...).Run(); err != nil {
-			return fmt.Errorf("failed to run %v: %w", args, err)
-		}
-	}
-
-	return nil
-}
-
-func createVethPair(veth0, veth1 string) error {
 	// Create network namespace first
 	if err := exec.Command("ip", "netns", "add", "tc-test-ns").Run(); err != nil {
 		return fmt.Errorf("failed to create namespace: %w", err)
@@ -210,29 +171,3 @@ func cleanupVeth(veth0, veth1 string) {
 	_ = exec.Command("ip", "netns", "del", "tc-test-ns").Run()
 }
 
-func parseIperf3Bandwidth(t *testing.T, output string) float64 {
-	// Parse iperf3 output to extract bandwidth
-	// Look for lines like:
-	// [  4]   0.00-5.00   sec  6.25 MBytes  10.5 Mbits/sec                  sender
-	// [  4]   0.00-5.04   sec  6.12 MBytes  10.2 Mbits/sec                  receiver
-
-	// We want the receiver bandwidth as it's more accurate for our test
-	re := regexp.MustCompile(`\[\s*\d+\]\s+[\d.-]+-[\d.-]+\s+sec\s+[\d.]+\s+\w+\s+([\d.]+)\s+Mbits/sec\s+receiver`)
-	matches := re.FindStringSubmatch(output)
-
-	if len(matches) < 2 {
-		// Try sender if receiver not found
-		re = regexp.MustCompile(`\[\s*\d+\]\s+[\d.-]+-[\d.-]+\s+sec\s+[\d.]+\s+\w+\s+([\d.]+)\s+Mbits/sec\s+sender`)
-		matches = re.FindStringSubmatch(output)
-	}
-
-	if len(matches) < 2 {
-		t.Logf("Could not parse bandwidth from iperf3 output:\n%s", output)
-		t.Fatal("Failed to parse iperf3 bandwidth")
-	}
-
-	bandwidth, err := strconv.ParseFloat(matches[1], 64)
-	require.NoError(t, err, "Failed to parse bandwidth value: %s", matches[1])
-
-	return bandwidth
-}

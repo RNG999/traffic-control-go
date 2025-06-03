@@ -31,8 +31,6 @@ func NewRealNetlinkAdapter() *RealNetlinkAdapter {
 	}
 }
 
-
-
 // AddQdisc adds a qdisc using netlink
 func (a *RealNetlinkAdapter) AddQdisc(ctx context.Context, qdiscEntity *entities.Qdisc) error {
 	a.logger.Info("Adding qdisc",
@@ -302,7 +300,7 @@ func (a *RealNetlinkAdapter) AddFilter(ctx context.Context, filterEntity *entiti
 		logging.String("device", filterEntity.ID().Device().String()),
 		logging.String("operation", logging.OperationCreateFilter),
 	)
-	
+
 	// Get the network link
 	link, err := netlink.LinkByName(filterEntity.ID().Device().String())
 	if err != nil {
@@ -411,7 +409,6 @@ func (a *RealNetlinkAdapter) GetFilters(device valueobjects.DeviceName) types.Re
 
 // Helper functions
 
-
 func convertProtocolBack(p uint16) entities.Protocol {
 	switch p {
 	case 0x0000:
@@ -424,4 +421,3 @@ func convertProtocolBack(p uint16) entities.Protocol {
 		return entities.ProtocolIP
 	}
 }
-

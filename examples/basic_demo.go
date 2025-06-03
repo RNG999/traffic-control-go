@@ -33,19 +33,19 @@ func main() {
 }
 
 func basicExample() {
-	controller := api.New("eth0")
+	controller := api.NetworkInterface("eth0")
 
 	err := controller.
-		SetTotalBandwidth("100Mbps").
+		WithHardLimitBandwidth("100Mbps").
 		CreateTrafficClass("Web Services").
 		WithGuaranteedBandwidth("30Mbps").
-		WithBurstableTo("60Mbps").
+		WithSoftLimitBandwidth("60Mbps").
 		WithPriority(4). // Normal priority
 		ForPort(80, 443).
-		And().
+		Done().
 		CreateTrafficClass("SSH Management").
 		WithGuaranteedBandwidth("5Mbps").
-		WithBurstableTo("10Mbps").
+		WithSoftLimitBandwidth("10Mbps").
 		WithPriority(1). // High priority
 		ForPort(22).
 		Apply()
@@ -58,10 +58,10 @@ func basicExample() {
 }
 
 func priorityExample() {
-	controller := api.New("eth0")
+	controller := api.NetworkInterface("eth0")
 
 	// Configure priority groups separately
-	controller.SetTotalBandwidth("1Gbps")
+	controller.WithHardLimitBandwidth("1Gbps")
 
 	// This is a conceptual example - the actual implementation would need
 	// proper integration between priority groups and the controller
@@ -70,12 +70,12 @@ func priorityExample() {
 		WithGuaranteedBandwidth("300Mbps").
 		WithPriority(1). // High priority
 		ForPort(22).     // SSH
-		And().
+		Done().
 		CreateTrafficClass("Medium Priority").
 		WithGuaranteedBandwidth("500Mbps").
 		WithPriority(4).  // Medium priority
 		ForPort(80, 443). // HTTP/HTTPS
-		And().
+		Done().
 		CreateTrafficClass("Low Priority").
 		WithGuaranteedBandwidth("200Mbps").
 		WithPriority(6). // Low priority
@@ -90,23 +90,23 @@ func priorityExample() {
 }
 
 func serverExample() {
-	controller := api.New("eth0")
+	controller := api.NetworkInterface("eth0")
 
 	err := controller.
-		SetTotalBandwidth("500Mbps").
+		WithHardLimitBandwidth("500Mbps").
 		CreateTrafficClass("Database Server").
 		WithGuaranteedBandwidth("100Mbps").
-		WithBurstableTo("200Mbps").
+		WithSoftLimitBandwidth("200Mbps").
 		WithPriority(1). // High priority
 		ForDestination("192.168.1.10").
-		And().
+		Done().
 		CreateTrafficClass("Web Servers").
 		WithGuaranteedBandwidth("150Mbps").
-		WithBurstableTo("300Mbps").
+		WithSoftLimitBandwidth("300Mbps").
 		WithPriority(3). // Normal-high priority
 		ForDestination("192.168.1.20").
 		ForDestination("192.168.1.21").
-		And().
+		Done().
 		CreateTrafficClass("Backup Traffic").
 		WithGuaranteedBandwidth("50Mbps").
 		WithPriority(6). // Low priority
@@ -122,14 +122,14 @@ func serverExample() {
 
 // Example of error handling
 func errorExample() {
-	controller := api.New("eth0")
+	controller := api.NetworkInterface("eth0")
 
 	// This will fail due to over-allocation
 	err := controller.
-		SetTotalBandwidth("100Mbps").
+		WithHardLimitBandwidth("100Mbps").
 		CreateTrafficClass("Service1").
 		WithGuaranteedBandwidth("60Mbps").
-		And().
+		Done().
 		CreateTrafficClass("Service2").
 		WithGuaranteedBandwidth("50Mbps").
 		Apply()
@@ -168,7 +168,7 @@ func configExample() {
 	})
 
 	// Apply modified configuration
-	controller := api.New(config.Device)
+	controller := api.NetworkInterface(config.Device)
 	err = controller.ApplyConfig(config)
 	if err != nil {
 		log.Printf("Configuration error: %v", err)
@@ -219,7 +219,7 @@ func configExample() {
 		},
 	}
 
-	controller = api.New(customConfig.Device)
+	controller = api.NetworkInterface(customConfig.Device)
 	err = controller.ApplyConfig(customConfig)
 	if err != nil {
 		log.Printf("Custom configuration error: %v", err)

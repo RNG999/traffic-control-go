@@ -1,5 +1,33 @@
 # Progress - プロジェクト進捗状況
 
+## 2025年6月3日 - API Naming Convention Improvements
+
+### 🎯 **API命名規則改善完了**
+
+#### ✅ **人間に理解しやすい命名への変更**
+- `Done()` → `AddClass()` - より明確な意図表現
+- `NewTrafficController()` → `NetworkInterface()` - シンプルで直感的
+- `SetTotalBandwidth()` → `WithHardLimitBandwidth()` - 物理的制限の明確化
+- `WithMaxBandwidth()` → `WithSoftLimitBandwidth()` - ポリシー制限の明確化
+
+#### ✅ **帯域幅制限の概念明確化**
+- **Hard Limit**: 物理的な絶対制限（超過不可能）
+- **Soft Limit**: ポリシーベース制限（借用可能）
+- HTB (Hierarchical Token Bucket) の仕組みに合致
+- ユーザーの理解を促進する直感的なAPI
+
+#### ✅ **全ファイル更新完了**
+- メインAPI (`api/api.go`) 更新
+- 全サンプルファイル更新 (examples/*.go)
+- 全テストファイル更新 (test/**/*.go)
+- 全テストPASS確認済み
+
+### 現在のプロジェクト状態
+- **フォーカス**: Go Library専用
+- **ブランチ**: `feature/automated-release-system`
+- **状態**: API命名改善完了、全テストPASS
+- **次のアクション**: Memory bank & ドキュメント更新 → PR作成
+
 ## 2025年6月3日 - CI Workflows Fixed for Library-Only
 
 ### 🔧 **CI/CD修正完了**

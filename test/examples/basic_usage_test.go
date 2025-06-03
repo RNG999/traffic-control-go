@@ -13,28 +13,35 @@ func TestBasicTrafficControlUsage(t *testing.T) {
 	// This test demonstrates the fluent API design
 	// It's not actually applying TC rules but validates the API structure
 
-	controller := api.New("eth0")
+	controller := api.NetworkInterface("eth0")
 
 	// Test the fluent interface without applying
-	err := controller.
-		SetTotalBandwidth("100Mbps").
+	controller.WithHardLimitBandwidth("100Mbps")
+
+	controller.
 		CreateTrafficClass("Critical Services").
 		WithGuaranteedBandwidth("20Mbps").
-		WithBurstableTo("40Mbps").
+		WithSoftLimitBandwidth("40Mbps").
 		WithPriority(1). // High priority
 		ForPort(22, 443).
-		And().
+		AddClass()
+
+	controller.
 		CreateTrafficClass("Web Traffic").
 		WithGuaranteedBandwidth("30Mbps").
-		WithBurstableTo("60Mbps").
+		WithSoftLimitBandwidth("60Mbps").
 		WithPriority(4). // Normal priority
 		ForPort(80, 443).
-		And().
+		AddClass()
+
+	controller.
 		CreateTrafficClass("Background").
 		WithGuaranteedBandwidth("10Mbps").
 		WithPriority(6). // Low priority
 		ForDestination("192.168.1.100").
-		Apply()
+		AddClass()
+
+	err := controller.Apply()
 
 	// Should succeed with valid configuration
 	assert.NoError(t, err)
@@ -42,19 +49,24 @@ func TestBasicTrafficControlUsage(t *testing.T) {
 
 // TestInvalidConfiguration demonstrates validation
 func TestInvalidConfiguration(t *testing.T) {
-	controller := api.New("eth0")
+	controller := api.NetworkInterface("eth0")
 
 	// Test over-allocation of guaranteed bandwidth
-	err := controller.
-		SetTotalBandwidth("100Mbps").
+	controller.WithHardLimitBandwidth("100Mbps")
+
+	controller.
 		CreateTrafficClass("Service1").
 		WithGuaranteedBandwidth("60Mbps").
 		WithPriority(4).
-		And().
+		AddClass()
+
+	controller.
 		CreateTrafficClass("Service2").
 		WithGuaranteedBandwidth("50Mbps").
 		WithPriority(4).
-		Apply()
+		AddClass()
+
+	err := controller.Apply()
 
 	// Should fail due to over-allocation
 	assert.Error(t, err)
@@ -63,14 +75,14 @@ func TestInvalidConfiguration(t *testing.T) {
 
 // TestInvalidBandwidthLimits tests bandwidth validation
 func TestInvalidBandwidthLimits(t *testing.T) {
-	controller := api.New("eth0")
+	controller := api.NetworkInterface("eth0")
 
 	// Test guaranteed > max bandwidth
 	err := controller.
-		SetTotalBandwidth("100Mbps").
+		WithHardLimitBandwidth("100Mbps").
 		CreateTrafficClass("Invalid").
 		WithGuaranteedBandwidth("50Mbps").
-		WithMaxBandwidth("30Mbps").
+		WithSoftLimitBandwidth("30Mbps").
 		WithPriority(4).
 		Apply()
 
@@ -81,7 +93,7 @@ func TestInvalidBandwidthLimits(t *testing.T) {
 
 // TestMissingTotalBandwidth tests missing bandwidth configuration
 func TestMissingTotalBandwidth(t *testing.T) {
-	controller := api.New("eth0")
+	controller := api.NetworkInterface("eth0")
 
 	// Test missing total bandwidth
 	err := controller.

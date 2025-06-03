@@ -15,36 +15,36 @@ func main() {
 	fmt.Println("====================\n")
 
 	// Demonstrate different priority options
-	controller := api.New("eth0")
+	controller := api.NetworkInterface("eth0")
 
 	// Using numeric priorities
 	err := controller.
-		SetTotalBandwidth("1Gbps").
+		WithHardLimitBandwidth("1Gbps").
 		CreateTrafficClass("Critical Traffic").
 		WithGuaranteedBandwidth("100Mbps").
 		WithPriority(0).     // Highest priority
 		ForPort(5060, 5061). // SIP/VoIP
-		And().
+		Done().
 		CreateTrafficClass("Interactive Traffic").
 		WithGuaranteedBandwidth("100Mbps").
 		WithPriority(1). // High priority
 		ForPort(22).     // SSH
-		And().
+		Done().
 		CreateTrafficClass("Normal Traffic").
 		WithGuaranteedBandwidth("400Mbps").
 		WithPriority(4).  // Must set explicit priority
 		ForPort(80, 443). // HTTP/HTTPS
-		And().
+		Done().
 		CreateTrafficClass("Background Traffic").
 		WithGuaranteedBandwidth("100Mbps").
 		WithPriority(6). // Low priority
 		ForPort(873).    // rsync
-		And().
+		Done().
 		CreateTrafficClass("Database Traffic").
 		WithGuaranteedBandwidth("200Mbps").
 		WithPriority(3). // Medium-high priority
 		ForPort(3306).   // MySQL
-		And().
+		Done().
 		CreateTrafficClass("Bulk Transfer").
 		WithGuaranteedBandwidth("100Mbps").
 		WithPriority(7). // Lowest priority

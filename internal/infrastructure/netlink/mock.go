@@ -256,7 +256,7 @@ func (m *MockAdapter) SetQdiscStatistics(device valueobjects.DeviceName, handle 
 	defer m.mu.Unlock()
 
 	deviceStr := device.String()
-	
+
 	if qdiscs, exists := m.qdiscs[deviceStr]; exists {
 		if qdisc, qdiscExists := qdiscs[handle]; qdiscExists {
 			qdisc.Statistics = stats
@@ -271,7 +271,7 @@ func (m *MockAdapter) SetClassStatistics(device valueobjects.DeviceName, handle 
 	defer m.mu.Unlock()
 
 	deviceStr := device.String()
-	
+
 	if classes, exists := m.classes[deviceStr]; exists {
 		if class, classExists := classes[handle]; classExists {
 			class.Statistics = stats

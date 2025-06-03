@@ -16,22 +16,26 @@ import (
 func TestStatisticsIntegration(t *testing.T) {
 	t.Skip("Skipping statistics integration test - timing issues in CI")
 	// Create a traffic controller with mock adapter for testing
-	tc := api.New("eth0")
-	
+	tc := api.NetworkInterface("eth0")
+
 	// Configure traffic control
-	err := tc.SetTotalBandwidth("10mbit").
+	tc.WithHardLimitBandwidth("10mbit")
+	tc.
 		CreateTrafficClass("web-traffic").
 		WithGuaranteedBandwidth("2mbit").
-		WithMaxBandwidth("5mbit").
+		WithSoftLimitBandwidth("5mbit").
 		WithPriority(1).
 		ForPort(80, 443).
-		And().
+		AddClass()
+	tc.
 		CreateTrafficClass("ssh-traffic").
 		WithGuaranteedBandwidth("1mbit").
-		WithMaxBandwidth("3mbit").
+		WithSoftLimitBandwidth("3mbit").
 		WithPriority(0).
 		ForPort(22).
-		Apply()
+		AddClass()
+
+	err := tc.Apply()
 
 	require.NoError(t, err)
 
@@ -43,20 +47,20 @@ func TestStatisticsIntegration(t *testing.T) {
 		stats, err := tc.GetStatistics()
 		require.NoError(t, err)
 		assert.NotNil(t, stats)
-		
+
 		assert.Equal(t, "eth0", stats.DeviceName)
 		assert.NotEmpty(t, stats.Timestamp)
-		
+
 		// Should have statistics for created qdiscs and classes
 		assert.NotEmpty(t, stats.QdiscStats)
 		assert.NotEmpty(t, stats.ClassStats)
-		
+
 		t.Logf("Device: %s", stats.DeviceName)
 		t.Logf("Timestamp: %s", stats.Timestamp)
 		t.Logf("Qdiscs: %d", len(stats.QdiscStats))
 		t.Logf("Classes: %d", len(stats.ClassStats))
 		t.Logf("Filters: %d", len(stats.FilterStats))
-		
+
 		// Verify qdisc statistics structure
 		for _, qdisc := range stats.QdiscStats {
 			t.Logf("Qdisc %s (%s): %d bytes sent, %d packets sent",
@@ -64,7 +68,7 @@ func TestStatisticsIntegration(t *testing.T) {
 			assert.NotEmpty(t, qdisc.Handle)
 			assert.NotEmpty(t, qdisc.Type)
 		}
-		
+
 		// Verify class statistics structure
 		for _, class := range stats.ClassStats {
 			t.Logf("Class %s (%s): %d bytes sent, %d packets sent, rate %d bps",
@@ -79,13 +83,13 @@ func TestStatisticsIntegration(t *testing.T) {
 		stats, err := tc.GetRealtimeStatistics()
 		require.NoError(t, err)
 		assert.NotNil(t, stats)
-		
+
 		assert.Equal(t, "eth0", stats.DeviceName)
 		assert.NotEmpty(t, stats.Timestamp)
-		
+
 		// Real-time stats should include all detected TC elements
 		assert.NotEmpty(t, stats.QdiscStats)
-		
+
 		t.Logf("Real-time stats - Qdiscs: %d, Classes: %d",
 			len(stats.QdiscStats), len(stats.ClassStats))
 	})
@@ -95,13 +99,13 @@ func TestStatisticsIntegration(t *testing.T) {
 		stats, err := tc.GetQdiscStatistics("1:0")
 		require.NoError(t, err)
 		assert.NotNil(t, stats)
-		
+
 		assert.Equal(t, "1:0", stats.Handle)
 		assert.NotEmpty(t, stats.Type)
-		
+
 		t.Logf("Qdisc 1:0: %d bytes sent, %d packets sent, %d dropped",
 			stats.BytesSent, stats.PacketsSent, stats.BytesDropped)
-		
+
 		// Verify detailed stats if available
 		if len(stats.DetailedStats) > 0 {
 			t.Logf("Detailed stats available: %+v", stats.DetailedStats)
@@ -113,10 +117,10 @@ func TestStatisticsIntegration(t *testing.T) {
 		stats, err := tc.GetClassStatistics("1:10")
 		require.NoError(t, err)
 		assert.NotNil(t, stats)
-		
+
 		assert.Equal(t, "1:10", stats.Handle)
 		assert.Equal(t, "1:0", stats.Parent)
-		
+
 		t.Logf("Class 1:10: %d bytes sent, %d packets sent, %d backlog bytes",
 			stats.BytesSent, stats.PacketsSent, stats.BacklogBytes)
 	})
@@ -125,7 +129,7 @@ func TestStatisticsIntegration(t *testing.T) {
 	t.Run("MonitorStatistics", func(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.Background(), 200*time.Millisecond)
 		defer cancel()
-		_ = ctx  // Use ctx to avoid "declared and not used" error
+		_ = ctx // Use ctx to avoid "declared and not used" error
 
 		callbackCount := 0
 		var lastStats *qmodels.DeviceStatisticsView
@@ -140,20 +144,20 @@ func TestStatisticsIntegration(t *testing.T) {
 		// Should timeout (expected behavior)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "context deadline exceeded")
-		
+
 		// Should have received multiple callbacks
 		assert.Greater(t, callbackCount, 1)
 		assert.NotNil(t, lastStats)
 		assert.Equal(t, "eth0", lastStats.DeviceName)
-		
+
 		t.Logf("Received %d monitoring callbacks", callbackCount)
 	})
 }
 
 // TestStatisticsErrorHandling tests error scenarios
 func TestStatisticsErrorHandling(t *testing.T) {
-	tc := api.New("nonexistent")
-	
+	tc := api.NetworkInterface("nonexistent")
+
 	// Test getting statistics for non-configured device
 	t.Run("NonExistentDevice", func(t *testing.T) {
 		// This should still work but return empty/minimal statistics
@@ -181,15 +185,18 @@ func TestStatisticsErrorHandling(t *testing.T) {
 // TestStatisticsPerformance tests the performance characteristics
 func TestStatisticsPerformance(t *testing.T) {
 	t.Skip("Skipping statistics performance test - handler registration issues")
-	tc := api.New("eth0")
-	
+	tc := api.NetworkInterface("eth0")
+
 	// Setup configuration
-	err := tc.SetTotalBandwidth("100mbit").
+	tc.WithHardLimitBandwidth("100mbit")
+	tc.
 		CreateTrafficClass("bulk").
 		WithGuaranteedBandwidth("10mbit").
-		WithMaxBandwidth("50mbit").
+		WithSoftLimitBandwidth("50mbit").
 		WithPriority(7).
-		Apply()
+		AddClass()
+
+	err := tc.Apply()
 	require.NoError(t, err)
 
 	setupMockStatistics(tc)
@@ -206,9 +213,9 @@ func TestStatisticsPerformance(t *testing.T) {
 
 		duration := time.Since(start)
 		avgDuration := duration / time.Duration(iterations)
-		
+
 		t.Logf("Average time per statistics call: %v", avgDuration)
-		
+
 		// Should be reasonably fast (less than 10ms per call in mock mode)
 		assert.Less(t, avgDuration, 10*time.Millisecond)
 	})
@@ -219,13 +226,13 @@ func setupMockStatistics(tc *api.TrafficController) {
 	// In a real implementation, we would extract the netlink adapter
 	// and configure it with mock data. For now, this is a placeholder
 	// that would work with the mock adapter to set up realistic statistics.
-	
+
 	// This would typically involve:
 	// 1. Getting the service from the traffic controller
 	// 2. Extracting the netlink adapter
 	// 3. If it's a mock adapter, setting up mock qdisc/class/filter data
 	// 4. Populating realistic statistics numbers
-	
+
 	// Example (pseudocode):
 	// if mockAdapter, ok := tc.service.netlinkAdapter.(*netlink.MockAdapter); ok {
 	//     mockAdapter.SetQdiscs(device, mockQdiscData)
@@ -236,22 +243,26 @@ func setupMockStatistics(tc *api.TrafficController) {
 // TestStatisticsDataAccuracy tests that statistics accurately reflect the configuration
 func TestStatisticsDataAccuracy(t *testing.T) {
 	t.Skip("Skipping statistics data accuracy test - handler registration issues")
-	tc := api.New("eth0")
-	
+	tc := api.NetworkInterface("eth0")
+
 	// Create a specific configuration
-	err := tc.SetTotalBandwidth("10mbit").
+	tc.WithHardLimitBandwidth("10mbit")
+	tc.
 		CreateTrafficClass("priority-traffic").
 		WithGuaranteedBandwidth("3mbit").
-		WithMaxBandwidth("7mbit").
+		WithSoftLimitBandwidth("7mbit").
 		WithPriority(1).
 		ForPort(22, 443).
-		And().
+		AddClass()
+	tc.
 		CreateTrafficClass("bulk-traffic").
 		WithGuaranteedBandwidth("2mbit").
-		WithMaxBandwidth("5mbit").
+		WithSoftLimitBandwidth("5mbit").
 		WithPriority(5).
 		ForPort(80).
-		Apply()
+		AddClass()
+
+	err := tc.Apply()
 	require.NoError(t, err)
 
 	setupMockStatistics(tc)
@@ -268,7 +279,7 @@ func TestStatisticsDataAccuracy(t *testing.T) {
 
 	// Should have at least 2 classes (our created classes) plus potentially a default class
 	assert.GreaterOrEqual(t, len(stats.ClassStats), 2)
-	
+
 	// Should have filters for our port specifications
 	assert.GreaterOrEqual(t, len(stats.FilterStats), 3) // SSH, HTTPS, HTTP
 

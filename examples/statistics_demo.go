@@ -1,3 +1,4 @@
+//go:build ignore
 // +build ignore
 
 package main
@@ -16,19 +17,19 @@ func main() {
 	fmt.Println("============================")
 
 	// Create a traffic controller for demonstration
-	tc := api.New("demo-eth0")
+	tc := api.NetworkInterface("demo-eth0")
 
 	// Configure a simple traffic control setup
-	err := tc.SetTotalBandwidth("10mbit").
+	err := tc.WithHardLimitBandwidth("10mbit").
 		CreateTrafficClass("web-traffic").
 		WithGuaranteedBandwidth("2mbit").
-		WithMaxBandwidth("5mbit").
+		WithSoftLimitBandwidth("5mbit").
 		WithPriority(1).
 		ForPort(80, 443).
-		And().
+		Done().
 		CreateTrafficClass("ssh-traffic").
 		WithGuaranteedBandwidth("1mbit").
-		WithMaxBandwidth("3mbit").
+		WithSoftLimitBandwidth("3mbit").
 		WithPriority(0).
 		ForPort(22).
 		Apply()

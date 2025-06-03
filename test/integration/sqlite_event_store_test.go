@@ -37,9 +37,9 @@ func TestSQLiteEventStore(t *testing.T) {
 		// Create aggregate
 		device, err := valueobjects.NewDevice("eth0")
 		require.NoError(t, err)
-		
+
 		aggregate := aggregates.NewTrafficControlAggregate(device)
-		
+
 		// Add HTB qdisc
 		handle := valueobjects.NewHandle(1, 0)
 		defaultClass := valueobjects.NewHandle(1, 999)
@@ -64,7 +64,7 @@ func TestSQLiteEventStore(t *testing.T) {
 		// Create aggregate
 		device, err := valueobjects.NewDevice("eth1")
 		require.NoError(t, err)
-		
+
 		aggregate1 := aggregates.NewTrafficControlAggregate(device)
 		aggregate2 := aggregates.NewTrafficControlAggregate(device)
 
@@ -109,9 +109,9 @@ func TestSQLiteEventStore(t *testing.T) {
 		// Create and save aggregate with multiple events
 		device, err := valueobjects.NewDevice("eth2")
 		require.NoError(t, err)
-		
+
 		aggregate := aggregates.NewTrafficControlAggregate(device)
-		
+
 		// Add multiple items
 		handle := valueobjects.NewHandle(1, 0)
 		defaultClass := valueobjects.NewHandle(1, 999)
@@ -165,9 +165,9 @@ func TestSQLiteEventStorePersistence(t *testing.T) {
 		// Create aggregate
 		device, err := valueobjects.NewDevice("eth0")
 		require.NoError(t, err)
-		
+
 		aggregate := aggregates.NewTrafficControlAggregate(device)
-		
+
 		// Add HTB qdisc
 		handle := valueobjects.NewHandle(1, 0)
 		defaultClass := valueobjects.NewHandle(1, 999)
@@ -193,7 +193,7 @@ func TestSQLiteEventStorePersistence(t *testing.T) {
 	// Load aggregate
 	device, err := valueobjects.NewDevice("eth0")
 	require.NoError(t, err)
-	
+
 	aggregate := aggregates.NewTrafficControlAggregate(device)
 	err = store.Load(ctx, aggregate.GetID(), aggregate)
 	require.NoError(t, err)

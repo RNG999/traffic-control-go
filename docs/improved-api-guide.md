@@ -1,102 +1,95 @@
-# Improved API Guide
+# API Guide - Human-Readable Traffic Control
 
-This document describes the improved API design for traffic-control-go that eliminates redundant `And()` calls and provides a more natural, readable configuration experience.
+This document describes the current API design for traffic-control-go that provides clear, human-readable method names and bandwidth concepts.
 
 ## Overview
 
-The improved API removes the need for redundant `And()` method calls by allowing direct chaining of class configurations and providing cleaner method names.
+The API uses descriptive method names and clear bandwidth concepts to make traffic control configuration intuitive for developers.
 
-## API Comparison
+## Current API Design
 
-### Before (v0.1.0)
+### Bandwidth Concepts
+- **Hard Limit**: Physical bandwidth limit (cannot be exceeded)
+- **Soft Limit**: Policy bandwidth limit (can be exceeded through borrowing)
+- **Guaranteed**: Minimum bandwidth reservation for a class
+
+### API Example
 ```go
-controller := api.New("eth0").
-    SetTotalBandwidth("100Mbps").
-    CreateTrafficClass("Web Services").
-        WithGuaranteedBandwidth("30Mbps").
-        WithBurstableTo("60Mbps").
-        WithPriority(4).
-        ForPort(80, 443).
-    And().  // ← Redundant!
-    CreateTrafficClass("SSH Management").
-        WithGuaranteedBandwidth("5Mbps").
-        WithBurstableTo("10Mbps").
-        WithPriority(1).
-        ForPort(22).
-    And().  // ← Redundant!
-    Apply()
-```
+// Create controller for network interface
+tc := api.NetworkInterface("eth0").
+    WithHardLimitBandwidth("1Gbps")  // Physical interface limit
 
-### After (Improved)
-```go
-tc := api.NewImproved("eth0").
-    TotalBandwidth("100Mbps")
+// Configure web services class
+tc.CreateTrafficClass("Web Services").
+    WithGuaranteedBandwidth("300Mbps").     // Minimum guarantee
+    WithSoftLimitBandwidth("500Mbps").      // Policy limit (borrowing allowed)
+    WithPriority(4).                        // Normal priority
+    ForPort(80, 443).                       // HTTP/HTTPS traffic
+    AddClass()                              // Complete class configuration
 
-tc.Class("Web Services").
-    Guaranteed("30Mbps").
-    BurstTo("60Mbps").
-    Priority(4).
-    Ports(80, 443)
+// Configure database class
+tc.CreateTrafficClass("Database").
+    WithGuaranteedBandwidth("200Mbps").
+    WithSoftLimitBandwidth("400Mbps").
+    WithPriority(2).                        // High priority
+    ForPort(3306, 5432).                    // MySQL, PostgreSQL
+    AddClass()
 
-tc.Class("SSH Management").
-    Guaranteed("5Mbps").
-    BurstTo("10Mbps").
-    Priority(1).
-    Ports(22)
-
+// Apply configuration
 tc.Apply()
 ```
 
-## Key Improvements
+## Key Features
 
-### 1. No More Redundant `And()` Calls
-- Eliminated the need for `.And()` between class configurations
-- Each class configuration is self-contained and natural
+### 1. Human-Readable Method Names
+- `NetworkInterface()` - Clear interface selection
+- `WithHardLimitBandwidth()` - Physical interface limit
+- `WithSoftLimitBandwidth()` - Policy-based limit with borrowing
+- `WithGuaranteedBandwidth()` - Minimum bandwidth guarantee
+- `AddClass()` - Complete class configuration
 
-### 2. Cleaner Method Names
-- `TotalBandwidth()` instead of `SetTotalBandwidth()`
-- `Class()` instead of `CreateTrafficClass()`
-- `Guaranteed()` instead of `WithGuaranteedBandwidth()`
-- `BurstTo()` instead of `WithBurstableTo()`
-- `Ports()` instead of `ForPort()` with variadic parameters
+### 2. Clear Bandwidth Concepts
+- **Hard Limit**: Absolute physical constraint (line rate, interface speed)
+- **Soft Limit**: Policy constraint that allows borrowing from other classes
+- **Guaranteed**: Minimum reserved bandwidth for each class
 
-### 3. Natural Flow
-- Configure the controller first: `tc := api.NewImproved("eth0").TotalBandwidth("1Gbps")`
-- Then configure each class: `tc.Class("name").Guaranteed().Priority().Ports()`
-- Finally apply: `tc.Apply()`
+### 3. Natural Configuration Flow
+- Configure the controller: `api.NetworkInterface("eth0").WithHardLimitBandwidth("1Gbps")`
+- Configure each class: `tc.CreateTrafficClass("name").WithGuaranteedBandwidth().WithPriority().AddClass()`
+- Apply configuration: `tc.Apply()`
 
 ### 4. Enhanced Filtering Options
-- `Ports(80, 443, 8080)` - Multiple ports in one call
-- `SourceIPs("192.168.1.0/24", "10.0.1.100")` - Source IP filtering
-- `DestIPs("10.0.2.100", "10.0.2.101")` - Destination IP filtering
-- `Protocols("ssh", "http", "https")` - Protocol-based filtering
+- `ForPort(80, 443, 8080)` - Multiple ports in one call
+- `ForSourceIPs("192.168.1.0/24", "10.0.1.100")` - Source IP filtering
+- `ForDestinationIPs("10.0.2.100", "10.0.2.101")` - Destination IP filtering
+- `ForProtocols("ssh", "http", "https")` - Protocol-based filtering
 
 ## Complete API Reference
 
 ### Controller Methods
 
-#### `NewImproved(deviceName string) *ImprovedController`
-Creates a new improved traffic controller for the specified network device.
+#### `NetworkInterface(deviceName string) *TrafficController`
+Creates a new traffic controller for the specified network device.
 
 ```go
-tc := api.NewImproved("eth0")
+tc := api.NetworkInterface("eth0")
 ```
 
-#### `TotalBandwidth(bandwidth string) *ImprovedController`
-Sets the total bandwidth available on the interface.
+#### `WithHardLimitBandwidth(bandwidth string) *TrafficController`
+Sets the total physical bandwidth available on the interface (hard limit).
 
 ```go
-tc.TotalBandwidth("1Gbps")   // 1 Gigabit per second
-tc.TotalBandwidth("100Mbps") // 100 Megabits per second
-tc.TotalBandwidth("500mbit") // 500 megabits per second (alternative format)
+tc.WithHardLimitBandwidth("1Gbps")   // 1 Gigabit per second
+tc.WithHardLimitBandwidth("100Mbps") // 100 Megabits per second  
+tc.WithHardLimitBandwidth("500mbit") // 500 megabits per second (alternative format)
 ```
 
-#### `Class(name string) *ImprovedClass`
-Creates or selects a traffic class for configuration. If a class with the same name already exists, it will be reused.
+#### `CreateTrafficClass(name string) *TrafficClassBuilder`
+Creates a new traffic class for configuration.
 
 ```go
-webClass := tc.Class("Web Services")
-dbClass := tc.Class("Database")
+webClass := tc.CreateTrafficClass("Web Services")
+dbClass := tc.CreateTrafficClass("Database")
 ```
 
 #### `Apply() error`
@@ -115,85 +108,94 @@ Returns a human-readable representation of the configuration.
 fmt.Println(tc.String())
 ```
 
-### Class Methods
+### Class Builder Methods
 
-#### `Guaranteed(bandwidth string) *ImprovedClass`
-Sets the guaranteed bandwidth for the class.
-
-```go
-class.Guaranteed("100Mbps")
-class.Guaranteed("50mbit")
-```
-
-#### `BurstTo(bandwidth string) *ImprovedClass`
-Sets the maximum burstable bandwidth for the class.
+#### `WithGuaranteedBandwidth(bandwidth string) *TrafficClassBuilder`
+Sets the guaranteed minimum bandwidth for the class.
 
 ```go
-class.BurstTo("200Mbps")
+builder.WithGuaranteedBandwidth("100Mbps")
+builder.WithGuaranteedBandwidth("50mbit")
 ```
 
-#### `Priority(priority int) *ImprovedClass`
+#### `WithSoftLimitBandwidth(bandwidth string) *TrafficClassBuilder`
+Sets the soft limit bandwidth for the class (borrowing allowed).
+
+```go
+builder.WithSoftLimitBandwidth("200Mbps")
+```
+
+#### `WithPriority(priority int) *TrafficClassBuilder`
 Sets the priority for the class (0-7, where 0 is highest priority).
 
 ```go
-class.Priority(0)  // Highest priority
-class.Priority(4)  // Normal priority
-class.Priority(7)  // Lowest priority
+builder.WithPriority(0)  // Highest priority
+builder.WithPriority(4)  // Normal priority
+builder.WithPriority(7)  // Lowest priority
 ```
 
-#### `Ports(ports ...int) *ImprovedClass`
-Adds port-based filtering to the class. Can be called multiple times to add more ports.
+#### `ForPort(ports ...int) *TrafficClassBuilder`
+Adds port-based filtering to the class.
 
 ```go
-class.Ports(80, 443)           // HTTP and HTTPS
-class.Ports(22)                // SSH (adds to existing ports)
-class.Ports(3306, 5432, 1521)  // Database ports
+builder.ForPort(80, 443)           // HTTP and HTTPS
+builder.ForPort(22)                // SSH
+builder.ForPort(3306, 5432, 1521)  // Database ports
 ```
 
-#### `SourceIPs(ips ...string) *ImprovedClass`
+#### `ForSourceIPs(ips ...string) *TrafficClassBuilder`
 Adds source IP-based filtering to the class.
 
 ```go
-class.SourceIPs("192.168.1.0/24")                    // Subnet
-class.SourceIPs("10.0.1.100", "10.0.1.101")         // Specific IPs
-class.SourceIPs("192.168.100.0/24", "172.16.0.0/16") // Multiple subnets
+builder.ForSourceIPs("192.168.1.0/24")                    // Subnet
+builder.ForSourceIPs("10.0.1.100", "10.0.1.101")         // Specific IPs
+builder.ForSourceIPs("192.168.100.0/24", "172.16.0.0/16") // Multiple subnets
 ```
 
-#### `DestIPs(ips ...string) *ImprovedClass`
+#### `ForDestinationIPs(ips ...string) *TrafficClassBuilder`
 Adds destination IP-based filtering to the class.
 
 ```go
-class.DestIPs("192.168.1.10")        // Single server
-class.DestIPs("10.0.2.0/24")         // Server subnet
+builder.ForDestinationIPs("192.168.1.10")        // Single server
+builder.ForDestinationIPs("10.0.2.0/24")         // Server subnet
 ```
 
-#### `Protocols(protocols ...string) *ImprovedClass`
+#### `ForProtocols(protocols ...string) *TrafficClassBuilder`
 Adds protocol-based filtering to the class.
 
 ```go
-class.Protocols("tcp", "udp")
-class.Protocols("ssh", "http", "https")
-class.Protocols("dns", "ntp")
+builder.ForProtocols("tcp", "udp")
+builder.ForProtocols("ssh", "http", "https")
+builder.ForProtocols("dns", "ntp")
+```
+
+#### `AddClass() *TrafficController`
+Completes the class configuration and adds it to the controller.
+
+```go
+builder.AddClass()  // Finalizes and adds the class
 ```
 
 ## Usage Examples
 
 ### Basic Web Server Configuration
 ```go
-tc := api.NewImproved("eth0").
-    TotalBandwidth("1Gbps")
+tc := api.NetworkInterface("eth0").
+    WithHardLimitBandwidth("1Gbps")
 
-tc.Class("Web Traffic").
-    Guaranteed("400Mbps").
-    BurstTo("600Mbps").
-    Priority(3).
-    Ports(80, 443, 8080, 8443)
+tc.CreateTrafficClass("Web Traffic").
+    WithGuaranteedBandwidth("400Mbps").
+    WithSoftLimitBandwidth("600Mbps").
+    WithPriority(3).
+    ForPort(80, 443, 8080, 8443).
+    AddClass()
 
-tc.Class("SSH Management").
-    Guaranteed("10Mbps").
-    BurstTo("50Mbps").
-    Priority(1).
-    Ports(22)
+tc.CreateTrafficClass("SSH Management").
+    WithGuaranteedBandwidth("10Mbps").
+    WithSoftLimitBandwidth("50Mbps").
+    WithPriority(1).
+    ForPort(22).
+    AddClass()
 
 tc.Apply()
 ```

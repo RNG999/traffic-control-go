@@ -30,7 +30,7 @@ func (h *GetQdiscHandler) Handle(ctx context.Context, query interface{}) (interf
 	// Get read model
 	var readModel projections.TrafficControlReadModel
 	modelID := fmt.Sprintf("tc:%s", q.DeviceName)
-	
+
 	if err := h.readModelStore.Get(ctx, "traffic-control", modelID, &readModel); err != nil {
 		return nil, fmt.Errorf("failed to get read model: %w", err)
 	}
@@ -74,7 +74,7 @@ func (h *GetClassHandler) Handle(ctx context.Context, query interface{}) (interf
 	// Get read model
 	var readModel projections.TrafficControlReadModel
 	modelID := fmt.Sprintf("tc:%s", q.DeviceName)
-	
+
 	if err := h.readModelStore.Get(ctx, "traffic-control", modelID, &readModel); err != nil {
 		return nil, fmt.Errorf("failed to get read model: %w", err)
 	}
@@ -121,7 +121,7 @@ func (h *GetFilterHandler) Handle(ctx context.Context, query interface{}) (inter
 	// Get read model
 	var readModel projections.TrafficControlReadModel
 	modelID := fmt.Sprintf("tc:%s", q.DeviceName)
-	
+
 	if err := h.readModelStore.Get(ctx, "traffic-control", modelID, &readModel); err != nil {
 		return nil, fmt.Errorf("failed to get read model: %w", err)
 	}
@@ -167,7 +167,7 @@ func (h *GetConfigurationHandler) Handle(ctx context.Context, query interface{})
 	// Get read model
 	var readModel projections.TrafficControlReadModel
 	modelID := fmt.Sprintf("tc:%s", q.DeviceName)
-	
+
 	if err := h.readModelStore.Get(ctx, "traffic-control", modelID, &readModel); err != nil {
 		return nil, fmt.Errorf("failed to get read model: %w", err)
 	}

@@ -52,8 +52,8 @@ const (
 	ApplicationFilter
 )
 
-// New creates a new traffic controller for a network interface
-func New(deviceName string) *TrafficController {
+// NetworkInterface creates a new traffic controller for a network interface
+func NetworkInterface(deviceName string) *TrafficController {
 	logger := logging.WithComponent(logging.ComponentAPI).WithDevice(deviceName)
 	logger.Info("Creating new traffic controller",
 		logging.String("device", deviceName),
@@ -73,9 +73,9 @@ func New(deviceName string) *TrafficController {
 	}
 }
 
-// SetTotalBandwidth sets the total available bandwidth for the interface
-func (tc *TrafficController) SetTotalBandwidth(bandwidth string) *TrafficController {
-	tc.logger.Info("Setting total bandwidth",
+// WithHardLimitBandwidth sets the absolute physical bandwidth limit for the network interface
+func (tc *TrafficController) WithHardLimitBandwidth(bandwidth string) *TrafficController {
+	tc.logger.Info("Setting hard limit bandwidth",
 		logging.String("bandwidth", bandwidth),
 		logging.String("operation", logging.OperationConfigLoad),
 	)
@@ -114,15 +114,10 @@ func (b *TrafficClassBuilder) WithGuaranteedBandwidth(bandwidth string) *Traffic
 	return b
 }
 
-// WithMaxBandwidth sets the maximum allowed bandwidth
-func (b *TrafficClassBuilder) WithMaxBandwidth(bandwidth string) *TrafficClassBuilder {
+// WithSoftLimitBandwidth sets the policy-based bandwidth limit (borrowing allowed)
+func (b *TrafficClassBuilder) WithSoftLimitBandwidth(bandwidth string) *TrafficClassBuilder {
 	b.class.maxBandwidth = valueobjects.MustParseBandwidth(bandwidth)
 	return b
-}
-
-// WithBurstableTo is an alias for WithMaxBandwidth for better readability
-func (b *TrafficClassBuilder) WithBurstableTo(bandwidth string) *TrafficClassBuilder {
-	return b.WithMaxBandwidth(bandwidth)
 }
 
 // WithPriority sets the traffic class to a specific priority level (0-7)
@@ -147,12 +142,28 @@ func (b *TrafficClassBuilder) ForDestination(ip string) *TrafficClassBuilder {
 	return b
 }
 
+// ForDestinationIPs adds multiple destination IP filters
+func (b *TrafficClassBuilder) ForDestinationIPs(ips ...string) *TrafficClassBuilder {
+	for _, ip := range ips {
+		b.ForDestination(ip)
+	}
+	return b
+}
+
 // ForSource adds a source IP filter
 func (b *TrafficClassBuilder) ForSource(ip string) *TrafficClassBuilder {
 	b.class.filters = append(b.class.filters, Filter{
 		filterType: SourceIPFilter,
 		value:      ip,
 	})
+	return b
+}
+
+// ForSourceIPs adds multiple source IP filters
+func (b *TrafficClassBuilder) ForSourceIPs(ips ...string) *TrafficClassBuilder {
+	for _, ip := range ips {
+		b.ForSource(ip)
+	}
 	return b
 }
 
@@ -178,8 +189,19 @@ func (b *TrafficClassBuilder) ForApplication(apps ...string) *TrafficClassBuilde
 	return b
 }
 
-// And returns the traffic controller for method chaining
-func (b *TrafficClassBuilder) And() *TrafficController {
+// ForProtocols adds protocol filters
+func (b *TrafficClassBuilder) ForProtocols(protocols ...string) *TrafficClassBuilder {
+	for _, protocol := range protocols {
+		b.class.filters = append(b.class.filters, Filter{
+			filterType: ProtocolFilter,
+			value:      protocol,
+		})
+	}
+	return b
+}
+
+// AddClass completes the class configuration and adds it to the traffic controller
+func (b *TrafficClassBuilder) AddClass() *TrafficController {
 	b.controller.classes = append(b.controller.classes, b.class)
 	return b.controller
 }
@@ -224,8 +246,8 @@ func (p *PriorityGroupBuilder) ForHTTPS() *PriorityGroupBuilder {
 	return p
 }
 
-// HTBQdisc creates an HTB qdisc with fluent interface
-func (tc *TrafficController) HTBQdisc(handle, defaultClass string) *HTBQdiscBuilder {
+// CreateHTBQdisc creates an HTB (Hierarchical Token Bucket) qdisc with fluent interface
+func (tc *TrafficController) CreateHTBQdisc(handle, defaultClass string) *HTBQdiscBuilder {
 	return &HTBQdiscBuilder{
 		controller:   tc,
 		handle:       handle,
@@ -233,8 +255,8 @@ func (tc *TrafficController) HTBQdisc(handle, defaultClass string) *HTBQdiscBuil
 	}
 }
 
-// TBFQdisc creates a TBF qdisc with fluent interface  
-func (tc *TrafficController) TBFQdisc(handle, rate string) *TBFQdiscBuilder {
+// CreateTBFQdisc creates a TBF (Token Bucket Filter) qdisc with fluent interface
+func (tc *TrafficController) CreateTBFQdisc(handle, rate string) *TBFQdiscBuilder {
 	return &TBFQdiscBuilder{
 		controller: tc,
 		handle:     handle,
@@ -245,8 +267,8 @@ func (tc *TrafficController) TBFQdisc(handle, rate string) *TBFQdiscBuilder {
 	}
 }
 
-// PRIOQdisc creates a PRIO qdisc with fluent interface
-func (tc *TrafficController) PRIOQdisc(handle string, bands uint8) *PRIOQdiscBuilder {
+// CreatePRIOQdisc creates a PRIO (Priority Scheduler) qdisc with fluent interface
+func (tc *TrafficController) CreatePRIOQdisc(handle string, bands uint8) *PRIOQdiscBuilder {
 	return &PRIOQdiscBuilder{
 		controller: tc,
 		handle:     handle,
@@ -255,8 +277,8 @@ func (tc *TrafficController) PRIOQdisc(handle string, bands uint8) *PRIOQdiscBui
 	}
 }
 
-// FQCODELQdisc creates a FQ_CODEL qdisc with fluent interface
-func (tc *TrafficController) FQCODELQdisc(handle string) *FQCODELQdiscBuilder {
+// CreateFQCODELQdisc creates a FQ_CODEL (Fair Queuing Controlled Delay) qdisc with fluent interface
+func (tc *TrafficController) CreateFQCODELQdisc(handle string) *FQCODELQdiscBuilder {
 	return &FQCODELQdiscBuilder{
 		controller: tc,
 		handle:     handle,
@@ -285,7 +307,8 @@ type HTBClassConfig struct {
 	ceil   string
 }
 
-func (b *HTBQdiscBuilder) HTBClass(parent, handle, name, rate, ceil string) *HTBQdiscBuilder {
+// AddClass adds an HTB class to the qdisc
+func (b *HTBQdiscBuilder) AddClass(parent, handle, name, rate, ceil string) *HTBQdiscBuilder {
 	b.classes = append(b.classes, &HTBClassConfig{
 		parent: parent,
 		handle: handle,
@@ -298,19 +321,19 @@ func (b *HTBQdiscBuilder) HTBClass(parent, handle, name, rate, ceil string) *HTB
 
 func (b *HTBQdiscBuilder) Apply() error {
 	ctx := context.Background()
-	
+
 	// Create HTB qdisc
 	if err := b.controller.service.CreateHTBQdisc(ctx, b.controller.deviceName, b.handle, b.defaultClass); err != nil {
 		return fmt.Errorf("failed to create HTB qdisc: %w", err)
 	}
-	
+
 	// Create classes
 	for _, class := range b.classes {
 		if err := b.controller.service.CreateHTBClass(ctx, b.controller.deviceName, class.parent, class.handle, class.rate, class.ceil); err != nil {
 			return fmt.Errorf("failed to create HTB class %s: %w", class.name, err)
 		}
 	}
-	
+
 	return nil
 }
 
@@ -446,7 +469,7 @@ func (tc *TrafficController) Apply() error {
 	// Create classes
 	for i, class := range tc.classes {
 		classID := fmt.Sprintf("1:%d", i+10) // Start class IDs at 1:10
-		parent := "1:0" // Parent is the root qdisc
+		parent := "1:0"                      // Parent is the root qdisc
 
 		tc.logger.Debug("Creating HTB class",
 			logging.String("class_name", class.name),
@@ -582,7 +605,7 @@ func (tc *TrafficController) validate() error {
 		tc.logger.Warn("Total bandwidth not set",
 			logging.String("validation_error", "missing_total_bandwidth"),
 		)
-		return fmt.Errorf("total bandwidth not set. Use SetTotalBandwidth() to specify the interface bandwidth")
+		return fmt.Errorf("total bandwidth not set. Use WithHardLimitBandwidth() to specify the interface bandwidth")
 	}
 
 	// Check if all classes have priority set

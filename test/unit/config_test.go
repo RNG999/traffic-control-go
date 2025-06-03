@@ -212,7 +212,7 @@ func TestApplyConfig(t *testing.T) {
 			},
 		}
 
-		controller := api.New("eth0")
+		controller := api.NetworkInterface("eth0")
 		err := controller.ApplyConfig(config)
 		assert.NoError(t, err)
 	})
@@ -241,7 +241,7 @@ func TestApplyConfig(t *testing.T) {
 			},
 		}
 
-		controller := api.New("eth0")
+		controller := api.NetworkInterface("eth0")
 		err := controller.ApplyConfig(config)
 		assert.NoError(t, err)
 	})
@@ -284,7 +284,7 @@ func TestApplyConfig(t *testing.T) {
 			},
 		}
 
-		controller := api.New("eth0")
+		controller := api.NetworkInterface("eth0")
 		err := controller.ApplyConfig(config)
 		assert.NoError(t, err)
 	})

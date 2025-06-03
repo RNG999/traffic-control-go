@@ -31,49 +31,49 @@ func NewStatisticsQueryService(netlinkAdapter netlink.Adapter, readModelStore pr
 
 // DeviceStatistics represents statistics for a device (simplified for queries)
 type DeviceStatistics struct {
-	DeviceName     string                    `json:"device_name"`
-	Timestamp      time.Time                 `json:"timestamp"`
-	QdiscStats     []QdiscStatistics        `json:"qdisc_stats"`
-	ClassStats     []ClassStatistics        `json:"class_stats"`
-	FilterStats    []FilterStatistics       `json:"filter_stats"`
-	LinkStats      LinkStatistics           `json:"link_stats"`
+	DeviceName  string             `json:"device_name"`
+	Timestamp   time.Time          `json:"timestamp"`
+	QdiscStats  []QdiscStatistics  `json:"qdisc_stats"`
+	ClassStats  []ClassStatistics  `json:"class_stats"`
+	FilterStats []FilterStatistics `json:"filter_stats"`
+	LinkStats   LinkStatistics     `json:"link_stats"`
 }
 
 // QdiscStatistics represents qdisc statistics with metadata
 type QdiscStatistics struct {
-	Handle         string                   `json:"handle"`
-	Type           string                   `json:"type"`
-	Stats          netlink.QdiscStats       `json:"stats"`
-	DetailedStats  *netlink.DetailedQdiscStats `json:"detailed_stats,omitempty"`
+	Handle        string                      `json:"handle"`
+	Type          string                      `json:"type"`
+	Stats         netlink.QdiscStats          `json:"stats"`
+	DetailedStats *netlink.DetailedQdiscStats `json:"detailed_stats,omitempty"`
 }
 
 // ClassStatistics represents class statistics with metadata
 type ClassStatistics struct {
-	Handle         string                   `json:"handle"`
-	Parent         string                   `json:"parent"`
-	Name           string                   `json:"name"`
-	Stats          netlink.ClassStats       `json:"stats"`
-	DetailedStats  *netlink.DetailedClassStats `json:"detailed_stats,omitempty"`
+	Handle        string                      `json:"handle"`
+	Parent        string                      `json:"parent"`
+	Name          string                      `json:"name"`
+	Stats         netlink.ClassStats          `json:"stats"`
+	DetailedStats *netlink.DetailedClassStats `json:"detailed_stats,omitempty"`
 }
 
 // FilterStatistics represents filter statistics with metadata
 type FilterStatistics struct {
-	Parent         string                   `json:"parent"`
-	Priority       uint16                   `json:"priority"`
-	Protocol       string                   `json:"protocol"`
-	MatchCount     int                      `json:"match_count"`
+	Parent     string `json:"parent"`
+	Priority   uint16 `json:"priority"`
+	Protocol   string `json:"protocol"`
+	MatchCount int    `json:"match_count"`
 }
 
 // LinkStatistics represents network interface statistics
 type LinkStatistics struct {
-	RxBytes        uint64                   `json:"rx_bytes"`
-	TxBytes        uint64                   `json:"tx_bytes"`
-	RxPackets      uint64                   `json:"rx_packets"`
-	TxPackets      uint64                   `json:"tx_packets"`
-	RxErrors       uint64                   `json:"rx_errors"`
-	TxErrors       uint64                   `json:"tx_errors"`
-	RxDropped      uint64                   `json:"rx_dropped"`
-	TxDropped      uint64                   `json:"tx_dropped"`
+	RxBytes   uint64 `json:"rx_bytes"`
+	TxBytes   uint64 `json:"tx_bytes"`
+	RxPackets uint64 `json:"rx_packets"`
+	TxPackets uint64 `json:"tx_packets"`
+	RxErrors  uint64 `json:"rx_errors"`
+	TxErrors  uint64 `json:"tx_errors"`
+	RxDropped uint64 `json:"rx_dropped"`
+	TxDropped uint64 `json:"tx_dropped"`
 }
 
 // GetDeviceStatistics retrieves complete statistics for a device
@@ -84,7 +84,7 @@ func (s *StatisticsQueryService) GetDeviceStatistics(ctx context.Context, device
 	// Get configuration from read model
 	var readModel projections.TrafficControlReadModel
 	modelID := fmt.Sprintf("tc:%s", deviceName)
-	
+
 	if err := s.readModelStore.Get(ctx, "traffic-control", modelID, &readModel); err != nil {
 		s.logger.Warn("No configuration found for device",
 			logging.String("device", deviceName),
@@ -98,10 +98,10 @@ func (s *StatisticsQueryService) GetDeviceStatistics(ctx context.Context, device
 	}
 
 	stats := &DeviceStatistics{
-		DeviceName: deviceName,
-		Timestamp:  time.Now(),
-		QdiscStats: make([]QdiscStatistics, 0),
-		ClassStats: make([]ClassStatistics, 0),
+		DeviceName:  deviceName,
+		Timestamp:   time.Now(),
+		QdiscStats:  make([]QdiscStatistics, 0),
+		ClassStats:  make([]ClassStatistics, 0),
 		FilterStats: make([]FilterStatistics, 0),
 	}
 
@@ -196,10 +196,10 @@ func (s *StatisticsQueryService) GetRealtimeStatistics(ctx context.Context, devi
 	}
 
 	stats := &DeviceStatistics{
-		DeviceName: deviceName,
-		Timestamp:  time.Now(),
-		QdiscStats: make([]QdiscStatistics, 0),
-		ClassStats: make([]ClassStatistics, 0),
+		DeviceName:  deviceName,
+		Timestamp:   time.Now(),
+		QdiscStats:  make([]QdiscStatistics, 0),
+		ClassStats:  make([]ClassStatistics, 0),
 		FilterStats: make([]FilterStatistics, 0),
 	}
 
@@ -293,11 +293,11 @@ func (h *GetRealtimeStatisticsHandler) Handle(ctx context.Context, query *models
 // Helper function to convert DeviceStatistics to models.DeviceStatisticsView
 func convertDeviceStatisticsToView(stats *DeviceStatistics) models.DeviceStatisticsView {
 	view := models.DeviceStatisticsView{
-		DeviceName:     stats.DeviceName,
-		Timestamp:      stats.Timestamp.Format(time.RFC3339),
-		QdiscStats:     make([]models.QdiscStatisticsView, 0, len(stats.QdiscStats)),
-		ClassStats:     make([]models.ClassStatisticsView, 0, len(stats.ClassStats)),
-		FilterStats:    make([]models.FilterStatisticsView, 0, len(stats.FilterStats)),
+		DeviceName:  stats.DeviceName,
+		Timestamp:   stats.Timestamp.Format(time.RFC3339),
+		QdiscStats:  make([]models.QdiscStatisticsView, 0, len(stats.QdiscStats)),
+		ClassStats:  make([]models.ClassStatisticsView, 0, len(stats.ClassStats)),
+		FilterStats: make([]models.FilterStatisticsView, 0, len(stats.FilterStats)),
 		LinkStats: models.LinkStatisticsView{
 			RxBytes:   stats.LinkStats.RxBytes,
 			TxBytes:   stats.LinkStats.TxBytes,
@@ -313,14 +313,14 @@ func convertDeviceStatisticsToView(stats *DeviceStatistics) models.DeviceStatist
 	// Convert qdisc statistics
 	for _, qdisc := range stats.QdiscStats {
 		qdiscView := models.QdiscStatisticsView{
-			Handle:         qdisc.Handle,
-			Type:           qdisc.Type,
-			BytesSent:      qdisc.Stats.BytesSent,
-			PacketsSent:    qdisc.Stats.PacketsSent,
-			BytesDropped:   qdisc.Stats.BytesDropped,
-			Overlimits:     qdisc.Stats.Overlimits,
-			Requeues:       qdisc.Stats.Requeues,
-			DetailedStats:  make(map[string]interface{}),
+			Handle:        qdisc.Handle,
+			Type:          qdisc.Type,
+			BytesSent:     qdisc.Stats.BytesSent,
+			PacketsSent:   qdisc.Stats.PacketsSent,
+			BytesDropped:  qdisc.Stats.BytesDropped,
+			Overlimits:    qdisc.Stats.Overlimits,
+			Requeues:      qdisc.Stats.Requeues,
+			DetailedStats: make(map[string]interface{}),
 		}
 
 		if qdisc.DetailedStats != nil {
@@ -406,14 +406,14 @@ func (h *GetQdiscStatisticsHandler) Handle(ctx context.Context, query *models.Ge
 	for _, qdisc := range qdiscs.Value() {
 		if qdisc.Handle.String() == query.Handle().String() {
 			view := models.QdiscStatisticsView{
-				Handle:         qdisc.Handle.String(),
-				Type:           qdisc.Type.String(),
-				BytesSent:      qdisc.Statistics.BytesSent,
-				PacketsSent:    qdisc.Statistics.PacketsSent,
-				BytesDropped:   qdisc.Statistics.BytesDropped,
-				Overlimits:     qdisc.Statistics.Overlimits,
-				Requeues:       qdisc.Statistics.Requeues,
-				DetailedStats:  make(map[string]interface{}),
+				Handle:        qdisc.Handle.String(),
+				Type:          qdisc.Type.String(),
+				BytesSent:     qdisc.Statistics.BytesSent,
+				PacketsSent:   qdisc.Statistics.PacketsSent,
+				BytesDropped:  qdisc.Statistics.BytesDropped,
+				Overlimits:    qdisc.Statistics.Overlimits,
+				Requeues:      qdisc.Statistics.Requeues,
+				DetailedStats: make(map[string]interface{}),
 			}
 
 			// TODO: Add detailed statistics collection through adapter interface

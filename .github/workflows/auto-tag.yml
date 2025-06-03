@@ -1,0 +1,55 @@
+name: Auto Tag on Main
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  create-tag:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Create date-based tag
+        run: |
+          # Generate date-based tag
+          TAG_NAME="v$(date +%Y%m%d)"
+          
+          # Check if tag already exists
+          if git rev-parse "$TAG_NAME" >/dev/null 2>&1; then
+            echo "Tag $TAG_NAME already exists, adding time suffix"
+            TAG_NAME="v$(date +%Y%m%d%H%M)"
+          fi
+          
+          # Create and push tag
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          
+          git tag -a "$TAG_NAME" -m "Release $TAG_NAME"
+          git push origin "$TAG_NAME"
+          
+          echo "Created tag: $TAG_NAME"
+
+      - name: Create GitHub Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG_NAME="v$(date +%Y%m%d)"
+          
+          # Check if we used time suffix
+          if ! git rev-parse "$TAG_NAME" >/dev/null 2>&1; then
+            TAG_NAME="v$(date +%Y%m%d%H%M)"
+          fi
+          
+          # Create release
+          gh release create "$TAG_NAME" \
+            --title "Release $TAG_NAME" \
+            --notes "Automated release for Traffic Control Go Library" \
+            --latest

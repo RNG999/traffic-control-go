@@ -2,9 +2,9 @@ package netlink
 
 // DetailedQdiscStats represents detailed qdisc statistics
 type DetailedQdiscStats struct {
-	BasicStats  QdiscStats
-	QueueLength uint32
-	Backlog     uint32
+	BasicStats   QdiscStats
+	QueueLength  uint32
+	Backlog      uint32
 	BacklogBytes uint64
 	// Rate information
 	BytesPerSecond   uint64

@@ -34,7 +34,7 @@ func NewQueryBus(service *TrafficControlService) *QueryBus {
 func (qb *QueryBus) Register(queryType string, handler QueryHandler) {
 	qb.mu.Lock()
 	defer qb.mu.Unlock()
-	
+
 	qb.handlers[queryType] = handler
 	qb.logger.Debug("Registered query handler", logging.String("type", queryType))
 }
@@ -50,10 +50,10 @@ func (qb *QueryBus) Execute(ctx context.Context, queryType string, query interfa
 	}
 
 	qb.logger.Debug("Executing query", logging.String("type", queryType))
-	
+
 	result, err := handler.Handle(ctx, query)
 	if err != nil {
-		qb.logger.Error("Query execution failed", 
+		qb.logger.Error("Query execution failed",
 			logging.String("type", queryType),
 			logging.Error(err))
 		return nil, err

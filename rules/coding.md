@@ -1,8 +1,8 @@
-## Coding Agent Custom Instructions
+# Coding Agent Custom Instructions
 
 Based on thorough analysis of the provided documentation, the following comprehensive guidelines and instructions are generated for coding tasks across various domains including CQRS, Event Sourcing, Domain-Driven Design (DDD), Functional Programming, Dependency Injection (DI), Testing, and general software design principles. Adhering to these instructions is crucial for developing high-quality, maintainable, and robust software.
 
-### 1. CQRS Principles & Module Segregation
+## 1. CQRS Principles & Module Segregation
 
 Implement the Command Query Responsibility Segregation (CQRS) pattern where applicable, strictly separating the command model (for updates) and the query model (for reads). Ensure that not only the models but also the top-level modules containing them are separated or isolated. This separation helps in optimizing each side independently and clarifying responsibilities. Partial application of CQRS is permissible where full separation is not necessary, focusing on read-optimized models for specific needs.
 
@@ -32,7 +32,7 @@ Implement the Command Query Responsibility Segregation (CQRS) pattern where appl
     UserEvents.cs // Shared event definitions
 ```
 
-### 2. Event Sourcing Fundamentals
+## 2. Event Sourcing Fundamentals
 
 When implementing systems that require a history of changes, robust state reconstruction, or complex stream processing, utilize Event Sourcing. The core principle is that the sequence of immutable domain events is the single source of truth for the application state.
 
@@ -98,7 +98,7 @@ public class UserAggregate
 }
 ```
 
-### 3. Read Model Construction
+## 3. Read Model Construction
 
 Build read-optimized models (denormalized views, projections) by consuming domain events from the event store. These models are specifically designed for efficient querying and displaying data to the client, often deviating from the normalized structure of the write model.
 
@@ -158,7 +158,7 @@ public class UserReadModel
 }
 ```
 
-### 4. DDD Value Object Design
+## 4. DDD Value Object Design
 
 Design objects that describe characteristics or attributes, and carry no concept of identity, as Value Objects. Implement them as immutable objects with value equality. Their behavior should be side-effect-free.
 
@@ -182,7 +182,7 @@ Console.WriteLine(address1 == address2); // Output: True (Value equality)
 Console.WriteLine(address1 == address3); // Output: False
 ```
 
-### 5. DDD Entity Design
+## 5. DDD Entity Design
 
 Model objects distinguished by their identity, rather than their attributes, as Entities. Keep their class definitions simple, focusing on their unique identity and lifecycle within the domain.
 
@@ -232,7 +232,7 @@ public enum OrderStatus { Created, Shipped, Delivered }
 public record OrderItem(Guid ProductId, int Quantity); // Often a Value Object
 ```
 
-### 6. Handling Optional/Failure with Types (Maybe/Either)
+## 6. Handling Optional/Failure with Types (Maybe/Either)
 
 Represent the possibility of a value being absent or an operation failing using explicit types like `Maybe` (or `Option`) and `Either` (or `Result`) instead of null references or exceptions for expected outcomes. This makes the potential absence or failure explicit in the type signature.
 
@@ -333,7 +333,7 @@ validateName("Bob")
     .map(n => `Hello, ${n}`); // Left("Name must be longer than 3 characters")
 ```
 
-### 7. Functional Programming Concepts (Functors, Monads)
+## 7. Functional Programming Concepts (Functors, Monads)
 
 Apply functional programming concepts, particularly Functors and Monads, to structure computations involving containers, side effects, or potential failures. Understand `map` for applying a function inside a container, and `chain` (`>>=`) for sequencing computations that return nested containers, effectively flattening them. Use `of` (or `pure`) to place a value into a default minimal context (Pointed Functor).
 
@@ -389,7 +389,7 @@ Either.of(10)
     .chain(safeDivideBy(2)); // Right(1)
 ```
 
-### 8. Type-Driven Development (TFD) Workflow
+## 8. Type-Driven Development (TFD) Workflow
 
 Adopt a Type-Driven Development approach, starting with defining types to express abstract concepts and business logic. Use the type definitions and compiler feedback (intellisense, type checking errors) for rapid experimentation and refinement of the model before writing extensive implementation code. This enables quick iteration on design ideas and leverages the type system as a guide.
 
@@ -440,7 +440,7 @@ Adopt a Type-Driven Development approach, starting with defining types to expres
 3.  **Refine based on feedback:** If types don't express constraints well (e.g., `Quantity` allows 0), refine the type definition (e.g., use a smart constructor or a refined type). Compiler errors guide where changes are needed.
 4.  **Implement logic incrementally:** Once types are expressive, implement the function logic, leveraging pattern matching for ADTs. Compiler ensures all cases are handled.
 
-### 9. Algebraic Data Types (ADTs)
+## 9. Algebraic Data Types (ADTs)
 
 Utilize Algebraic Data Types (ADTs), combining Product Types (records, structs) for representing compositions of data and Sum Types (discriminated unions, enums with associated data) for representing distinct possibilities or choices. ADTs are fundamental for modeling domain concepts precisely and leveraging pattern matching.
 
@@ -477,7 +477,7 @@ let processPaymentUsing method =
     | BankTransfer(acc, sort) -> printfn "Processing Bank Transfer..."
 ```
 
-### 10. Pattern Matching Implementation
+## 10. Pattern Matching Implementation
 
 Use pattern matching extensively, particularly with Sum Types (discriminated unions) and other algebraic structures (lists, options, results), to handle different cases or data shapes explicitly. This leads to more robust and readable code where the compiler can verify that all possibilities are covered.
 
@@ -530,7 +530,7 @@ isEven (S (S (S (S Z)))) -- isEven 4 -> True
 describeList -- "Non-empty, tail ="
 ```
 
-### 11. Dependency Injection (DI) Principle
+## 11. Dependency Injection (DI) Principle
 
 Implement dependency injection to manage dependencies between components. Prefer constructor injection. Avoid using the Ambient Context anti-pattern, which involves static properties or methods (`TimeProvider.Current`, `System.getSecurityManager()`) to access dependencies, as it hides dependencies, makes components harder to test and less flexible.
 
@@ -587,7 +587,7 @@ public class Greeter // Dependencies injected
 // var message = greeter.GetWelcomeMessage();
 ```
 
-### 12. Decorator Pattern Implementation
+## 12. Decorator Pattern Implementation
 
 Apply the Decorator pattern to dynamically add behavior to an object. A decorator wraps another component of the same abstraction (interface) and forwards calls, potentially adding logic before or after the forwarded call. Guard Clauses can be implemented as a form of Decorator for null input.
 
@@ -660,7 +660,7 @@ public class NullInputGreeterDecorator : IGreeter // Decorator as a Guard Clause
 // Output: Hello.
 ```
 
-### 13. Test-Driven Development (TDD) Cycle
+## 13. Test-Driven Development (TDD) Cycle
 
 Practice Test-Driven Development (TDD) following the Red/Green/Refactor cycle. Write a failing test (Red), write just enough code to make it pass (Green), and then improve the code while keeping the test passing (Refactor). Use implementation strategies like Fake It, Triangulation, or Obvious Implementation as appropriate to drive development with small, confident steps.
 
@@ -753,7 +753,7 @@ Practice Test-Driven Development (TDD) following the Red/Green/Refactor cycle. W
     ```
 5.  **Refactor:** Improve the code's structure, naming, etc., while keeping all tests passing.
 
-### 14. Immutability
+## 14. Immutability
 
 Ensure objects, especially Value Objects, are immutable. Once created, their state cannot be changed. This contributes to thread safety, easier reasoning about data flow, and aligns well with functional programming principles and concepts like event sourcing.
 
@@ -804,7 +804,7 @@ Console.WriteLine($"Item1 Quantity: {item1.Quantity}"); // Output: 5
 Console.WriteLine($"Item2 Quantity: {item2.Quantity}"); // Output: 7
 ```
 
-### 15. Error Handling (Type-Based)
+## 15. Error Handling (Type-Based)
 
 Handle errors explicitly using types (`Result`, `Either`) and pattern matching, rather than relying solely on exceptions for expected failure conditions. This makes failure a part of the function's return type and forces callers to handle potential errors, improving robustness and clarity.
 
@@ -874,7 +874,7 @@ result.Match(
 );
 ```
 
-### 16. Concurrency & State Management (Functional Style)
+## 16. Concurrency & State Management (Functional Style)
 
 Model side effects, state, and concurrency using explicit types and patterns (`IO`, `Task`, `State`, `RunIO`, `Process`) rather than relying on implicit side effects or shared mutable state. Use `do` notation (or computation expressions) as syntactic sugar for sequencing these operations (`>>=`).
 
@@ -917,7 +917,7 @@ maybeAdd x y = do
     -- This is syntactic sugar for x >>= \x_val => y >>= \y_val => Just (x_val + y_val)
 ```
 
-### 17. Equality Checking with Types (Dependent Types)
+## 17. Equality Checking with Types (Dependent Types)
 
 Use type-level mechanisms where available (Dependent Types in Idris) to express and prove properties about data, such as equality between values being guaranteed by the type system itself. This provides strong compile-time guarantees about relationships between data, beyond simple value equality checks at runtime.
 
@@ -958,7 +958,7 @@ checkEqNat (S k) (S j) = case checkEqNat k j of -- Recursively check the predece
 -- checkEqNat' 3 4  -- No proof_that_3_ne_4 (internally uses Void)
 ```
 
-### 18. Pattern Matching with Views
+## 18. Pattern Matching with Views
 
 Use Views as a mechanism to define custom ways to pattern match on data structures, allowing destructuring based on logical properties (e.g., the last element of a list, or splitting a list in half) rather than just the physical constructors. This can simplify code that processes data in non-standard ways. Use `with` blocks where available to apply views concisely.
 
@@ -995,7 +995,7 @@ describeListEnd input with (listLast input) -- Apply the listLast view to input
 -- describeListEnd [] -- "Empty"
 ```
 
-### 19. Defensive Programming
+## 19. Defensive Programming
 
 Implement defensive programming techniques such as Guard Clauses and preconditions to handle invalid inputs or states early. Use techniques like the If-Then-Throw pattern for preconditions or Guard Clauses at the beginning of functions to validate arguments and state, failing fast if conditions are not met.
 
@@ -1050,7 +1050,7 @@ public class OrderService
 }
 ```
 
-### 20. Polyglot Persistence Consideration
+## 20. Polyglot Persistence Consideration
 
 When designing microservices or systems with diverse data needs, recognize that a single storage technology may not be optimal for all services. Consider using Polyglot Persistence, where different services or bounded contexts use different database technologies (e.g., relational database, document database, event store, graph database) best suited for their specific data access patterns and requirements. This requires learning and managing multiple technologies but can be a reasonable investment for optimized storage solutions per domain/service.
 

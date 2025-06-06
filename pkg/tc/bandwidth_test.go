@@ -1,4 +1,4 @@
-package valueobjects_test
+package tc_test
 
 import (
 	"testing"
@@ -6,38 +6,38 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/rng999/traffic-control-go/internal/domain/valueobjects"
+	"github.com/rng999/traffic-control-go/pkg/tc"
 )
 
 func TestBandwidthCreation(t *testing.T) {
 	tests := []struct {
 		name     string
-		create   func() valueobjects.Bandwidth
+		create   func() tc.Bandwidth
 		expected uint64 // bits per second
 	}{
 		{
 			name:     "Bps creation",
-			create:   func() valueobjects.Bandwidth { return valueobjects.Bps(1000) },
+			create:   func() tc.Bandwidth { return tc.Bps(1000) },
 			expected: 1000,
 		},
 		{
 			name:     "Kbps creation",
-			create:   func() valueobjects.Bandwidth { return valueobjects.Kbps(100) },
+			create:   func() tc.Bandwidth { return tc.Kbps(100) },
 			expected: 100_000,
 		},
 		{
 			name:     "Mbps creation",
-			create:   func() valueobjects.Bandwidth { return valueobjects.Mbps(10) },
+			create:   func() tc.Bandwidth { return tc.Mbps(10) },
 			expected: 10_000_000,
 		},
 		{
 			name:     "Gbps creation",
-			create:   func() valueobjects.Bandwidth { return valueobjects.Gbps(1) },
+			create:   func() tc.Bandwidth { return tc.Gbps(1) },
 			expected: 1_000_000_000,
 		},
 		{
 			name:     "Fractional Mbps",
-			create:   func() valueobjects.Bandwidth { return valueobjects.Mbps(1.5) },
+			create:   func() tc.Bandwidth { return tc.Mbps(1.5) },
 			expected: 1_500_000,
 		},
 	}
@@ -111,7 +111,7 @@ func TestParseBandwidth(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			b, err := valueobjects.ParseBandwidth(tt.input)
+			b, err := tc.ParseBandwidth(tt.input)
 
 			if tt.wantErr {
 				require.Error(t, err)
@@ -126,19 +126,19 @@ func TestParseBandwidth(t *testing.T) {
 
 func TestMustParseBandwidth(t *testing.T) {
 	t.Run("Valid input", func(t *testing.T) {
-		b := valueobjects.MustParseBandwidth("100Mbps")
+		b := tc.MustParseBandwidth("100Mbps")
 		assert.Equal(t, uint64(100_000_000), b.BitsPerSecond())
 	})
 
 	t.Run("Invalid input panics", func(t *testing.T) {
 		assert.Panics(t, func() {
-			valueobjects.MustParseBandwidth("invalid")
+			tc.MustParseBandwidth("invalid")
 		})
 	})
 }
 
 func TestBandwidthConversions(t *testing.T) {
-	b := valueobjects.Gbps(1.5)
+	b := tc.Gbps(1.5)
 
 	assert.Equal(t, uint64(1_500_000_000), b.BitsPerSecond())
 	assert.Equal(t, 1_500_000.0, b.KilobitsPerSecond())
@@ -149,37 +149,37 @@ func TestBandwidthConversions(t *testing.T) {
 func TestBandwidthHumanReadable(t *testing.T) {
 	tests := []struct {
 		name      string
-		bandwidth valueobjects.Bandwidth
+		bandwidth tc.Bandwidth
 		expected  string
 	}{
 		{
 			name:      "Display as bps",
-			bandwidth: valueobjects.Bps(500),
+			bandwidth: tc.Bps(500),
 			expected:  "500bps",
 		},
 		{
 			name:      "Display as Kbps",
-			bandwidth: valueobjects.Kbps(100),
+			bandwidth: tc.Kbps(100),
 			expected:  "100.0Kbps",
 		},
 		{
 			name:      "Display as Mbps",
-			bandwidth: valueobjects.Mbps(50),
+			bandwidth: tc.Mbps(50),
 			expected:  "50.0Mbps",
 		},
 		{
 			name:      "Display as Gbps",
-			bandwidth: valueobjects.Gbps(2.5),
+			bandwidth: tc.Gbps(2.5),
 			expected:  "2.5Gbps",
 		},
 		{
 			name:      "Auto-format large bps as Kbps",
-			bandwidth: valueobjects.Bps(5000),
+			bandwidth: tc.Bps(5000),
 			expected:  "5.0Kbps",
 		},
 		{
 			name:      "Auto-format large Kbps as Mbps",
-			bandwidth: valueobjects.Kbps(5000),
+			bandwidth: tc.Kbps(5000),
 			expected:  "5.0Mbps",
 		},
 	}
@@ -193,9 +193,9 @@ func TestBandwidthHumanReadable(t *testing.T) {
 }
 
 func TestBandwidthComparisons(t *testing.T) {
-	b1 := valueobjects.Mbps(100)
-	b2 := valueobjects.Mbps(50)
-	b3 := valueobjects.Mbps(100)
+	b1 := tc.Mbps(100)
+	b2 := tc.Mbps(50)
+	b3 := tc.Mbps(100)
 
 	assert.True(t, b1.Equals(b3))
 	assert.False(t, b1.Equals(b2))
@@ -210,17 +210,17 @@ func TestBandwidthComparisons(t *testing.T) {
 }
 
 func TestBandwidthArithmetic(t *testing.T) {
-	b1 := valueobjects.Mbps(100)
-	b2 := valueobjects.Mbps(50)
+	b1 := tc.Mbps(100)
+	b2 := tc.Mbps(50)
 
 	t.Run("Addition", func(t *testing.T) {
 		result := b1.Add(b2)
-		assert.Equal(t, valueobjects.Mbps(150).BitsPerSecond(), result.BitsPerSecond())
+		assert.Equal(t, tc.Mbps(150).BitsPerSecond(), result.BitsPerSecond())
 	})
 
 	t.Run("Subtraction", func(t *testing.T) {
 		result := b1.Subtract(b2)
-		assert.Equal(t, valueobjects.Mbps(50).BitsPerSecond(), result.BitsPerSecond())
+		assert.Equal(t, tc.Mbps(50).BitsPerSecond(), result.BitsPerSecond())
 	})
 
 	t.Run("Subtraction with underflow", func(t *testing.T) {
@@ -230,24 +230,24 @@ func TestBandwidthArithmetic(t *testing.T) {
 
 	t.Run("Multiply", func(t *testing.T) {
 		result := b1.MultiplyBy(1.5)
-		assert.Equal(t, valueobjects.Mbps(150).BitsPerSecond(), result.BitsPerSecond())
+		assert.Equal(t, tc.Mbps(150).BitsPerSecond(), result.BitsPerSecond())
 	})
 
 	t.Run("Percentage", func(t *testing.T) {
 		result := b1.Percentage(25)
-		assert.Equal(t, valueobjects.Mbps(25).BitsPerSecond(), result.BitsPerSecond())
+		assert.Equal(t, tc.Mbps(25).BitsPerSecond(), result.BitsPerSecond())
 	})
 }
 
 func TestBandwidthImmutability(t *testing.T) {
-	original := valueobjects.Mbps(100)
+	original := tc.Mbps(100)
 
 	// All operations should return new instances
-	_ = original.Add(valueobjects.Mbps(50))
-	_ = original.Subtract(valueobjects.Mbps(50))
+	_ = original.Add(tc.Mbps(50))
+	_ = original.Subtract(tc.Mbps(50))
 	_ = original.MultiplyBy(2)
 	_ = original.Percentage(50)
 
 	// Original should remain unchanged
-	assert.Equal(t, valueobjects.Mbps(100).BitsPerSecond(), original.BitsPerSecond())
+	assert.Equal(t, tc.Mbps(100).BitsPerSecond(), original.BitsPerSecond())
 }

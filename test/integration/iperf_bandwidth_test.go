@@ -320,12 +320,12 @@ func TestMultipleClassesConcurrent(t *testing.T) {
 	t.Logf("Low priority bandwidth: %.2f Mbps", lowBandwidth)
 
 	// High priority should get significantly more bandwidth
-	require.Greater(t, highBandwidth, lowBandwidth*1.5, 
+	require.Greater(t, highBandwidth, lowBandwidth*1.5,
 		"High priority should get at least 1.5x more bandwidth than low priority")
-	
+
 	// High priority should be close to its guaranteed bandwidth
 	require.Greater(t, highBandwidth, 50.0, "High priority bandwidth too low")
-	
+
 	// Low priority should be limited
 	require.Less(t, lowBandwidth, 30.0, "Low priority bandwidth too high")
 }
@@ -377,7 +377,7 @@ func TestDynamicBandwidthChange(t *testing.T) {
 	client := exec.CommandContext(clientCtx, "iperf3", "-c", "localhost", "-p", "5201", "-t", "20", "-i", "1")
 	clientPipe, err := client.StdoutPipe()
 	require.NoError(t, err)
-	
+
 	err = client.Start()
 	require.NoError(t, err, "Failed to start iperf3 client")
 
@@ -412,7 +412,7 @@ func TestDynamicBandwidthChange(t *testing.T) {
 	// Let it finish
 	time.Sleep(5 * time.Second)
 	clientCancel()
-	
+
 	// Read output
 	output, _ := io.ReadAll(clientPipe)
 	_ = client.Wait()

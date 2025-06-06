@@ -1,4 +1,4 @@
-package valueobjects_test
+package tc_test
 
 import (
 	"strings"
@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/rng999/traffic-control-go/internal/domain/valueobjects"
+	"github.com/rng999/traffic-control-go/pkg/tc"
 )
 
 func TestNewDeviceName(t *testing.T) {
@@ -79,7 +79,7 @@ func TestNewDeviceName(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			d, err := valueobjects.NewDeviceName(tt.input)
+			d, err := tc.NewDeviceName(tt.input)
 
 			if tt.wantErr {
 				require.Error(t, err)
@@ -97,35 +97,35 @@ func TestNewDeviceName(t *testing.T) {
 
 func TestMustNewDeviceName(t *testing.T) {
 	t.Run("Valid input", func(t *testing.T) {
-		d := valueobjects.MustNewDeviceName("eth0")
+		d := tc.MustNewDeviceName("eth0")
 		assert.Equal(t, "eth0", d.String())
 	})
 
 	t.Run("Invalid input panics", func(t *testing.T) {
 		assert.Panics(t, func() {
-			valueobjects.MustNewDeviceName("")
+			tc.MustNewDeviceName("")
 		})
 	})
 }
 
 func TestDeviceNameEquals(t *testing.T) {
-	d1 := valueobjects.MustNewDeviceName("eth0")
-	d2 := valueobjects.MustNewDeviceName("eth0")
-	d3 := valueobjects.MustNewDeviceName("eth1")
+	d1 := tc.MustNewDeviceName("eth0")
+	d2 := tc.MustNewDeviceName("eth0")
+	d3 := tc.MustNewDeviceName("eth1")
 
 	assert.True(t, d1.Equals(d2))
 	assert.False(t, d1.Equals(d3))
 }
 
 func TestDeviceNameString(t *testing.T) {
-	d := valueobjects.MustNewDeviceName("wlan0")
+	d := tc.MustNewDeviceName("wlan0")
 	assert.Equal(t, "wlan0", d.String())
 }
 
 func TestDeviceNameImmutability(t *testing.T) {
 	// DeviceName should be immutable
 	name := "eth0"
-	d := valueobjects.MustNewDeviceName(name)
+	d := tc.MustNewDeviceName(name)
 
 	// Even if we modify the original string variable,
 	// the DeviceName should remain unchanged
@@ -163,7 +163,7 @@ func TestDeviceNameValidPatterns(t *testing.T) {
 
 	for _, name := range validNames {
 		t.Run(name, func(t *testing.T) {
-			_, err := valueobjects.NewDeviceName(name)
+			_, err := tc.NewDeviceName(name)
 			assert.NoError(t, err, "Expected %s to be a valid device name", name)
 		})
 	}
@@ -189,7 +189,7 @@ func TestDeviceNameBoundaryLengths(t *testing.T) {
 			// Generate a name of the specified length
 			name := strings.Repeat("a", tt.length)
 
-			_, err := valueobjects.NewDeviceName(name)
+			_, err := tc.NewDeviceName(name)
 
 			if tt.valid {
 				assert.NoError(t, err)

@@ -4,19 +4,19 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/rng999/traffic-control-go/internal/domain/valueobjects"
+	"github.com/rng999/traffic-control-go/pkg/tc"
 )
 
 // FilterID represents a unique identifier for a filter
 type FilterID struct {
-	device   valueobjects.DeviceName
-	parent   valueobjects.Handle
+	device   tc.DeviceName
+	parent   tc.Handle
 	priority uint16
-	handle   valueobjects.Handle
+	handle   tc.Handle
 }
 
 // NewFilterID creates a new FilterID
-func NewFilterID(device valueobjects.DeviceName, parent valueobjects.Handle, priority uint16, handle valueobjects.Handle) FilterID {
+func NewFilterID(device tc.DeviceName, parent tc.Handle, priority uint16, handle tc.Handle) FilterID {
 	return FilterID{
 		device:   device,
 		parent:   parent,
@@ -31,12 +31,12 @@ func (id FilterID) String() string {
 }
 
 // Device returns the device name
-func (id FilterID) Device() valueobjects.DeviceName {
+func (id FilterID) Device() tc.DeviceName {
 	return id.device
 }
 
 // Parent returns the parent handle
-func (id FilterID) Parent() valueobjects.Handle {
+func (id FilterID) Parent() tc.Handle {
 	return id.parent
 }
 
@@ -46,14 +46,14 @@ func (id FilterID) Priority() uint16 {
 }
 
 // Handle returns the filter handle
-func (id FilterID) Handle() valueobjects.Handle {
+func (id FilterID) Handle() tc.Handle {
 	return id.handle
 }
 
 // Filter represents a packet classification filter
 type Filter struct {
 	id       FilterID
-	flowID   valueobjects.Handle // Target class
+	flowID   tc.Handle // Target class
 	protocol Protocol
 	matches  []Match
 }
@@ -68,7 +68,7 @@ const (
 )
 
 // NewFilter creates a new Filter entity
-func NewFilter(device valueobjects.DeviceName, parent valueobjects.Handle, priority uint16, handle valueobjects.Handle) *Filter {
+func NewFilter(device tc.DeviceName, parent tc.Handle, priority uint16, handle tc.Handle) *Filter {
 	return &Filter{
 		id:       NewFilterID(device, parent, priority, handle),
 		protocol: ProtocolIP,
@@ -82,12 +82,12 @@ func (f *Filter) ID() FilterID {
 }
 
 // SetFlowID sets the target class handle
-func (f *Filter) SetFlowID(flowID valueobjects.Handle) {
+func (f *Filter) SetFlowID(flowID tc.Handle) {
 	f.flowID = flowID
 }
 
 // FlowID returns the target class handle
-func (f *Filter) FlowID() valueobjects.Handle {
+func (f *Filter) FlowID() tc.Handle {
 	return f.flowID
 }
 

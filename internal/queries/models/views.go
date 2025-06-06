@@ -2,7 +2,7 @@ package models
 
 import (
 	"github.com/rng999/traffic-control-go/internal/domain/entities"
-	"github.com/rng999/traffic-control-go/internal/domain/valueobjects"
+	"github.com/rng999/traffic-control-go/pkg/tc"
 )
 
 // QdiscView is a read model for qdiscs
@@ -59,7 +59,7 @@ type TrafficControlConfigView struct {
 }
 
 // NewQdiscView creates a QdiscView from domain entity
-func NewQdiscView(device valueobjects.DeviceName, qdisc interface{}) QdiscView {
+func NewQdiscView(device tc.DeviceName, qdisc interface{}) QdiscView {
 	// First check if it's a basic Qdisc
 	basicQdisc, isBasicQdisc := qdisc.(*entities.Qdisc)
 	if !isBasicQdisc {
@@ -93,7 +93,7 @@ func NewQdiscView(device valueobjects.DeviceName, qdisc interface{}) QdiscView {
 }
 
 // NewClassView creates a ClassView from domain entity
-func NewClassView(device valueobjects.DeviceName, class interface{}) ClassView {
+func NewClassView(device tc.DeviceName, class interface{}) ClassView {
 	// First check if it's a basic Class
 	basicClass, isBasicClass := class.(*entities.Class)
 	if !isBasicClass {
@@ -128,7 +128,7 @@ func NewClassView(device valueobjects.DeviceName, class interface{}) ClassView {
 }
 
 // NewFilterView creates a FilterView from domain entity
-func NewFilterView(device valueobjects.DeviceName, filter *entities.Filter) FilterView {
+func NewFilterView(device tc.DeviceName, filter *entities.Filter) FilterView {
 	view := FilterView{
 		DeviceName: device.String(),
 		Parent:     filter.ID().String(),

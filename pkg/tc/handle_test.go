@@ -1,4 +1,4 @@
-package valueobjects_test
+package tc_test
 
 import (
 	"testing"
@@ -6,11 +6,11 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/rng999/traffic-control-go/internal/domain/valueobjects"
+	"github.com/rng999/traffic-control-go/pkg/tc"
 )
 
 func TestNewHandle(t *testing.T) {
-	h := valueobjects.NewHandle(1, 10)
+	h := tc.NewHandle(1, 10)
 
 	assert.Equal(t, uint16(1), h.Major())
 	assert.Equal(t, uint16(10), h.Minor())
@@ -78,7 +78,7 @@ func TestParseHandle(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			h, err := valueobjects.ParseHandle(tt.input)
+			h, err := tc.ParseHandle(tt.input)
 
 			if tt.wantErr {
 				require.Error(t, err)
@@ -94,14 +94,14 @@ func TestParseHandle(t *testing.T) {
 
 func TestMustParseHandle(t *testing.T) {
 	t.Run("Valid input", func(t *testing.T) {
-		h := valueobjects.MustParseHandle("1:10")
+		h := tc.MustParseHandle("1:10")
 		assert.Equal(t, uint16(1), h.Major())
 		assert.Equal(t, uint16(16), h.Minor())
 	})
 
 	t.Run("Invalid input panics", func(t *testing.T) {
 		assert.Panics(t, func() {
-			valueobjects.MustParseHandle("invalid")
+			tc.MustParseHandle("invalid")
 		})
 	})
 }
@@ -109,22 +109,22 @@ func TestMustParseHandle(t *testing.T) {
 func TestHandleString(t *testing.T) {
 	tests := []struct {
 		name     string
-		handle   valueobjects.Handle
+		handle   tc.Handle
 		expected string
 	}{
 		{
 			name:     "Simple handle",
-			handle:   valueobjects.NewHandle(1, 10),
+			handle:   tc.NewHandle(1, 10),
 			expected: "1:a",
 		},
 		{
 			name:     "Root handle",
-			handle:   valueobjects.NewHandle(1, 0),
+			handle:   tc.NewHandle(1, 0),
 			expected: "1:",
 		},
 		{
 			name:     "Large numbers",
-			handle:   valueobjects.NewHandle(255, 65535),
+			handle:   tc.NewHandle(255, 65535),
 			expected: "ff:ffff",
 		},
 	}
@@ -137,18 +137,18 @@ func TestHandleString(t *testing.T) {
 }
 
 func TestHandleIsRoot(t *testing.T) {
-	root := valueobjects.NewHandle(1, 0)
-	nonRoot := valueobjects.NewHandle(1, 10)
+	root := tc.NewHandle(1, 0)
+	nonRoot := tc.NewHandle(1, 10)
 
 	assert.True(t, root.IsRoot())
 	assert.False(t, nonRoot.IsRoot())
 }
 
 func TestHandleEquals(t *testing.T) {
-	h1 := valueobjects.NewHandle(1, 10)
-	h2 := valueobjects.NewHandle(1, 10)
-	h3 := valueobjects.NewHandle(1, 20)
-	h4 := valueobjects.NewHandle(2, 10)
+	h1 := tc.NewHandle(1, 10)
+	h2 := tc.NewHandle(1, 10)
+	h3 := tc.NewHandle(1, 20)
+	h4 := tc.NewHandle(2, 10)
 
 	assert.True(t, h1.Equals(h2))
 	assert.False(t, h1.Equals(h3))
@@ -158,22 +158,22 @@ func TestHandleEquals(t *testing.T) {
 func TestHandleUint32Conversion(t *testing.T) {
 	tests := []struct {
 		name     string
-		handle   valueobjects.Handle
+		handle   tc.Handle
 		expected uint32
 	}{
 		{
 			name:     "Simple conversion",
-			handle:   valueobjects.NewHandle(1, 10),
+			handle:   tc.NewHandle(1, 10),
 			expected: 0x0001000A,
 		},
 		{
 			name:     "Root handle",
-			handle:   valueobjects.NewHandle(1, 0),
+			handle:   tc.NewHandle(1, 0),
 			expected: 0x00010000,
 		},
 		{
 			name:     "Max values",
-			handle:   valueobjects.NewHandle(0xFFFF, 0xFFFF),
+			handle:   tc.NewHandle(0xFFFF, 0xFFFF),
 			expected: 0xFFFFFFFF,
 		},
 	}
@@ -214,7 +214,7 @@ func TestHandleFromUint32(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			h := valueobjects.HandleFromUint32(tt.input)
+			h := tc.HandleFromUint32(tt.input)
 			assert.Equal(t, tt.wantMajor, h.Major())
 			assert.Equal(t, tt.wantMinor, h.Minor())
 		})
@@ -223,9 +223,9 @@ func TestHandleFromUint32(t *testing.T) {
 
 func TestHandleRoundTripConversion(t *testing.T) {
 	// Test that converting to uint32 and back preserves the handle
-	original := valueobjects.NewHandle(123, 456)
+	original := tc.NewHandle(123, 456)
 	uint32Val := original.ToUint32()
-	restored := valueobjects.HandleFromUint32(uint32Val)
+	restored := tc.HandleFromUint32(uint32Val)
 
 	assert.True(t, original.Equals(restored))
 }

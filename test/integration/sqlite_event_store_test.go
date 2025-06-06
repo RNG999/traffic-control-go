@@ -10,8 +10,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/rng999/traffic-control-go/internal/domain/aggregates"
-	"github.com/rng999/traffic-control-go/internal/domain/valueobjects"
 	"github.com/rng999/traffic-control-go/internal/infrastructure/eventstore"
+	"github.com/rng999/traffic-control-go/pkg/tc"
 )
 
 func TestSQLiteEventStore(t *testing.T) {
@@ -35,14 +35,14 @@ func TestSQLiteEventStore(t *testing.T) {
 
 	t.Run("save and load aggregate", func(t *testing.T) {
 		// Create aggregate
-		device, err := valueobjects.NewDevice("eth0")
+		device, err := tc.NewDevice("eth0")
 		require.NoError(t, err)
 
 		aggregate := aggregates.NewTrafficControlAggregate(device)
 
 		// Add HTB qdisc
-		handle := valueobjects.NewHandle(1, 0)
-		defaultClass := valueobjects.NewHandle(1, 999)
+		handle := tc.NewHandle(1, 0)
+		defaultClass := tc.NewHandle(1, 999)
 		err = aggregate.AddHTBQdisc(handle, defaultClass)
 		require.NoError(t, err)
 
@@ -62,15 +62,15 @@ func TestSQLiteEventStore(t *testing.T) {
 
 	t.Run("optimistic concurrency control", func(t *testing.T) {
 		// Create aggregate
-		device, err := valueobjects.NewDevice("eth1")
+		device, err := tc.NewDevice("eth1")
 		require.NoError(t, err)
 
 		aggregate1 := aggregates.NewTrafficControlAggregate(device)
 		aggregate2 := aggregates.NewTrafficControlAggregate(device)
 
 		// Add qdisc to first aggregate
-		handle := valueobjects.NewHandle(1, 0)
-		defaultClass := valueobjects.NewHandle(1, 999)
+		handle := tc.NewHandle(1, 0)
+		defaultClass := tc.NewHandle(1, 999)
 		err = aggregate1.AddHTBQdisc(handle, defaultClass)
 		require.NoError(t, err)
 
@@ -83,11 +83,11 @@ func TestSQLiteEventStore(t *testing.T) {
 		require.NoError(t, err)
 
 		// Modify both aggregates
-		parentHandle := valueobjects.NewHandle(1, 0)
-		classHandle1 := valueobjects.NewHandle(1, 10)
-		classHandle2 := valueobjects.NewHandle(1, 20)
-		rate, _ := valueobjects.NewBandwidth("10mbps")
-		ceil, _ := valueobjects.NewBandwidth("100mbps")
+		parentHandle := tc.NewHandle(1, 0)
+		classHandle1 := tc.NewHandle(1, 10)
+		classHandle2 := tc.NewHandle(1, 20)
+		rate, _ := tc.NewBandwidth("10mbps")
+		ceil, _ := tc.NewBandwidth("100mbps")
 
 		err = aggregate1.AddHTBClass(parentHandle, classHandle1, "class1", rate, ceil)
 		require.NoError(t, err)
@@ -107,21 +107,21 @@ func TestSQLiteEventStore(t *testing.T) {
 
 	t.Run("retrieve events with context", func(t *testing.T) {
 		// Create and save aggregate with multiple events
-		device, err := valueobjects.NewDevice("eth2")
+		device, err := tc.NewDevice("eth2")
 		require.NoError(t, err)
 
 		aggregate := aggregates.NewTrafficControlAggregate(device)
 
 		// Add multiple items
-		handle := valueobjects.NewHandle(1, 0)
-		defaultClass := valueobjects.NewHandle(1, 999)
+		handle := tc.NewHandle(1, 0)
+		defaultClass := tc.NewHandle(1, 999)
 		err = aggregate.AddHTBQdisc(handle, defaultClass)
 		require.NoError(t, err)
 
-		parentHandle := valueobjects.NewHandle(1, 0)
-		classHandle := valueobjects.NewHandle(1, 10)
-		rate, _ := valueobjects.NewBandwidth("10mbps")
-		ceil, _ := valueobjects.NewBandwidth("100mbps")
+		parentHandle := tc.NewHandle(1, 0)
+		classHandle := tc.NewHandle(1, 10)
+		rate, _ := tc.NewBandwidth("10mbps")
+		ceil, _ := tc.NewBandwidth("100mbps")
 		err = aggregate.AddHTBClass(parentHandle, classHandle, "class1", rate, ceil)
 		require.NoError(t, err)
 
@@ -163,14 +163,14 @@ func TestSQLiteEventStorePersistence(t *testing.T) {
 		}()
 
 		// Create aggregate
-		device, err := valueobjects.NewDevice("eth0")
+		device, err := tc.NewDevice("eth0")
 		require.NoError(t, err)
 
 		aggregate := aggregates.NewTrafficControlAggregate(device)
 
 		// Add HTB qdisc
-		handle := valueobjects.NewHandle(1, 0)
-		defaultClass := valueobjects.NewHandle(1, 999)
+		handle := tc.NewHandle(1, 0)
+		defaultClass := tc.NewHandle(1, 999)
 		err = aggregate.AddHTBQdisc(handle, defaultClass)
 		require.NoError(t, err)
 
@@ -191,7 +191,7 @@ func TestSQLiteEventStorePersistence(t *testing.T) {
 	}()
 
 	// Load aggregate
-	device, err := valueobjects.NewDevice("eth0")
+	device, err := tc.NewDevice("eth0")
 	require.NoError(t, err)
 
 	aggregate := aggregates.NewTrafficControlAggregate(device)

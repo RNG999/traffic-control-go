@@ -8,8 +8,8 @@ import (
 	"fmt"
 
 	"github.com/rng999/traffic-control-go/internal/domain/entities"
-	"github.com/rng999/traffic-control-go/internal/domain/valueobjects"
 	"github.com/rng999/traffic-control-go/pkg/logging"
+	"github.com/rng999/traffic-control-go/pkg/tc"
 	"github.com/rng999/traffic-control-go/pkg/types"
 )
 
@@ -34,12 +34,12 @@ func (a *RealNetlinkAdapter) AddQdisc(ctx context.Context, qdisc *entities.Qdisc
 }
 
 // DeleteQdisc is not supported on non-Linux platforms
-func (a *RealNetlinkAdapter) DeleteQdisc(device valueobjects.DeviceName, handle valueobjects.Handle) types.Result[Unit] {
+func (a *RealNetlinkAdapter) DeleteQdisc(device tc.DeviceName, handle tc.Handle) types.Result[Unit] {
 	return types.Failure[Unit](fmt.Errorf("traffic control operations are not supported on this platform"))
 }
 
 // GetQdiscs is not supported on non-Linux platforms
-func (a *RealNetlinkAdapter) GetQdiscs(device valueobjects.DeviceName) types.Result[[]QdiscInfo] {
+func (a *RealNetlinkAdapter) GetQdiscs(device tc.DeviceName) types.Result[[]QdiscInfo] {
 	return types.Failure[[]QdiscInfo](fmt.Errorf("traffic control operations are not supported on this platform"))
 }
 
@@ -49,12 +49,12 @@ func (a *RealNetlinkAdapter) AddClass(ctx context.Context, class interface{}) er
 }
 
 // DeleteClass is not supported on non-Linux platforms
-func (a *RealNetlinkAdapter) DeleteClass(device valueobjects.DeviceName, handle valueobjects.Handle) types.Result[Unit] {
+func (a *RealNetlinkAdapter) DeleteClass(device tc.DeviceName, handle tc.Handle) types.Result[Unit] {
 	return types.Failure[Unit](fmt.Errorf("traffic control operations are not supported on this platform"))
 }
 
 // GetClasses is not supported on non-Linux platforms
-func (a *RealNetlinkAdapter) GetClasses(device valueobjects.DeviceName) types.Result[[]ClassInfo] {
+func (a *RealNetlinkAdapter) GetClasses(device tc.DeviceName) types.Result[[]ClassInfo] {
 	return types.Failure[[]ClassInfo](fmt.Errorf("traffic control operations are not supported on this platform"))
 }
 
@@ -64,21 +64,21 @@ func (a *RealNetlinkAdapter) AddFilter(ctx context.Context, filter *entities.Fil
 }
 
 // DeleteFilter is not supported on non-Linux platforms
-func (a *RealNetlinkAdapter) DeleteFilter(device valueobjects.DeviceName, parent valueobjects.Handle, priority uint16, handle valueobjects.Handle) types.Result[Unit] {
+func (a *RealNetlinkAdapter) DeleteFilter(device tc.DeviceName, parent tc.Handle, priority uint16, handle tc.Handle) types.Result[Unit] {
 	return types.Failure[Unit](fmt.Errorf("traffic control operations are not supported on this platform"))
 }
 
 // GetFilters is not supported on non-Linux platforms
-func (a *RealNetlinkAdapter) GetFilters(device valueobjects.DeviceName) types.Result[[]FilterInfo] {
+func (a *RealNetlinkAdapter) GetFilters(device tc.DeviceName) types.Result[[]FilterInfo] {
 	return types.Failure[[]FilterInfo](fmt.Errorf("traffic control operations are not supported on this platform"))
 }
 
 // GetDetailedQdiscStats is not supported on non-Linux platforms
-func (a *RealNetlinkAdapter) GetDetailedQdiscStats(device valueobjects.DeviceName, handle valueobjects.Handle) types.Result[DetailedQdiscStats] {
+func (a *RealNetlinkAdapter) GetDetailedQdiscStats(device tc.DeviceName, handle tc.Handle) types.Result[DetailedQdiscStats] {
 	return types.Failure[DetailedQdiscStats](fmt.Errorf("traffic control operations are not supported on this platform"))
 }
 
 // GetDetailedClassStats is not supported on non-Linux platforms
-func (a *RealNetlinkAdapter) GetDetailedClassStats(device valueobjects.DeviceName, handle valueobjects.Handle) types.Result[DetailedClassStats] {
+func (a *RealNetlinkAdapter) GetDetailedClassStats(device tc.DeviceName, handle tc.Handle) types.Result[DetailedClassStats] {
 	return types.Failure[DetailedClassStats](fmt.Errorf("traffic control operations are not supported on this platform"))
 }

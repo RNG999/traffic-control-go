@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"math"
 
-	"github.com/rng999/traffic-control-go/internal/domain/valueobjects"
+	"github.com/rng999/traffic-control-go/pkg/tc"
 )
 
 // QdiscType represents the type of queueing discipline
@@ -47,12 +47,12 @@ func (q QdiscType) String() string {
 
 // QdiscID represents a unique identifier for a qdisc
 type QdiscID struct {
-	device valueobjects.DeviceName
-	handle valueobjects.Handle
+	device tc.DeviceName
+	handle tc.Handle
 }
 
 // NewQdiscID creates a new QdiscID
-func NewQdiscID(device valueobjects.DeviceName, handle valueobjects.Handle) QdiscID {
+func NewQdiscID(device tc.DeviceName, handle tc.Handle) QdiscID {
 	return QdiscID{device: device, handle: handle}
 }
 
@@ -62,7 +62,7 @@ func (id QdiscID) String() string {
 }
 
 // Device returns the device name
-func (id QdiscID) Device() valueobjects.DeviceName {
+func (id QdiscID) Device() tc.DeviceName {
 	return id.device
 }
 
@@ -70,12 +70,12 @@ func (id QdiscID) Device() valueobjects.DeviceName {
 type Qdisc struct {
 	id         QdiscID
 	qdiscType  QdiscType
-	parent     *valueobjects.Handle
+	parent     *tc.Handle
 	parameters map[string]interface{}
 }
 
 // NewQdisc creates a new Qdisc entity
-func NewQdisc(device valueobjects.DeviceName, handle valueobjects.Handle, qdiscType QdiscType) *Qdisc {
+func NewQdisc(device tc.DeviceName, handle tc.Handle, qdiscType QdiscType) *Qdisc {
 	return &Qdisc{
 		id:         NewQdiscID(device, handle),
 		qdiscType:  qdiscType,
@@ -89,12 +89,12 @@ func (q *Qdisc) ID() QdiscID {
 }
 
 // Handle returns the qdisc handle
-func (q *Qdisc) Handle() valueobjects.Handle {
+func (q *Qdisc) Handle() tc.Handle {
 	return q.id.handle
 }
 
 // Device returns the device name
-func (q *Qdisc) Device() valueobjects.DeviceName {
+func (q *Qdisc) Device() tc.DeviceName {
 	return q.id.device
 }
 
@@ -104,12 +104,12 @@ func (q *Qdisc) Type() QdiscType {
 }
 
 // Parent returns the parent handle if set
-func (q *Qdisc) Parent() *valueobjects.Handle {
+func (q *Qdisc) Parent() *tc.Handle {
 	return q.parent
 }
 
 // SetParent sets the parent handle
-func (q *Qdisc) SetParent(parent valueobjects.Handle) {
+func (q *Qdisc) SetParent(parent tc.Handle) {
 	q.parent = &parent
 }
 
@@ -132,12 +132,12 @@ func (q *Qdisc) GetParameter(key string) (interface{}, bool) {
 // HTBQdisc represents an HTB-specific qdisc
 type HTBQdisc struct {
 	*Qdisc
-	defaultClass valueobjects.Handle
+	defaultClass tc.Handle
 	r2q          uint32
 }
 
 // NewHTBQdisc creates a new HTB qdisc
-func NewHTBQdisc(device valueobjects.DeviceName, handle valueobjects.Handle, defaultClass valueobjects.Handle) *HTBQdisc {
+func NewHTBQdisc(device tc.DeviceName, handle tc.Handle, defaultClass tc.Handle) *HTBQdisc {
 	qdisc := NewQdisc(device, handle, QdiscTypeHTB)
 	return &HTBQdisc{
 		Qdisc:        qdisc,
@@ -147,12 +147,12 @@ func NewHTBQdisc(device valueobjects.DeviceName, handle valueobjects.Handle, def
 }
 
 // DefaultClass returns the default class handle
-func (h *HTBQdisc) DefaultClass() valueobjects.Handle {
+func (h *HTBQdisc) DefaultClass() tc.Handle {
 	return h.defaultClass
 }
 
 // SetDefaultClass sets the default class handle
-func (h *HTBQdisc) SetDefaultClass(handle valueobjects.Handle) {
+func (h *HTBQdisc) SetDefaultClass(handle tc.Handle) {
 	h.defaultClass = handle
 }
 
@@ -169,14 +169,14 @@ func (h *HTBQdisc) SetR2Q(r2q uint32) {
 // TBFQdisc represents a Token Bucket Filter qdisc
 type TBFQdisc struct {
 	*Qdisc
-	rate   valueobjects.Bandwidth
+	rate   tc.Bandwidth
 	buffer uint32
 	limit  uint32
 	burst  uint32
 }
 
 // NewTBFQdisc creates a new TBF qdisc
-func NewTBFQdisc(device valueobjects.DeviceName, handle valueobjects.Handle, rate valueobjects.Bandwidth) *TBFQdisc {
+func NewTBFQdisc(device tc.DeviceName, handle tc.Handle, rate tc.Bandwidth) *TBFQdisc {
 	qdisc := NewQdisc(device, handle, QdiscTypeTBF)
 	// Calculate burst with overflow protection
 	burstValue := rate.BitsPerSecond() / 8 / 250
@@ -195,12 +195,12 @@ func NewTBFQdisc(device valueobjects.DeviceName, handle valueobjects.Handle, rat
 }
 
 // Rate returns the rate limit
-func (t *TBFQdisc) Rate() valueobjects.Bandwidth {
+func (t *TBFQdisc) Rate() tc.Bandwidth {
 	return t.rate
 }
 
 // SetRate sets the rate limit
-func (t *TBFQdisc) SetRate(rate valueobjects.Bandwidth) {
+func (t *TBFQdisc) SetRate(rate tc.Bandwidth) {
 	t.rate = rate
 }
 
@@ -242,7 +242,7 @@ type PRIOQdisc struct {
 }
 
 // NewPRIOQdisc creates a new PRIO qdisc
-func NewPRIOQdisc(device valueobjects.DeviceName, handle valueobjects.Handle, bands uint8) *PRIOQdisc {
+func NewPRIOQdisc(device tc.DeviceName, handle tc.Handle, bands uint8) *PRIOQdisc {
 	qdisc := NewQdisc(device, handle, QdiscTypePRIO)
 	// Default priomap for 3 bands (standard configuration)
 	defaultPriomap := []uint8{1, 2, 2, 2, 1, 2, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1}
@@ -285,7 +285,7 @@ type FQCODELQdisc struct {
 }
 
 // NewFQCODELQdisc creates a new FQ_CODEL qdisc
-func NewFQCODELQdisc(device valueobjects.DeviceName, handle valueobjects.Handle) *FQCODELQdisc {
+func NewFQCODELQdisc(device tc.DeviceName, handle tc.Handle) *FQCODELQdisc {
 	qdisc := NewQdisc(device, handle, QdiscTypeFQCODEL)
 	return &FQCODELQdisc{
 		Qdisc:    qdisc,

@@ -11,21 +11,21 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/rng999/traffic-control-go/internal/domain/entities"
-	"github.com/rng999/traffic-control-go/internal/domain/valueobjects"
 	"github.com/rng999/traffic-control-go/internal/infrastructure/netlink"
+	"github.com/rng999/traffic-control-go/pkg/tc"
 )
 
 // TestComplexHTBHierarchy tests a multi-level HTB hierarchy
 func TestComplexHTBHierarchy(t *testing.T) {
 	adapter := netlink.NewMockAdapter()
-	device := valueobjects.MustNewDeviceName("eth0")
+	device := tc.MustNewDeviceName("eth0")
 
 	// Create root HTB qdisc
 	rootQdisc := netlink.QdiscConfig{
-		Handle: valueobjects.NewHandle(1, 0),
+		Handle: tc.NewHandle(1, 0),
 		Type:   entities.QdiscTypeHTB,
 		Parameters: map[string]interface{}{
-			"defaultClass": valueobjects.NewHandle(1, 999),
+			"defaultClass": tc.NewHandle(1, 999),
 		},
 	}
 
@@ -34,12 +34,12 @@ func TestComplexHTBHierarchy(t *testing.T) {
 
 	// Create parent class (1:1) - Total bandwidth
 	parentClass := netlink.ClassConfig{
-		Handle: valueobjects.NewHandle(1, 1),
-		Parent: valueobjects.NewHandle(1, 0),
+		Handle: tc.NewHandle(1, 1),
+		Parent: tc.NewHandle(1, 0),
 		Type:   entities.QdiscTypeHTB,
 		Parameters: map[string]interface{}{
-			"rate": valueobjects.MustParseBandwidth("1Gbps"),
-			"ceil": valueobjects.MustParseBandwidth("1Gbps"),
+			"rate": tc.MustParseBandwidth("1Gbps"),
+			"ceil": tc.MustParseBandwidth("1Gbps"),
 		},
 	}
 
@@ -50,12 +50,12 @@ func TestComplexHTBHierarchy(t *testing.T) {
 
 	// High priority class (1:10)
 	highPrioClass := netlink.ClassConfig{
-		Handle: valueobjects.NewHandle(1, 10),
-		Parent: valueobjects.NewHandle(1, 1),
+		Handle: tc.NewHandle(1, 10),
+		Parent: tc.NewHandle(1, 1),
 		Type:   entities.QdiscTypeHTB,
 		Parameters: map[string]interface{}{
-			"rate": valueobjects.MustParseBandwidth("400Mbps"),
-			"ceil": valueobjects.MustParseBandwidth("800Mbps"),
+			"rate": tc.MustParseBandwidth("400Mbps"),
+			"ceil": tc.MustParseBandwidth("800Mbps"),
 		},
 	}
 
@@ -64,12 +64,12 @@ func TestComplexHTBHierarchy(t *testing.T) {
 
 	// Medium priority class (1:20)
 	mediumPrioClass := netlink.ClassConfig{
-		Handle: valueobjects.NewHandle(1, 20),
-		Parent: valueobjects.NewHandle(1, 1),
+		Handle: tc.NewHandle(1, 20),
+		Parent: tc.NewHandle(1, 1),
 		Type:   entities.QdiscTypeHTB,
 		Parameters: map[string]interface{}{
-			"rate": valueobjects.MustParseBandwidth("300Mbps"),
-			"ceil": valueobjects.MustParseBandwidth("600Mbps"),
+			"rate": tc.MustParseBandwidth("300Mbps"),
+			"ceil": tc.MustParseBandwidth("600Mbps"),
 		},
 	}
 
@@ -78,12 +78,12 @@ func TestComplexHTBHierarchy(t *testing.T) {
 
 	// Low priority class (1:30)
 	lowPrioClass := netlink.ClassConfig{
-		Handle: valueobjects.NewHandle(1, 30),
-		Parent: valueobjects.NewHandle(1, 1),
+		Handle: tc.NewHandle(1, 30),
+		Parent: tc.NewHandle(1, 1),
 		Type:   entities.QdiscTypeHTB,
 		Parameters: map[string]interface{}{
-			"rate": valueobjects.MustParseBandwidth("300Mbps"),
-			"ceil": valueobjects.MustParseBandwidth("500Mbps"),
+			"rate": tc.MustParseBandwidth("300Mbps"),
+			"ceil": tc.MustParseBandwidth("500Mbps"),
 		},
 	}
 
@@ -94,12 +94,12 @@ func TestComplexHTBHierarchy(t *testing.T) {
 
 	// VoIP traffic (1:11)
 	voipClass := netlink.ClassConfig{
-		Handle: valueobjects.NewHandle(1, 11),
-		Parent: valueobjects.NewHandle(1, 10),
+		Handle: tc.NewHandle(1, 11),
+		Parent: tc.NewHandle(1, 10),
 		Type:   entities.QdiscTypeHTB,
 		Parameters: map[string]interface{}{
-			"rate": valueobjects.MustParseBandwidth("100Mbps"),
-			"ceil": valueobjects.MustParseBandwidth("200Mbps"),
+			"rate": tc.MustParseBandwidth("100Mbps"),
+			"ceil": tc.MustParseBandwidth("200Mbps"),
 		},
 	}
 
@@ -108,12 +108,12 @@ func TestComplexHTBHierarchy(t *testing.T) {
 
 	// Video streaming (1:12)
 	videoClass := netlink.ClassConfig{
-		Handle: valueobjects.NewHandle(1, 12),
-		Parent: valueobjects.NewHandle(1, 10),
+		Handle: tc.NewHandle(1, 12),
+		Parent: tc.NewHandle(1, 10),
 		Type:   entities.QdiscTypeHTB,
 		Parameters: map[string]interface{}{
-			"rate": valueobjects.MustParseBandwidth("300Mbps"),
-			"ceil": valueobjects.MustParseBandwidth("600Mbps"),
+			"rate": tc.MustParseBandwidth("300Mbps"),
+			"ceil": tc.MustParseBandwidth("600Mbps"),
 		},
 	}
 
@@ -129,11 +129,11 @@ func TestComplexHTBHierarchy(t *testing.T) {
 // TestMultipleFiltersWithPriority tests filter ordering and priority
 func TestMultipleFiltersWithPriority(t *testing.T) {
 	adapter := netlink.NewMockAdapter()
-	device := valueobjects.MustNewDeviceName("eth0")
+	device := tc.MustNewDeviceName("eth0")
 
 	// Add qdisc
 	qdisc := netlink.QdiscConfig{
-		Handle: valueobjects.NewHandle(1, 0),
+		Handle: tc.NewHandle(1, 0),
 		Type:   entities.QdiscTypeHTB,
 	}
 	adapter.AddQdisc(device, qdisc)
@@ -141,11 +141,11 @@ func TestMultipleFiltersWithPriority(t *testing.T) {
 	// Add filters with different priorities
 	filters := []netlink.FilterConfig{
 		{
-			Parent:   valueobjects.NewHandle(1, 0),
+			Parent:   tc.NewHandle(1, 0),
 			Priority: 1, // Highest priority
-			Handle:   valueobjects.NewHandle(800, 1),
+			Handle:   tc.NewHandle(800, 1),
 			Protocol: entities.ProtocolIP,
-			FlowID:   valueobjects.NewHandle(1, 10),
+			FlowID:   tc.NewHandle(1, 10),
 			Matches: []netlink.FilterMatch{
 				{
 					Type:  entities.MatchTypeIPDestination,
@@ -154,11 +154,11 @@ func TestMultipleFiltersWithPriority(t *testing.T) {
 			},
 		},
 		{
-			Parent:   valueobjects.NewHandle(1, 0),
+			Parent:   tc.NewHandle(1, 0),
 			Priority: 2,
-			Handle:   valueobjects.NewHandle(800, 2),
+			Handle:   tc.NewHandle(800, 2),
 			Protocol: entities.ProtocolIP,
-			FlowID:   valueobjects.NewHandle(1, 20),
+			FlowID:   tc.NewHandle(1, 20),
 			Matches: []netlink.FilterMatch{
 				{
 					Type:  entities.MatchTypePortDestination,
@@ -167,11 +167,11 @@ func TestMultipleFiltersWithPriority(t *testing.T) {
 			},
 		},
 		{
-			Parent:   valueobjects.NewHandle(1, 0),
+			Parent:   tc.NewHandle(1, 0),
 			Priority: 3,
-			Handle:   valueobjects.NewHandle(800, 3),
+			Handle:   tc.NewHandle(800, 3),
 			Protocol: entities.ProtocolIP,
-			FlowID:   valueobjects.NewHandle(1, 30),
+			FlowID:   tc.NewHandle(1, 30),
 			Matches: []netlink.FilterMatch{
 				{
 					Type:  entities.MatchTypeProtocol,
@@ -261,16 +261,16 @@ func TestNETEMConfiguration(t *testing.T) {
 // TestErrorScenarios tests various error conditions
 func TestErrorScenarios(t *testing.T) {
 	adapter := netlink.NewMockAdapter()
-	device := valueobjects.MustNewDeviceName("eth0")
+	device := tc.MustNewDeviceName("eth0")
 
 	t.Run("ClassWithoutParentQdisc", func(t *testing.T) {
 		// Try to add class without parent qdisc
 		class := netlink.ClassConfig{
-			Handle: valueobjects.NewHandle(1, 1),
-			Parent: valueobjects.NewHandle(1, 0), // Non-existent parent
+			Handle: tc.NewHandle(1, 1),
+			Parent: tc.NewHandle(1, 0), // Non-existent parent
 			Type:   entities.QdiscTypeHTB,
 			Parameters: map[string]interface{}{
-				"rate": valueobjects.MustParseBandwidth("100Mbps"),
+				"rate": tc.MustParseBandwidth("100Mbps"),
 			},
 		}
 
@@ -281,7 +281,7 @@ func TestErrorScenarios(t *testing.T) {
 	t.Run("DuplicateHandle", func(t *testing.T) {
 		// Add qdisc
 		qdisc := netlink.QdiscConfig{
-			Handle: valueobjects.NewHandle(1, 0),
+			Handle: tc.NewHandle(1, 0),
 			Type:   entities.QdiscTypeHTB,
 		}
 		adapter.AddQdisc(device, qdisc)
@@ -294,11 +294,11 @@ func TestErrorScenarios(t *testing.T) {
 	t.Run("InvalidFilterParent", func(t *testing.T) {
 		// Try to add filter to non-existent parent
 		filter := netlink.FilterConfig{
-			Parent:   valueobjects.NewHandle(99, 0), // Non-existent
+			Parent:   tc.NewHandle(99, 0), // Non-existent
 			Priority: 1,
-			Handle:   valueobjects.NewHandle(800, 1),
+			Handle:   tc.NewHandle(800, 1),
 			Protocol: entities.ProtocolIP,
-			FlowID:   valueobjects.NewHandle(1, 1),
+			FlowID:   tc.NewHandle(1, 1),
 		}
 
 		result := adapter.AddFilter(device, filter)

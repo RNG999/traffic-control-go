@@ -3,17 +3,17 @@ package entities
 import (
 	"fmt"
 
-	"github.com/rng999/traffic-control-go/internal/domain/valueobjects"
+	"github.com/rng999/traffic-control-go/pkg/tc"
 )
 
 // ClassID represents a unique identifier for a traffic class
 type ClassID struct {
-	device valueobjects.DeviceName
-	handle valueobjects.Handle
+	device tc.DeviceName
+	handle tc.Handle
 }
 
 // NewClassID creates a new ClassID
-func NewClassID(device valueobjects.DeviceName, handle valueobjects.Handle) ClassID {
+func NewClassID(device tc.DeviceName, handle tc.Handle) ClassID {
 	return ClassID{device: device, handle: handle}
 }
 
@@ -23,14 +23,14 @@ func (id ClassID) String() string {
 }
 
 // Device returns the device name
-func (id ClassID) Device() valueobjects.DeviceName {
+func (id ClassID) Device() tc.DeviceName {
 	return id.device
 }
 
 // Class represents a traffic class entity
 type Class struct {
 	id       ClassID
-	parent   valueobjects.Handle
+	parent   tc.Handle
 	name     string    // Human-readable name
 	priority *Priority // Priority must be explicitly set
 }
@@ -39,7 +39,7 @@ type Class struct {
 type Priority int
 
 // NewClass creates a new Class entity
-func NewClass(device valueobjects.DeviceName, handle valueobjects.Handle, parent valueobjects.Handle, name string, priority Priority) *Class {
+func NewClass(device tc.DeviceName, handle tc.Handle, parent tc.Handle, name string, priority Priority) *Class {
 	return &Class{
 		id:       NewClassID(device, handle),
 		parent:   parent,
@@ -54,12 +54,12 @@ func (c *Class) ID() ClassID {
 }
 
 // Handle returns the class handle
-func (c *Class) Handle() valueobjects.Handle {
+func (c *Class) Handle() tc.Handle {
 	return c.id.handle
 }
 
 // Parent returns the parent handle
-func (c *Class) Parent() valueobjects.Handle {
+func (c *Class) Parent() tc.Handle {
 	return c.parent
 }
 
@@ -81,14 +81,14 @@ func (c *Class) SetPriority(p Priority) {
 // HTBClass represents an HTB-specific traffic class
 type HTBClass struct {
 	*Class
-	rate   valueobjects.Bandwidth
-	ceil   valueobjects.Bandwidth
+	rate   tc.Bandwidth
+	ceil   tc.Bandwidth
 	burst  uint32
 	cburst uint32
 }
 
 // NewHTBClass creates a new HTB class
-func NewHTBClass(device valueobjects.DeviceName, handle valueobjects.Handle, parent valueobjects.Handle, name string, priority Priority) *HTBClass {
+func NewHTBClass(device tc.DeviceName, handle tc.Handle, parent tc.Handle, name string, priority Priority) *HTBClass {
 	class := NewClass(device, handle, parent, name, priority)
 	return &HTBClass{
 		Class: class,
@@ -96,22 +96,22 @@ func NewHTBClass(device valueobjects.DeviceName, handle valueobjects.Handle, par
 }
 
 // SetRate sets the guaranteed rate
-func (h *HTBClass) SetRate(rate valueobjects.Bandwidth) {
+func (h *HTBClass) SetRate(rate tc.Bandwidth) {
 	h.rate = rate
 }
 
 // Rate returns the guaranteed rate
-func (h *HTBClass) Rate() valueobjects.Bandwidth {
+func (h *HTBClass) Rate() tc.Bandwidth {
 	return h.rate
 }
 
 // SetCeil sets the maximum rate
-func (h *HTBClass) SetCeil(ceil valueobjects.Bandwidth) {
+func (h *HTBClass) SetCeil(ceil tc.Bandwidth) {
 	h.ceil = ceil
 }
 
 // Ceil returns the maximum rate
-func (h *HTBClass) Ceil() valueobjects.Bandwidth {
+func (h *HTBClass) Ceil() tc.Bandwidth {
 	return h.ceil
 }
 

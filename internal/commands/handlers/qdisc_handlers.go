@@ -6,8 +6,8 @@ import (
 
 	"github.com/rng999/traffic-control-go/internal/commands/models"
 	"github.com/rng999/traffic-control-go/internal/domain/aggregates"
-	"github.com/rng999/traffic-control-go/internal/domain/valueobjects"
 	"github.com/rng999/traffic-control-go/internal/infrastructure/eventstore"
+	"github.com/rng999/traffic-control-go/pkg/tc"
 )
 
 // CreateTBFQdiscHandler handles the creation of TBF qdiscs
@@ -30,7 +30,7 @@ func (h *CreateTBFQdiscHandler) Handle(ctx context.Context, command interface{})
 	}
 
 	// Create device value object
-	device, err := valueobjects.NewDevice(cmd.DeviceName)
+	device, err := tc.NewDeviceName(cmd.DeviceName)
 	if err != nil {
 		return fmt.Errorf("invalid device name: %w", err)
 	}
@@ -46,10 +46,10 @@ func (h *CreateTBFQdiscHandler) Handle(ctx context.Context, command interface{})
 	if n, err := fmt.Sscanf(cmd.Handle, "%x:%x", &handleMajor, &handleMinor); err != nil || n != 2 {
 		return fmt.Errorf("invalid handle format: %s", cmd.Handle)
 	}
-	handle := valueobjects.NewHandle(handleMajor, handleMinor)
+	handle := tc.NewHandle(handleMajor, handleMinor)
 
 	// Parse bandwidth
-	rate, err := valueobjects.NewBandwidth(cmd.Rate)
+	rate, err := tc.ParseBandwidth(cmd.Rate)
 	if err != nil {
 		return fmt.Errorf("invalid rate: %w", err)
 	}
@@ -87,7 +87,7 @@ func (h *CreatePRIOQdiscHandler) Handle(ctx context.Context, command interface{}
 	}
 
 	// Create device value object
-	device, err := valueobjects.NewDevice(cmd.DeviceName)
+	device, err := tc.NewDeviceName(cmd.DeviceName)
 	if err != nil {
 		return fmt.Errorf("invalid device name: %w", err)
 	}
@@ -103,7 +103,7 @@ func (h *CreatePRIOQdiscHandler) Handle(ctx context.Context, command interface{}
 	if n, err := fmt.Sscanf(cmd.Handle, "%x:%x", &handleMajor, &handleMinor); err != nil || n != 2 {
 		return fmt.Errorf("invalid handle format: %s", cmd.Handle)
 	}
-	handle := valueobjects.NewHandle(handleMajor, handleMinor)
+	handle := tc.NewHandle(handleMajor, handleMinor)
 
 	// Execute business logic
 	if err := aggregate.AddPRIOQdisc(handle, cmd.Bands, cmd.Priomap); err != nil {
@@ -138,7 +138,7 @@ func (h *CreateFQCODELQdiscHandler) Handle(ctx context.Context, command interfac
 	}
 
 	// Create device value object
-	device, err := valueobjects.NewDevice(cmd.DeviceName)
+	device, err := tc.NewDeviceName(cmd.DeviceName)
 	if err != nil {
 		return fmt.Errorf("invalid device name: %w", err)
 	}
@@ -154,7 +154,7 @@ func (h *CreateFQCODELQdiscHandler) Handle(ctx context.Context, command interfac
 	if n, err := fmt.Sscanf(cmd.Handle, "%x:%x", &handleMajor, &handleMinor); err != nil || n != 2 {
 		return fmt.Errorf("invalid handle format: %s", cmd.Handle)
 	}
-	handle := valueobjects.NewHandle(handleMajor, handleMinor)
+	handle := tc.NewHandle(handleMajor, handleMinor)
 
 	// Execute business logic
 	if err := aggregate.AddFQCODELQdisc(

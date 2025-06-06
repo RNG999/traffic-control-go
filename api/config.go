@@ -9,7 +9,7 @@ import (
 
 	yaml "gopkg.in/yaml.v3"
 
-	"github.com/rng999/traffic-control-go/internal/domain/valueobjects"
+	"github.com/rng999/traffic-control-go/pkg/tc"
 )
 
 // TrafficControlConfig represents a structured configuration for traffic control
@@ -176,10 +176,10 @@ func validateClassConfig(class *TrafficClassConfig, classNames map[string]bool, 
 }
 
 // ApplyConfig applies a structured configuration using the chain API
-func (tc *TrafficController) ApplyConfig(config *TrafficControlConfig) error {
+func (controller *TrafficController) ApplyConfig(config *TrafficControlConfig) error {
 	// Set device and bandwidth
-	tc.deviceName = config.Device
-	tc.totalBandwidth = valueobjects.MustParseBandwidth(config.Bandwidth)
+	controller.deviceName = config.Device
+	controller.totalBandwidth = tc.MustParseBandwidth(config.Bandwidth)
 
 	// Apply defaults
 	defaults := config.Defaults
@@ -190,26 +190,26 @@ func (tc *TrafficController) ApplyConfig(config *TrafficControlConfig) error {
 	}
 
 	// Create classes
-	if err := tc.createClassesFromConfig(config.Classes, defaults, ""); err != nil {
+	if err := controller.createClassesFromConfig(config.Classes, defaults, ""); err != nil {
 		return err
 	}
 
 	// Finalize pending classes before applying rules
-	tc.finalizePendingClasses()
+	controller.finalizePendingClasses()
 
 	// Apply rules
 	for i := range config.Rules {
-		if err := tc.createRuleFromConfig(&config.Rules[i]); err != nil {
+		if err := controller.createRuleFromConfig(&config.Rules[i]); err != nil {
 			return err
 		}
 	}
 
 	// Apply the configuration
-	return tc.Apply()
+	return controller.Apply()
 }
 
 // createClassesFromConfig recursively creates classes from configuration
-func (tc *TrafficController) createClassesFromConfig(classes []TrafficClassConfig, defaults *DefaultConfig, parentName string) error {
+func (controller *TrafficController) createClassesFromConfig(classes []TrafficClassConfig, defaults *DefaultConfig, parentName string) error {
 	for _, classConfig := range classes {
 		// Create full class name
 		fullName := classConfig.Name
@@ -218,7 +218,7 @@ func (tc *TrafficController) createClassesFromConfig(classes []TrafficClassConfi
 		}
 
 		// Create class using chain API
-		builder := tc.CreateTrafficClass(fullName).
+		builder := controller.CreateTrafficClass(fullName).
 			WithGuaranteedBandwidth(classConfig.Guaranteed)
 
 		// Apply maximum bandwidth
@@ -226,7 +226,7 @@ func (tc *TrafficController) createClassesFromConfig(classes []TrafficClassConfi
 			builder.WithSoftLimitBandwidth(classConfig.Maximum)
 		} else if defaults.BurstRatio > 1.0 {
 			// Calculate burst based on guaranteed and ratio
-			guaranteed := valueobjects.MustParseBandwidth(classConfig.Guaranteed)
+			guaranteed := tc.MustParseBandwidth(classConfig.Guaranteed)
 			burst := fmt.Sprintf("%dMbps", int(float64(guaranteed.MegabitsPerSecond())*defaults.BurstRatio))
 			builder.WithSoftLimitBandwidth(burst)
 		}
@@ -238,11 +238,11 @@ func (tc *TrafficController) createClassesFromConfig(classes []TrafficClassConfi
 		// Note: validation will catch missing priority later
 
 		// The builder is automatically added to pendingBuilders in CreateTrafficClass
-		// No need to manually append to tc.classes here
+		// No need to manually append to controller.classes here
 
 		// Create children
 		if len(classConfig.Children) > 0 {
-			if err := tc.createClassesFromConfig(classConfig.Children, defaults, fullName); err != nil {
+			if err := controller.createClassesFromConfig(classConfig.Children, defaults, fullName); err != nil {
 				return err
 			}
 		}
@@ -252,12 +252,12 @@ func (tc *TrafficController) createClassesFromConfig(classes []TrafficClassConfi
 }
 
 // createRuleFromConfig creates a rule from configuration
-func (tc *TrafficController) createRuleFromConfig(rule *TrafficRuleConfig) error {
+func (controller *TrafficController) createRuleFromConfig(rule *TrafficRuleConfig) error {
 	// Find target class
 	var targetClass *TrafficClass
-	for i := range tc.classes {
-		if tc.classes[i].name == rule.Target {
-			targetClass = tc.classes[i]
+	for i := range controller.classes {
+		if controller.classes[i].name == rule.Target {
+			targetClass = controller.classes[i]
 			break
 		}
 	}

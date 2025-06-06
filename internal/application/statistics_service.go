@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/rng999/traffic-control-go/internal/domain/valueobjects"
 	"github.com/rng999/traffic-control-go/internal/infrastructure/netlink"
 	"github.com/rng999/traffic-control-go/internal/projections"
 	"github.com/rng999/traffic-control-go/pkg/logging"
+	"github.com/rng999/traffic-control-go/pkg/tc"
 )
 
 // StatisticsService provides TC statistics collection functionality
@@ -90,7 +90,7 @@ func (s *StatisticsService) GetDeviceStatistics(ctx context.Context, deviceName 
 		// Continue anyway - we can still get raw statistics
 	}
 
-	device, err := valueobjects.NewDevice(deviceName)
+	device, err := tc.NewDevice(deviceName)
 	if err != nil {
 		return nil, fmt.Errorf("invalid device name: %w", err)
 	}
@@ -204,7 +204,7 @@ func (s *StatisticsService) GetDeviceStatistics(ctx context.Context, deviceName 
 
 // GetRealtimeStatistics gets real-time statistics without read model
 func (s *StatisticsService) GetRealtimeStatistics(ctx context.Context, deviceName string) (*DeviceStatistics, error) {
-	device, err := valueobjects.NewDevice(deviceName)
+	device, err := tc.NewDevice(deviceName)
 	if err != nil {
 		return nil, fmt.Errorf("invalid device name: %w", err)
 	}

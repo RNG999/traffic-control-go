@@ -170,4 +170,3 @@ func cleanupVeth(veth0, veth1 string) {
 	// Delete namespace
 	_ = exec.Command("ip", "netns", "del", "tc-test-ns").Run()
 }
-

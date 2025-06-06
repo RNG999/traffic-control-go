@@ -1,7 +1,6 @@
 # Traffic Control Go
 
 [![CI](https://github.com/RNG999/traffic-control-go/actions/workflows/ci.yml/badge.svg)](https://github.com/RNG999/traffic-control-go/actions/workflows/ci.yml)
-[![codecov](https://codecov.io/gh/RNG999/traffic-control-go/branch/main/graph/badge.svg)](https://codecov.io/gh/RNG999/traffic-control-go)
 [![Go Report Card](https://goreportcard.com/badge/github.com/RNG999/traffic-control-go)](https://goreportcard.com/report/github.com/RNG999/traffic-control-go)
 [![Go Reference](https://pkg.go.dev/badge/github.com/RNG999/traffic-control-go.svg)](https://pkg.go.dev/github.com/RNG999/traffic-control-go)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -27,21 +26,34 @@ This library provides an intuitive API for managing Linux Traffic Control, makin
 ## Quick Start
 
 ```go
-import "github.com/rng999/traffic-control-go/api"
+import (
+    "github.com/rng999/traffic-control-go/api"
+    "github.com/rng999/traffic-control-go/pkg/tc"
+    "github.com/rng999/traffic-control-go/pkg/types"
+)
 
-// Create a traffic controller with human-readable API
-tc := api.NetworkInterface("eth0").
-    WithHardLimitBandwidth("1Gbps")  // Physical interface limit
+// Create a traffic controller
+deviceName, _ := tc.NewDeviceName("eth0")
+config := api.Config{
+    Device: deviceName,
+}
 
-// Configure traffic classes with clear bandwidth concepts
-tc.CreateTrafficClass("Database").
-    WithGuaranteedBandwidth("100Mbps").     // Minimum guarantee
-    WithSoftLimitBandwidth("200Mbps").      // Policy limit (borrowing allowed)
-    WithPriority(2).                        // High priority
-    ForDestinationIPs("192.168.1.10").     // Target specific server
-    AddClass()                              // Complete class configuration
+result := api.NewTrafficControlService(config)
+if result.IsFailure() {
+    log.Fatal(result.Error())
+}
 
-tc.Apply()
+tcService := result.Value()
+
+// Configure HTB qdisc with bandwidth control
+bandwidth := tc.Mbps(1000)
+handle := tc.NewHandle(1, 0)
+defaultClass := tc.NewHandle(1, 10)
+
+result = tcService.CreateHTBQdisc(handle, defaultClass, bandwidth)
+if result.IsFailure() {
+    log.Fatal(result.Error())
+}
 ```
 
 Compare this to traditional TC commands:
@@ -50,6 +62,41 @@ tc qdisc add dev eth0 root handle 1: htb default 10
 tc class add dev eth0 parent 1: classid 1:1 htb rate 1000mbit ceil 1000mbit
 tc class add dev eth0 parent 1:1 classid 1:10 htb rate 100mbit ceil 200mbit
 tc filter add dev eth0 parent 1:0 protocol ip prio 1 u32 match ip dst 192.168.1.10/32 flowid 1:10
+```
+
+## Core Concepts
+
+### Handles
+Handles are unique identifiers for qdiscs and classes in Linux Traffic Control, represented as `major:minor` format:
+
+```go
+// Create a handle with major=1, minor=0 (represents "1:0")
+rootHandle := tc.NewHandle(1, 0)     // Root qdisc handle
+classHandle := tc.NewHandle(1, 10)   // Class handle "1:10"
+defaultHandle := tc.NewHandle(1, 30) // Default class "1:30"
+
+// Parse handle from string
+handle, err := tc.ParseHandle("1:10") // Parses "1:10"
+```
+
+**Handle Rules:**
+- **Root qdiscs**: `major:0` (e.g., `1:0`, `2:0`)
+- **Classes**: `major:minor` where minor > 0 (e.g., `1:10`, `1:20`)
+- **Parent-child relationships**: Classes with same major number belong to the same qdisc
+- **Default class**: Special class that handles unclassified traffic
+
+### Bandwidth
+Type-safe bandwidth representations with multiple creation methods:
+
+```go
+// Direct creation with unit methods
+bandwidth1 := tc.Mbps(100)     // 100 Mbps
+bandwidth2 := tc.Kbps(500)     // 500 Kbps
+bandwidth3 := tc.Gbps(1.5)     // 1.5 Gbps
+
+// Parse from string
+bandwidth4, err := tc.ParseBandwidth("100Mbps")
+bandwidth5, err := tc.ParseBandwidth("1.5Gbps")
 ```
 
 ## Library Design
@@ -74,56 +121,63 @@ go get github.com/rng999/traffic-control-go
 ### Home Network Fair Sharing
 
 ```go
-tc := api.NetworkInterface("eth0").
-    WithHardLimitBandwidth("100Mbps")
+// Create service
+deviceName, _ := tc.NewDeviceName("eth0")
+config := api.Config{Device: deviceName}
+tc := api.NewTrafficControlService(config).Value()
 
-tc.CreateTrafficClass("Streaming").
-    WithGuaranteedBandwidth("40Mbps").
-    WithSoftLimitBandwidth("60Mbps").
-    WithPriority(4).
-    ForSourceIPs("192.168.1.100").  // Smart TV
-    AddClass()
+// Create root HTB qdisc
+rootHandle := tc.NewHandle(1, 0)
+defaultHandle := tc.NewHandle(1, 30)
+totalBandwidth := tc.Mbps(100)
 
-tc.CreateTrafficClass("Work").
-    WithGuaranteedBandwidth("30Mbps").
-    WithPriority(1).  // High priority
-    ForSourceIPs("192.168.1.101").  // Laptop
-    AddClass()
+tc.CreateHTBQdisc(rootHandle, defaultHandle, totalBandwidth)
 
-tc.Apply()
+// Streaming class (40Mbps guaranteed, 60Mbps max)
+streamingHandle := tc.NewHandle(1, 10)
+streamingRate := tc.Mbps(40)
+streamingCeil := tc.Mbps(60)
+
+tc.CreateHTBClass(rootHandle, streamingHandle, "Streaming", streamingRate, streamingCeil)
+
+// Work class (30Mbps guaranteed, can borrow more)
+workHandle := tc.NewHandle(1, 20)
+workRate := tc.Mbps(30)
+workCeil := tc.Mbps(100)
+
+tc.CreateHTBClass(rootHandle, workHandle, "Work", workRate, workCeil)
 ```
 
 ### Priority-Based Traffic Control
 
 ```go
-tc := api.NetworkInterface("eth0").
-    WithHardLimitBandwidth("1Gbps")
+// Create PRIO qdisc for priority-based scheduling
+deviceName, _ := tc.NewDeviceName("eth0")
+config := api.Config{Device: deviceName}
+tc := api.NewTrafficControlService(config).Value()
 
-// Set priority values (0-7, where 0 is highest)
-tc.CreateTrafficClass("Critical Services").
-    WithGuaranteedBandwidth("200Mbps").
-    WithSoftLimitBandwidth("400Mbps").
-    WithPriority(0).  // Highest priority
-    ForPort(5060, 5061).  // VoIP
-    ForProtocols("rtp", "sip").
-    AddClass()
+// Create PRIO qdisc with 3 bands
+prioHandle := tc.NewHandle(1, 0)
+bands := uint8(3)
+priomap := []uint8{1, 2, 2, 2, 1, 2, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1}
 
-tc.CreateTrafficClass("Normal Traffic").
-    WithGuaranteedBandwidth("500Mbps").
-    WithSoftLimitBandwidth("800Mbps").
-    WithPriority(4).  // Default priority
-    ForPort(80, 443, 8080, 8443).  // HTTP/HTTPS
-    AddClass()
+tc.CreatePRIOQdisc(prioHandle, bands, priomap)
 
-tc.CreateTrafficClass("Background").
-    WithGuaranteedBandwidth("100Mbps").
-    WithSoftLimitBandwidth("200Mbps").
-    WithPriority(7).  // Lowest priority
-    ForPort(873, 22).  // rsync, SSH
-    ForProtocols("rsync", "ssh").
-    AddClass()
+// Create HTB qdiscs on each band for bandwidth control
+// Band 0: Critical (highest priority)
+criticalHandle := tc.NewHandle(2, 0)
+criticalBandwidth := tc.Mbps(200)
+tc.CreateHTBQdisc(criticalHandle, tc.NewHandle(2, 1), criticalBandwidth)
 
-tc.Apply()
+// Band 1: Normal traffic
+normalHandle := tc.NewHandle(3, 0)
+normalBandwidth := tc.Mbps(500)
+tc.CreateHTBQdisc(normalHandle, tc.NewHandle(3, 1), normalBandwidth)
+
+// Band 2: Background (lowest priority)
+backgroundHandle := tc.NewHandle(4, 0)
+backgroundBandwidth := tc.Mbps(100)
+tc.CreateHTBQdisc(backgroundHandle, tc.NewHandle(4, 1), backgroundBandwidth)
 ```
 
 ### Configuration File Support
@@ -156,27 +210,36 @@ rules:
 
 **Programmatic Configuration:**
 ```go
-// Apply configuration from file
-err := api.LoadAndApplyYAML("config.yaml", "eth0")
+// Load configuration from file
+config, err := api.LoadConfigFromYAML("config.yaml")
+if err != nil {
+    log.Fatal(err)
+}
+
+// Create service from config
+result := api.NewTrafficControlService(config)
+if result.IsFailure() {
+    log.Fatal(result.Error())
+}
+
+tc := result.Value()
 
 // Or build configuration programmatically
-tc := api.NetworkInterface("eth0").WithHardLimitBandwidth("1Gbps")
+deviceName, _ := tc.NewDeviceName("eth0")
+config := api.Config{Device: deviceName}
+tc := api.NewTrafficControlService(config).Value()
 
-tc.CreateTrafficClass("Critical").
-    WithGuaranteedBandwidth("400Mbps").
-    WithSoftLimitBandwidth("600Mbps").
-    WithPriority(0).
-    ForPort(22).
-    AddClass()
-    
-tc.CreateTrafficClass("Standard").
-    WithGuaranteedBandwidth("600Mbps").
-    WithSoftLimitBandwidth("800Mbps").
-    WithPriority(4).
-    ForPort(80, 443).
-    AddClass()
-    
-tc.Apply()
+// Create HTB qdisc and classes
+rootHandle := tc.NewHandle(1, 0)
+bandwidth := tc.Mbps(1000)
+
+tc.CreateHTBQdisc(rootHandle, tc.NewHandle(1, 30), bandwidth)
+
+// Critical class
+criticalHandle := tc.NewHandle(1, 10)
+criticalRate := tc.Mbps(400)
+criticalCeil := tc.Mbps(600)
+tc.CreateHTBClass(rootHandle, criticalHandle, "Critical", criticalRate, criticalCeil)
 ```
 
 ### Logging Configuration
@@ -196,34 +259,6 @@ logger := logging.WithComponent(logging.ComponentAPI).
     
 logger.Info("Traffic control operation started")
 ```
-
-## Roadmap
-
-### v0.1.0 (Released! 🎉)
-- [x] Core library with human-readable API
-- [x] Basic TC operations (HTB, filters)
-- [x] Structured Configuration API (YAML/JSON)
-- [x] Numeric Priority System (0-7)
-- [x] Comprehensive Logging System
-- [x] CI/CD Pipeline with GitHub Actions
-- [x] Extended Qdisc Support (HTB, TBF, PRIO, FQ_CODEL)
-- [x] SQLite Event Store for persistent storage
-- [x] Statistics Collection and monitoring
-
-### v0.2.0 (In Development)
-- [x] **Human-Readable API Naming** - Clear method names and bandwidth concepts
-- [x] **Hard vs Soft Bandwidth Limits** - Distinct concepts for physical and policy limits
-- [ ] CQRS query handler interface compatibility fixes
-- [ ] Enhanced statistics collection with detailed metrics
-- [ ] Mark-based filtering (fw filter)
-
-### Future Releases
-- [ ] NETEM qdisc (network emulation)
-- [ ] Flower filter types and police actions
-- [ ] Performance optimization and benchmarks
-- [ ] REST API server mode
-- [ ] Kubernetes integration
-- [ ] Web UI dashboard
 
 ## Requirements
 

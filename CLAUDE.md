@@ -4,120 +4,95 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a traffic control system implementation in Go. The project is currently in its initial setup phase with foundational documentation and development rules established.
+This is a Go library for Linux Traffic Control (TC) that provides an intuitive, human-readable API for managing network traffic. The library follows CQRS, Event Sourcing, and Domain-Driven Design principles.
+
+## Important: Project Rules
+
+**ALWAYS refer to and follow the rules defined in the `rules/` directory:**
+- `rules/coding.md` - Comprehensive coding guidelines (CQRS, DDD, FP, testing, etc.)
+- `rules/management.md` - Project management guidelines using GitHub
+
+These rules must be consulted and strictly followed for any coding or project management tasks.
 
 ## Development Commands
 
-Since this is a Go project in early development, common commands would include:
+Common commands for this project (from Makefile):
 
 ```bash
-# Initialize Go module (if not already done)
-go mod init github.com/[username]/traffic-control-go
-
-# Run the application
-go run main.go
-
-# Build the application
-go build -o traffic-control
-
 # Run tests
-go test ./...
+make test                   # Run all unit tests
+make test-coverage          # Run tests with coverage report
+make test-integration       # Run integration tests (requires root and iperf3)
 
-# Run tests with verbose output
-go test -v ./...
+# Code quality
+make fmt                    # Format code
+make lint                   # Run linting (golangci-lint)
+make security              # Run security scanner (gosec)
+make check                 # Run all quality checks (fmt, lint, test)
 
-# Format code
-go fmt ./...
+# Development
+make dev                   # Set up development environment
+make examples              # Build and test examples
+make docs                  # Generate documentation
 
-# Lint code (requires golangci-lint)
-golangci-lint run
-
-# Run tests with coverage
-go test -cover ./...
-
-# Run tests with detailed coverage report
-go test -coverprofile=coverage.out ./...
-go tool cover -html=coverage.out
-
-# Run specific test
-go test -run TestName ./...
-
-# Benchmark tests
-go test -bench=. ./...
+# Other
+make version               # Show current version
+make info                  # Show project info
+make help                  # Show all available commands
 ```
 
-## Project Rules
+Manual commands:
 
-This project has specific rules defined in the `rules/` directory that must be followed:
+```bash
+# Run specific tests
+go test -v ./internal/domain/...
+go test -run TestSpecificName ./...
 
-### 1. General Coding Rules (`rules/001_general/`)
-- Follow comprehensive software engineering guidelines including:
-  - CQRS (Command Query Responsibility Segregation) principles
-  - Event Sourcing fundamentals
-  - Domain-Driven Design (DDD) patterns
-  - Functional programming concepts
-  - Test-Driven Development (TDD) practices
-  - Immutability and defensive programming
-  - Type-driven development workflow
+# Run benchmarks
+go test -bench=. ./...
 
-### 2. Memory Management Rules (`rules/002_memory/`)
-- Maintain a memory bank structure for project continuity
-- Required core files in memory bank:
-  - `projectbrief.md` - Foundation document
-  - `productContext.md` - Why the project exists
-  - `activeContext.md` - Current work focus
-  - `systemPatterns.md` - Architecture and patterns
-  - `techContext.md` - Technologies used
-  - `progress.md` - Current status
-- Update `.cursor/rules/*.mdc` with project-specific patterns
+# Generate test coverage for specific packages
+go test -cover ./internal/application/...
+```
 
-### 3. Documentation Rules (`rules/003_document/`)
-- Keep root `README.md` updated with project overview
-- Maintain `docs/README.md` as navigation hub for documentation
-- Create feature-specific documentation in `docs/[feature]/README.md`
-- Always update documentation when making significant changes
+## High-Level Architecture
 
-## Architecture Guidelines
+This library implements Linux Traffic Control management with the following architecture:
 
-Based on the coding rules, this traffic control system should follow:
+### Core Architecture Patterns
 
-1. **CQRS Pattern**: Separate command (write) and query (read) models
-   - Commands in `internal/commands/` directory
-   - Queries in `internal/queries/` directory
-   - Shared domain events in `internal/domain/events/`
+1. **CQRS (Command Query Responsibility Segregation)**
+   - Commands: Located in `internal/commands/` - handle write operations (creating qdiscs, classes, filters)
+   - Queries: Located in `internal/queries/` - handle read operations (statistics, current configuration)
+   - Clear separation between write and read models for optimal performance
 
-2. **Event Sourcing**: Store state changes as immutable events
-   - All traffic control state changes recorded as events
+2. **Event Sourcing**
+   - All configuration changes are stored as immutable events in `internal/domain/events/`
+   - SQLite-based event store in `internal/infrastructure/eventstore/`
    - Aggregate state reconstructed by replaying events
-   - Event store for persistent storage
+   - Enables configuration history and rollback capabilities
 
-3. **DDD Principles**: Use Value Objects, Entities, and Aggregates
-   - Value Objects: TrafficLightState, VehicleID, IntersectionID
-   - Entities: Vehicle, TrafficLight
-   - Aggregates: Intersection, TrafficFlow
+3. **Domain-Driven Design (DDD)**
+   - Value Objects: `Bandwidth`, `Handle`, `Device` in `internal/domain/valueobjects/`
+   - Entities: `Qdisc`, `Class`, `Filter` in `internal/domain/entities/`
+   - Aggregates: `TrafficControl` in `internal/domain/aggregates/`
+   - Rich domain model with business logic encapsulated in domain objects
 
-4. **Functional Approach**: Prefer immutability and pure functions
-   - Use `Result[T, E]` or similar for error handling
-   - Avoid nil returns - use explicit optional types
-   - No mutable shared state
+### Key Components
 
-5. **Type Safety**: Use Go's type system effectively with custom types
-   - Define domain-specific types (not just strings/ints)
-   - Use interfaces for abstractions
-   - Leverage Go's type embedding where appropriate
+- **API Layer** (`api/`): Human-readable fluent API for traffic control operations
+- **Application Layer** (`internal/application/`): Orchestrates commands, queries, and events
+- **Infrastructure Layer** (`internal/infrastructure/`):
+  - `netlink/`: Direct kernel communication for TC operations
+  - `eventstore/`: Event persistence (SQLite and in-memory implementations)
+- **Projections** (`internal/projections/`): Read models built from events
 
-## Key Reminders
+### Traffic Control Concepts Mapping
 
-1. **Initialize Messages**: When rules are loaded, acknowledge them in Japanese:
-   - "001_generalを読み込みました！"
-   - "002_memoryを読み込みました！" 
-   - "003_documentを読み込みました！"
-
-2. **Documentation First**: Always update relevant documentation when making changes
-
-3. **Memory Bank**: If implementing features, create and maintain memory bank files
-
-4. **Test Coverage**: Follow TDD practices - write tests before implementation
+- **Hard Limit Bandwidth**: Physical interface capacity (HTB root rate)
+- **Soft Limit Bandwidth**: Policy-based maximum (HTB ceil rate)
+- **Guaranteed Bandwidth**: Minimum guaranteed rate (HTB rate)
+- **Priority**: Numeric value 0-7 (0 = highest priority)
 
 ## Code Structure Guidelines
 
@@ -126,87 +101,71 @@ When implementing features in this traffic control system:
 ### Directory Structure
 ```
 traffic-control-go/
-├── cmd/                      # Application entry points
-│   └── traffic-control/      # Main application
-├── internal/                 # Private application code
-│   ├── domain/              # Domain models and business logic
-│   │   ├── aggregates/      # DDD Aggregates
-│   │   ├── entities/        # DDD Entities
-│   │   ├── events/          # Domain events
-│   │   └── valueobjects/    # DDD Value Objects
-│   ├── commands/            # CQRS Commands
-│   │   ├── handlers/        # Command handlers
-│   │   └── models/          # Command DTOs
-│   ├── queries/             # CQRS Queries
-│   │   ├── handlers/        # Query handlers
-│   │   └── models/          # Query DTOs/Read models
-│   ├── infrastructure/      # External concerns
-│   │   ├── eventstore/      # Event persistence
-│   │   └── persistence/     # Database adapters
-│   └── application/         # Application services
-├── pkg/                     # Public packages
-│   └── types/               # Shared types (Result, Maybe, etc.)
-├── memory-bank/             # Project memory files
-└── test/                    # Integration tests
+├── api/                     # Human-readable API layer
+│   ├── api.go              # Main API implementation
+│   └── config.go           # Configuration file support
+├── internal/                # Private application code
+│   ├── domain/             # Domain models and business logic
+│   │   ├── aggregates/     # TrafficControl aggregate
+│   │   ├── entities/       # Qdisc, Class, Filter entities
+│   │   ├── events/         # Domain events for all operations
+│   │   └── valueobjects/   # Bandwidth, Handle, Device
+│   ├── commands/           # CQRS Commands
+│   │   ├── handlers/       # Command handlers
+│   │   └── models/         # Command DTOs
+│   ├── queries/            # CQRS Queries
+│   │   ├── handlers/       # Query handlers
+│   │   └── models/         # Views and query models
+│   ├── infrastructure/     # External concerns
+│   │   ├── netlink/        # Kernel communication
+│   │   └── eventstore/     # Event persistence
+│   ├── application/        # Application services
+│   └── projections/        # Read model projections
+├── pkg/                    # Public packages
+│   ├── types/              # Result type for error handling
+│   └── logging/            # Structured logging
+├── test/                   # Integration tests
+│   ├── integration/        # Tests with real interfaces
+│   └── unit/               # API unit tests
+└── examples/               # Usage examples
 ```
 
-### Testing Requirements
-- **ALWAYS** write tests first (TDD Red/Green/Refactor)
-- Use table-driven tests for comprehensive coverage
-- Test file naming: `*_test.go` in same package
-- Use testify/assert for clearer test assertions
+### Testing Strategy
 
-### Key Implementation Notes
+- **TDD Required**: Write tests first (Red/Green/Refactor cycle)
+- **Table-driven tests**: Use for comprehensive test coverage
+- **Unit tests**: Alongside code (`*_test.go`)
+- **Integration tests**: In `test/integration/` using veth pairs
+- **iperf3 tests**: For realistic bandwidth validation
+- Use `github.com/stretchr/testify/assert` for assertions
 
-1. **Never use primitive types directly for domain concepts**
+### Important Project-Specific Notes
+
+1. **Always use the Result type** from `pkg/types/` for error handling:
    ```go
-   // Bad
-   type Vehicle struct {
-       ID string
-   }
-   
-   // Good
-   type VehicleID string
-   type Vehicle struct {
-       ID VehicleID
+   func DoSomething() types.Result[Output] {
+       // Implementation
    }
    ```
 
-2. **Use Result types for operations that can fail**
+2. **Value Objects for all domain concepts**:
    ```go
-   type Result[T any] struct {
-       value T
-       err   error
+   type Bandwidth struct {
+       value uint64
+       unit  BandwidthUnit
    }
    ```
 
-3. **Events must be immutable**
+3. **Events are immutable** - use past tense naming:
    ```go
-   type TrafficLightChangedEvent struct {
-       IntersectionID IntersectionID
-       LightID        TrafficLightID
-       OldState       TrafficLightState
-       NewState       TrafficLightState
-       Timestamp      time.Time
+   type QdiscCreatedEvent struct {
+       Device    valueobjects.Device
+       Handle    valueobjects.Handle
+       Type      string
+       Timestamp time.Time
    }
    ```
 
-## Next Steps
+4. **Netlink operations** require root for integration tests
 
-When starting development on this project:
-
-1. Create the initial Go module structure
-2. Set up the memory bank directory and core files
-3. Define the domain model following DDD principles
-4. Implement CQRS infrastructure
-5. Set up event sourcing capabilities
-6. Create comprehensive tests following TDD
-
-## Important Warnings
-
-- **DO NOT** create getters/setters for every field
-- **DO NOT** use mutable shared state
-- **DO NOT** use `interface{}` or `any` without strong justification
-- **ALWAYS** handle errors explicitly (no ignored errors)
-- **ALWAYS** validate inputs at boundaries
-- **NEVER** expose internal state unnecessarily
+5. **Follow the rules** in `rules/coding.md` and `rules/management.md`

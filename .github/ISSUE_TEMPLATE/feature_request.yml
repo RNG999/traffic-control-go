@@ -1,0 +1,88 @@
+name: ✨ Feature Request
+description: Suggest an idea for this project
+title: "feat: "
+labels: ["enhancement", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for suggesting a new feature! 
+        
+        Please fill out this form to help us understand your idea.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: 🎯 Problem Statement
+      description: Is your feature request related to a problem? Please describe.
+      placeholder: A clear and concise description of what the problem is. Ex. I'm always frustrated when [...]
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: 💡 Proposed Solution
+      description: Describe the solution you'd like
+      placeholder: A clear and concise description of what you want to happen.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: 🔄 Alternatives Considered
+      description: Describe alternatives you've considered
+      placeholder: A clear and concise description of any alternative solutions or features you've considered.
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: 📊 Priority
+      description: How important is this feature to you?
+      options:
+        - High - Critical for my use case
+        - Medium - Would be very helpful
+        - Low - Nice to have
+    validations:
+      required: true
+
+  - type: dropdown
+    id: complexity
+    attributes:
+      label: 🛠️ Implementation Complexity (if known)
+      description: How complex do you think this feature would be to implement?
+      options:
+        - Simple - Small changes or additions
+        - Medium - Moderate changes required
+        - Complex - Significant architectural changes
+        - Unknown - Not sure
+
+  - type: textarea
+    id: use-case
+    attributes:
+      label: 🎭 Use Case
+      description: Describe your specific use case for this feature
+      placeholder: How would you use this feature? What traffic control scenarios would it help with?
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: 📋 Additional Context
+      description: Add any other context, mockups, or examples about the feature request here.
+      placeholder: Any additional information, code examples, references, etc.
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: ✅ Checklist
+      description: Please confirm the following
+      options:
+        - label: I have searched for existing feature requests
+          required: true
+        - label: I have provided a clear problem statement and solution
+          required: true
+        - label: This feature aligns with the project's goals
+          required: true

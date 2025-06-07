@@ -82,3 +82,8 @@ func (a *RealNetlinkAdapter) GetDetailedQdiscStats(device tc.DeviceName, handle 
 func (a *RealNetlinkAdapter) GetDetailedClassStats(device tc.DeviceName, handle tc.Handle) types.Result[DetailedClassStats] {
 	return types.Failure[DetailedClassStats](fmt.Errorf("traffic control operations are not supported on this platform"))
 }
+
+// GetLinkStats is not supported on non-Linux platforms
+func (a *RealNetlinkAdapter) GetLinkStats(device tc.DeviceName) types.Result[LinkStats] {
+	return types.Failure[LinkStats](fmt.Errorf("traffic control operations are not supported on this platform"))
+}

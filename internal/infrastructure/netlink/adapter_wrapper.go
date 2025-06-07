@@ -70,3 +70,18 @@ func (a *AdapterWrapper) DeleteFilter(device tc.DeviceName, parent tc.Handle, pr
 func (a *AdapterWrapper) GetFilters(device tc.DeviceName) types.Result[[]FilterInfo] {
 	return a.adapter.GetFilters(device)
 }
+
+// GetDetailedQdiscStats returns detailed statistics for a qdisc
+func (a *AdapterWrapper) GetDetailedQdiscStats(device tc.DeviceName, handle tc.Handle) types.Result[DetailedQdiscStats] {
+	return a.adapter.GetDetailedQdiscStats(device, handle)
+}
+
+// GetDetailedClassStats returns detailed statistics for a class
+func (a *AdapterWrapper) GetDetailedClassStats(device tc.DeviceName, handle tc.Handle) types.Result[DetailedClassStats] {
+	return a.adapter.GetDetailedClassStats(device, handle)
+}
+
+// GetLinkStats returns network interface statistics
+func (a *AdapterWrapper) GetLinkStats(device tc.DeviceName) types.Result[LinkStats] {
+	return a.adapter.GetLinkStats(device)
+}

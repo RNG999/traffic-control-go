@@ -278,7 +278,7 @@ func (s *TrafficControlService) GetQdiscStatistics(ctx context.Context, device s
 		return nil, fmt.Errorf("invalid device name: %w", err)
 	}
 
-	qdiscHandle, err := parseHandle(handle)
+	qdiscHandle, err := tc.ParseHandle(handle)
 	if err != nil {
 		return nil, fmt.Errorf("invalid handle: %w", err)
 	}
@@ -305,7 +305,7 @@ func (s *TrafficControlService) GetClassStatistics(ctx context.Context, device s
 		return nil, fmt.Errorf("invalid device name: %w", err)
 	}
 
-	classHandle, err := parseHandle(handle)
+	classHandle, err := tc.ParseHandle(handle)
 	if err != nil {
 		return nil, fmt.Errorf("invalid handle: %w", err)
 	}
@@ -356,15 +356,7 @@ func (s *TrafficControlService) MonitorStatistics(ctx context.Context, device st
 	})
 }
 
-// parseHandle converts string handle to valueobject (helper function)
-func parseHandle(handleStr string) (tc.Handle, error) {
-	var major, minor uint16
-	n, err := fmt.Sscanf(handleStr, "%x:%x", &major, &minor)
-	if err != nil || n != 2 {
-		return tc.Handle{}, fmt.Errorf("invalid handle format: %s", handleStr)
-	}
-	return tc.NewHandle(major, minor), nil
-}
+// 削除: tc.ParseHandle()を直接使用するため不要
 
 // convertApplicationStatsToView converts application model to view model
 func convertApplicationStatsToView(stats *DeviceStatistics) qmodels.DeviceStatisticsView {

@@ -28,12 +28,11 @@ type TrafficClass struct {
 	name                string
 	guaranteedBandwidth tc.Bandwidth
 	maxBandwidth        tc.Bandwidth
-	priority            *Priority // Priority is now required and must be explicitly set
+	priority            *uint8 // Priority is now required and must be explicitly set (0-7, where 0 is highest)
 	filters             []Filter
 }
 
-// Priority represents the priority level of traffic (0-7, where 0 is highest priority)
-type Priority int
+// Priority型は削除: uint8を直接使用
 
 // Filter represents a packet matching rule
 type Filter struct {
@@ -134,7 +133,7 @@ func (b *TrafficClassBuilder) WithPriority(priority int) *TrafficClassBuilder {
 	} else if priority > 7 {
 		priority = 7
 	}
-	p := Priority(priority)
+	p := uint8(priority)
 	b.class.priority = &p
 	return b
 }
@@ -435,9 +434,9 @@ func (controller *TrafficController) Apply() error {
 	}
 
 	// Create classes
-	for i, class := range controller.classes {
-		classID := fmt.Sprintf("1:%d", i+10) // Start class IDs at 1:10
-		parent := "1:0"                      // Parent is the root qdisc
+	for _, class := range controller.classes {
+		classID := fmt.Sprintf("1:%d", int(*class.priority)+10) // Use priority to determine handle (1:10-1:17)
+		parent := "1:0"                                         // Parent is the root qdisc
 
 		controller.logger.Debug("Creating HTB class",
 			logging.String("class_name", class.name),

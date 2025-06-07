@@ -19,15 +19,16 @@ import (
 // TrafficControlService is the main application service that coordinates
 // between the API layer, CQRS handlers, and infrastructure
 type TrafficControlService struct {
-	eventStore        eventstore.EventStoreWithContext
-	netlinkAdapter    netlink.Adapter
-	commandBus        *CommandBus
-	queryBus          *QueryBus
-	eventBus          *EventBus
-	projectionManager *projections.Manager
-	readModelStore    projections.ReadModelStore
-	statisticsService *StatisticsService
-	logger            logging.Logger
+	eventStore         eventstore.EventStoreWithContext
+	netlinkAdapter     netlink.Adapter
+	commandBus         *CommandBus
+	genericCommandBus  *GenericCommandBus
+	queryBus           *QueryBus
+	eventBus           *EventBus
+	projectionManager  *projections.Manager
+	readModelStore     projections.ReadModelStore
+	statisticsService  *StatisticsService
+	logger             logging.Logger
 }
 
 // NewTrafficControlService creates a new traffic control service
@@ -62,6 +63,7 @@ func NewTrafficControlService(
 
 	// Initialize buses
 	service.commandBus = NewCommandBus(service)
+	service.genericCommandBus = NewGenericCommandBus(service)
 	service.queryBus = NewQueryBus(service)
 	service.eventBus = NewEventBus(service)
 
@@ -81,13 +83,21 @@ func NewTrafficControlService(
 
 // registerHandlers registers all command and query handlers
 func (s *TrafficControlService) registerHandlers() {
-	// Register command handlers
+	// Register legacy command handlers (to be deprecated)
 	s.commandBus.Register("CreateHTBQdisc", chandlers.NewCreateHTBQdiscHandler(s.eventStore))
 	s.commandBus.Register("CreateTBFQdisc", chandlers.NewCreateTBFQdiscHandler(s.eventStore))
 	s.commandBus.Register("CreatePRIOQdisc", chandlers.NewCreatePRIOQdiscHandler(s.eventStore))
 	s.commandBus.Register("CreateFQCODELQdisc", chandlers.NewCreateFQCODELQdiscHandler(s.eventStore))
 	s.commandBus.Register("CreateHTBClass", chandlers.NewCreateHTBClassHandler(s.eventStore))
 	s.commandBus.Register("CreateFilter", chandlers.NewCreateFilterHandler(s.eventStore))
+
+	// Register new type-safe generic command handlers
+	RegisterHandlerFor(s.genericCommandBus, chandlers.NewGenericCreateHTBQdiscHandler(s.eventStore))
+	RegisterHandlerFor(s.genericCommandBus, chandlers.NewGenericCreateHTBClassHandler(s.eventStore))
+	RegisterHandlerFor(s.genericCommandBus, chandlers.NewGenericCreateFilterHandler(s.eventStore))
+	RegisterHandlerFor(s.genericCommandBus, chandlers.NewGenericCreateTBFQdiscHandler(s.eventStore))
+	RegisterHandlerFor(s.genericCommandBus, chandlers.NewGenericCreatePRIOQdiscHandler(s.eventStore))
+	RegisterHandlerFor(s.genericCommandBus, chandlers.NewGenericCreateFQCODELQdiscHandler(s.eventStore))
 
 	// Register query handlers with read model support
 	// Note: Query handlers temporarily disabled due to interface compatibility issues

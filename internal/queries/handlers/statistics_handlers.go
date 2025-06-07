@@ -310,7 +310,7 @@ func (h *GetDeviceStatisticsHandler) Handle(ctx context.Context, query *models.G
 
 	// Convert to view model
 	view := convertDeviceStatisticsToView(stats)
-	return types.Success(view)
+	return types.Success[models.DeviceStatisticsView](view)
 }
 
 // GetRealtimeStatisticsHandler handles queries for realtime statistics
@@ -334,7 +334,7 @@ func (h *GetRealtimeStatisticsHandler) Handle(ctx context.Context, query *models
 
 	// Convert to view model
 	view := convertDeviceStatisticsToView(stats)
-	return types.Success(view)
+	return types.Success[models.DeviceStatisticsView](view)
 }
 
 // Helper function to convert DeviceStatistics to models.DeviceStatisticsView
@@ -478,7 +478,7 @@ func (h *GetQdiscStatisticsHandler) Handle(ctx context.Context, query *models.Ge
 				}
 			}
 
-			return types.Success(view)
+			return types.Success[models.QdiscStatisticsView](view)
 		}
 	}
 
@@ -538,7 +538,7 @@ func (h *GetClassStatisticsHandler) Handle(ctx context.Context, query *models.Ge
 				}
 			}
 
-			return types.Success(view)
+			return types.Success[models.ClassStatisticsView](view)
 		}
 	}
 

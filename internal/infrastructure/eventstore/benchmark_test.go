@@ -23,7 +23,7 @@ func BenchmarkEventStoreSave(b *testing.B) {
 
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
-			store.Save("aggregate-1", []events.DomainEvent{event}, i)
+			_ = store.Save("aggregate-1", []events.DomainEvent{event}, i)
 		}
 	})
 
@@ -33,20 +33,20 @@ func BenchmarkEventStoreSave(b *testing.B) {
 		if err != nil {
 			b.Fatal(err)
 		}
-		defer os.Remove(tmpFile.Name())
-		tmpFile.Close()
+		defer func() { _ = os.Remove(tmpFile.Name()) }()
+		_ = tmpFile.Close()
 
 		store, err := eventstore.NewSQLiteEventStore(tmpFile.Name())
 		if err != nil {
 			b.Fatal(err)
 		}
-		defer store.Close()
+		defer func() { _ = store.Close() }()
 
 		event := createTestEvent()
 
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
-			store.Save("aggregate-1", []events.DomainEvent{event}, i)
+			_ = store.Save("aggregate-1", []events.DomainEvent{event}, i)
 		}
 	})
 }
@@ -60,7 +60,7 @@ func BenchmarkEventStoreRetrieve(b *testing.B) {
 		// Populate with test events
 		event := createTestEvent()
 		for i := 0; i < numEvents; i++ {
-			store.Save("aggregate-1", []events.DomainEvent{event}, i)
+			_ = store.Save("aggregate-1", []events.DomainEvent{event}, i)
 		}
 
 		b.ResetTimer()
@@ -75,19 +75,19 @@ func BenchmarkEventStoreRetrieve(b *testing.B) {
 		if err != nil {
 			b.Fatal(err)
 		}
-		defer os.Remove(tmpFile.Name())
-		tmpFile.Close()
+		defer func() { _ = os.Remove(tmpFile.Name()) }()
+		_ = tmpFile.Close()
 
 		store, err := eventstore.NewSQLiteEventStore(tmpFile.Name())
 		if err != nil {
 			b.Fatal(err)
 		}
-		defer store.Close()
+		defer func() { _ = store.Close() }()
 
 		// Populate with test events
 		event := createTestEvent()
 		for i := 0; i < numEvents; i++ {
-			store.Save("aggregate-1", []events.DomainEvent{event}, i)
+			_ = store.Save("aggregate-1", []events.DomainEvent{event}, i)
 		}
 
 		b.ResetTimer()
@@ -106,7 +106,7 @@ func BenchmarkEventStoreRetrieveFromVersion(b *testing.B) {
 		// Populate with test events
 		event := createTestEvent()
 		for i := 0; i < numEvents; i++ {
-			store.Save("aggregate-1", []events.DomainEvent{event}, i)
+			_ = store.Save("aggregate-1", []events.DomainEvent{event}, i)
 		}
 
 		b.ResetTimer()
@@ -121,19 +121,19 @@ func BenchmarkEventStoreRetrieveFromVersion(b *testing.B) {
 		if err != nil {
 			b.Fatal(err)
 		}
-		defer os.Remove(tmpFile.Name())
-		tmpFile.Close()
+		defer func() { _ = os.Remove(tmpFile.Name()) }()
+		_ = tmpFile.Close()
 
 		store, err := eventstore.NewSQLiteEventStore(tmpFile.Name())
 		if err != nil {
 			b.Fatal(err)
 		}
-		defer store.Close()
+		defer func() { _ = store.Close() }()
 
 		// Populate with test events
 		event := createTestEvent()
 		for i := 0; i < numEvents; i++ {
-			store.Save("aggregate-1", []events.DomainEvent{event}, i)
+			_ = store.Save("aggregate-1", []events.DomainEvent{event}, i)
 		}
 
 		b.ResetTimer()
@@ -152,7 +152,7 @@ func BenchmarkEventStoreConcurrentReads(b *testing.B) {
 		// Populate with test events
 		event := createTestEvent()
 		for i := 0; i < numEvents; i++ {
-			store.Save("aggregate-1", []events.DomainEvent{event}, i)
+			_ = store.Save("aggregate-1", []events.DomainEvent{event}, i)
 		}
 
 		b.ResetTimer()
@@ -169,19 +169,19 @@ func BenchmarkEventStoreConcurrentReads(b *testing.B) {
 		if err != nil {
 			b.Fatal(err)
 		}
-		defer os.Remove(tmpFile.Name())
-		tmpFile.Close()
+		defer func() { _ = os.Remove(tmpFile.Name()) }()
+		_ = tmpFile.Close()
 
 		store, err := eventstore.NewSQLiteEventStore(tmpFile.Name())
 		if err != nil {
 			b.Fatal(err)
 		}
-		defer store.Close()
+		defer func() { _ = store.Close() }()
 
 		// Populate with test events
 		event := createTestEvent()
 		for i := 0; i < numEvents; i++ {
-			store.Save("aggregate-1", []events.DomainEvent{event}, i)
+			_ = store.Save("aggregate-1", []events.DomainEvent{event}, i)
 		}
 
 		b.ResetTimer()
@@ -209,7 +209,7 @@ func BenchmarkEventStoreConcurrentWrites(b *testing.B) {
 				version := int(counter)
 				mu.Unlock()
 
-				store.Save(aggregateID, []events.DomainEvent{event}, version)
+				_ = store.Save(aggregateID, []events.DomainEvent{event}, version)
 			}
 		})
 	})
@@ -220,14 +220,14 @@ func BenchmarkEventStoreConcurrentWrites(b *testing.B) {
 		if err != nil {
 			b.Fatal(err)
 		}
-		defer os.Remove(tmpFile.Name())
-		tmpFile.Close()
+		defer func() { _ = os.Remove(tmpFile.Name()) }()
+		_ = tmpFile.Close()
 
 		store, err := eventstore.NewSQLiteEventStore(tmpFile.Name())
 		if err != nil {
 			b.Fatal(err)
 		}
-		defer store.Close()
+		defer func() { _ = store.Close() }()
 
 		event := createTestEvent()
 		var counter int64
@@ -242,7 +242,7 @@ func BenchmarkEventStoreConcurrentWrites(b *testing.B) {
 				version := int(counter)
 				mu.Unlock()
 
-				store.Save(aggregateID, []events.DomainEvent{event}, version)
+				_ = store.Save(aggregateID, []events.DomainEvent{event}, version)
 			}
 		})
 	})
@@ -260,7 +260,7 @@ func BenchmarkEventStoreGetAllEvents(b *testing.B) {
 		for aggIdx := 0; aggIdx < numAggregates; aggIdx++ {
 			aggregateID := fmt.Sprintf("aggregate-%d", aggIdx)
 			for eventIdx := 0; eventIdx < numEventsPerAggregate; eventIdx++ {
-				store.Save(aggregateID, []events.DomainEvent{event}, eventIdx)
+				_ = store.Save(aggregateID, []events.DomainEvent{event}, eventIdx)
 			}
 		}
 
@@ -276,21 +276,21 @@ func BenchmarkEventStoreGetAllEvents(b *testing.B) {
 		if err != nil {
 			b.Fatal(err)
 		}
-		defer os.Remove(tmpFile.Name())
-		tmpFile.Close()
+		defer func() { _ = os.Remove(tmpFile.Name()) }()
+		_ = tmpFile.Close()
 
 		store, err := eventstore.NewSQLiteEventStore(tmpFile.Name())
 		if err != nil {
 			b.Fatal(err)
 		}
-		defer store.Close()
+		defer func() { _ = store.Close() }()
 
 		// Populate with test events across multiple aggregates
 		event := createTestEvent()
 		for aggIdx := 0; aggIdx < numAggregates; aggIdx++ {
 			aggregateID := fmt.Sprintf("aggregate-%d", aggIdx)
 			for eventIdx := 0; eventIdx < numEventsPerAggregate; eventIdx++ {
-				store.Save(aggregateID, []events.DomainEvent{event}, eventIdx)
+				_ = store.Save(aggregateID, []events.DomainEvent{event}, eventIdx)
 			}
 		}
 
@@ -312,20 +312,20 @@ func BenchmarkEventStoreComparison(b *testing.B) {
 		{
 			name: "SingleWrite",
 			fn: func(store eventstore.EventStore) {
-				store.Save("aggregate-1", []events.DomainEvent{event}, 1)
+				_ = store.Save("aggregate-1", []events.DomainEvent{event}, 1)
 			},
 		},
 		{
 			name: "SingleRead",
 			fn: func(store eventstore.EventStore) {
-				store.GetEvents("aggregate-1")
+				_, _ = store.GetEvents("aggregate-1")
 			},
 		},
 		{
 			name: "BatchWrite",
 			fn: func(store eventstore.EventStore) {
 				for i := 0; i < 10; i++ {
-					store.Save("aggregate-1", []events.DomainEvent{event}, i)
+					_ = store.Save("aggregate-1", []events.DomainEvent{event}, i)
 				}
 			},
 		},
@@ -345,7 +345,7 @@ func BenchmarkEventStoreComparison(b *testing.B) {
 				if err != nil {
 					b.Fatal(err)
 				}
-				tmpFile.Close()
+				_ = tmpFile.Close()
 
 				store, err := eventstore.NewSQLiteEventStore(tmpFile.Name())
 				if err != nil {
@@ -354,8 +354,8 @@ func BenchmarkEventStoreComparison(b *testing.B) {
 
 				op.fn(store)
 
-				store.Close()
-				os.Remove(tmpFile.Name())
+				_ = store.Close()
+				_ = os.Remove(tmpFile.Name())
 			}
 		})
 	}

@@ -9,12 +9,12 @@ This is a Go library for Linux Traffic Control (TC) that provides an intuitive, 
 ## Important: Project Rules
 
 **ALWAYS refer to and follow the rules defined in the `rules/` directory:**
-- `rules/coding.md` - Comprehensive coding guidelines (CQRS, DDD, FP, testing, etc.)
-- `rules/management.md` - Project management guidelines using GitHub
+- `@rules/coding.md` - Comprehensive coding guidelines (CQRS, DDD, FP, testing, etc.)
+- `@rules/management.md` - Project management guidelines using GitHub
 
-**When you receive a request for a coding task (e.g., implementing a feature, fixing a bug), you MUST consult `rules/coding.md` and implement the solution strictly according to its guidelines.**
+**When you receive a request for a coding task (e.g., implementing a feature, fixing a bug), you MUST consult `@rules/coding.md` and implement the solution strictly according to its guidelines.**
 
-**When you receive a request for a management task (e.g., task management), you MUST consult `rules/management.md` and execute the task strictly according to its defined procedures.**
+**When you receive a request for a management task (e.g., task management), you MUST consult `@rules/management.md` and execute the task strictly according to its defined procedures.**
 
 These rules must be consulted and strictly followed for any coding or project management tasks.
 

@@ -129,82 +129,63 @@ jobs:
             core.setOutput('referenced-issues', JSON.stringify(referencedIssues));
             core.setOutput('pr-number', prNumber.toString());
 
-      - name: Comment on Referenced Issues
+
+      - name: Close Related Issues
         uses: actions/github-script@v7
         with:
           script: |
             const autoCloseIssues = JSON.parse('${{ steps.extract-issues.outputs.auto-close-issues }}');
-            const referencedIssues = JSON.parse('${{ steps.extract-issues.outputs.referenced-issues }}');
-            const prNumber = '${{ steps.extract-issues.outputs.pr-number }}';
-            const prUrl = context.payload.pull_request.html_url;
-            const prTitle = context.payload.pull_request.title;
-            
-            // 自動クローズされるIssueにコメント
-            for (const issueNumber of autoCloseIssues) {
-              try {
-                await github.rest.issues.createComment({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  issue_number: parseInt(issueNumber),
-                  body: `🎉 This issue has been resolved by PR #${prNumber}: "${prTitle}"\n\n` +
-                        `🔗 Pull Request: ${prUrl}\n\n` +
-                        `This issue will be automatically closed when the PR is merged.\n\n` +
-                        `---\n` +
-                        `🤖 Generated with [Claude Code](https://claude.ai/code)`
-                });
-                console.log(`✅ Commented on issue #${issueNumber}`);
-              } catch (error) {
-                console.log(`❌ Failed to comment on issue #${issueNumber}:`, error.message);
-              }
-            }
-            
-            // 参照のみのIssueにコメント
-            for (const issueNumber of referencedIssues) {
-              try {
-                await github.rest.issues.createComment({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  issue_number: parseInt(issueNumber),
-                  body: `🔗 This issue was referenced in PR #${prNumber}: "${prTitle}"\n\n` +
-                        `📋 Pull Request: ${prUrl}\n\n` +
-                        `---\n` +
-                        `🤖 Generated with [Claude Code](https://claude.ai/code)`
-                });
-                console.log(`✅ Referenced comment added to issue #${issueNumber}`);
-              } catch (error) {
-                console.log(`❌ Failed to comment on issue #${issueNumber}:`, error.message);
-              }
-            }
-
-      - name: Update Project Status
-        uses: actions/github-script@v7
-        with:
-          script: |
             const prNumber = '${{ steps.extract-issues.outputs.pr-number }}';
             const prUrl = context.payload.pull_request.html_url;
             const prTitle = context.payload.pull_request.title;
             const mergedBy = context.payload.pull_request.merged_by.login;
             
-            // PRマージの通知をIssueにコメント
-            core.notice(`✅ PR #${prNumber} merged successfully: ${prTitle}`);
             console.log(`🎉 PR #${prNumber} was merged by @${mergedBy}`);
             console.log(`📋 Title: ${prTitle}`);
             console.log(`🔗 URL: ${prUrl}`);
+            
+            // 自動クローズ対象のIssueをクローズ
+            for (const issueNumber of autoCloseIssues) {
+              try {
+                // まずIssueの現在の状態をチェック
+                const { data: issue } = await github.rest.issues.get({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: parseInt(issueNumber)
+                });
+                
+                if (issue.state === 'open') {
+                  // 完了コメントを追加
+                  await github.rest.issues.createComment({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    issue_number: parseInt(issueNumber),
+                    body: `🎯 **Issue Completed!**\n\n` +
+                          `✅ Resolved by PR #${prNumber}: "${prTitle}"\n` +
+                          `🚀 Merged by @${mergedBy}\n` +
+                          `📋 Pull Request: ${prUrl}\n\n` +
+                          `This issue is now closed.\n\n` +
+                          `---\n` +
+                          `🤖 Automated by GitHub Actions • Generated with [Claude Code](https://claude.ai/code)`
+                  });
+                  
+                  // Issueをクローズ
+                  await github.rest.issues.update({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    issue_number: parseInt(issueNumber),
+                    state: 'closed',
+                    state_reason: 'completed'
+                  });
+                  
+                  console.log(`✅ Successfully closed issue #${issueNumber}`);
+                  core.notice(`Issue #${issueNumber} has been closed by PR #${prNumber}`);
+                } else {
+                  console.log(`ℹ️ Issue #${issueNumber} is already ${issue.state}`);
+                }
+              } catch (error) {
+                console.log(`❌ Failed to close issue #${issueNumber}:`, error.message);
+                core.warning(`Failed to close issue #${issueNumber}: ${error.message}`);
+              }
+            }
 
-  cleanup-on-close:
-    if: github.event.pull_request.merged == false && github.event.action == 'closed'
-    runs-on: ubuntu-latest
-    name: Handle Closed PR
-    steps:
-      - name: Notify PR Closed Without Merge
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const prNumber = context.payload.pull_request.number;
-            const prTitle = context.payload.pull_request.title;
-            const closedBy = context.payload.pull_request.closed_by.login;
-            
-            console.log(`❌ PR #${prNumber} was closed without merging by @${closedBy}`);
-            console.log(`📋 Title: ${prTitle}`);
-            
-            core.warning(`PR #${prNumber} was closed without merging`);

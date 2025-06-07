@@ -21,78 +21,108 @@ jobs:
             let hasValidIssueReference = false;
             let foundIssues = [];
             
-            // まずテキスト解析で高速チェック
-            const title = context.payload.pull_request.title;
-            const body = context.payload.pull_request.body || '';
+            console.log('🔍 Using Timeline API for authoritative issue linking...');
             
-            console.log('PR Title:', title);
-            console.log('PR Body length:', body.length);
-            
-            const patterns = [
-              /(?:close|closes|closed|fix|fixes|fixed|resolve|resolves|resolved)\s+#\d+/gi,
-              /\B#\d+\b/g
-            ];
-            
-            let foundReferences = [];
-            const textToCheck = title + ' ' + body;
-            
-            for (const pattern of patterns) {
-              const matches = textToCheck.match(pattern);
-              if (matches) {
-                hasValidIssueReference = true;
-                foundReferences.push(...matches);
+            // Exponential Backoffでリトライする
+            async function checkTimelineWithExponentialBackoff(maxRetries = 4, baseDelayMs = 500) {
+              for (let attempt = 1; attempt <= maxRetries; attempt++) {
+                try {
+                  console.log(`Timeline API attempt ${attempt}/${maxRetries}`);
+                  
+                  const { data: timelineEvents } = await github.rest.issues.listEventsForTimeline({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    issue_number: prNumber
+                  });
+                  
+                  console.log(`Timeline events found: ${timelineEvents.length}`);
+                  
+                  // connected/cross-referencedイベントからIssue番号を抽出
+                  for (const event of timelineEvents) {
+                    if ((event.event === 'connected' || event.event === 'cross-referenced') && 
+                        event.source && event.source.issue) {
+                      const issueNumber = event.source.issue.number;
+                      foundIssues.push(issueNumber);
+                      hasValidIssueReference = true;
+                      console.log(`✅ Found linked issue #${issueNumber} (${event.event})`);
+                    }
+                  }
+                  
+                  if (hasValidIssueReference) {
+                    core.notice(`✅ PR is properly linked to issues: ${foundIssues.map(n => '#' + n).join(', ')}`);
+                    console.log('✅ Issue reference validation passed via Timeline API');
+                    return true;
+                  }
+                  
+                  if (attempt < maxRetries) {
+                    // Exponential backoff: 500ms, 1s, 2s, 4s
+                    const delayMs = baseDelayMs * Math.pow(2, attempt - 1);
+                    console.log(`⏳ No issue links found yet, waiting ${delayMs}ms (exponential backoff)...`);
+                    await new Promise(resolve => setTimeout(resolve, delayMs));
+                  }
+                  
+                } catch (error) {
+                  console.log(`❌ Timeline API attempt ${attempt} failed:`, error.message);
+                  if (attempt === maxRetries) {
+                    throw error;
+                  }
+                  // API エラーでもexponential backoff
+                  const delayMs = baseDelayMs * Math.pow(2, attempt - 1);
+                  console.log(`⏳ Retrying after ${delayMs}ms (exponential backoff)...`);
+                  await new Promise(resolve => setTimeout(resolve, delayMs));
+                }
               }
+              return false;
             }
             
-            console.log('Text parsing found references:', foundReferences);
-            
-            if (hasValidIssueReference) {
-              console.log('✅ Issue reference found via text parsing');
-              core.notice(`✅ Found issue references: ${foundReferences.join(', ')}`);
-            } else {
-              // テキスト解析で見つからない場合のみTimeline APIを試す
-              console.log('🔍 Text parsing failed, trying Timeline API...');
-              
-              try {
-                const { data: timelineEvents } = await github.rest.issues.listEventsForTimeline({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  issue_number: prNumber
-                });
+            try {
+              const timelineSuccess = await checkTimelineWithExponentialBackoff();
+              if (!timelineSuccess) {
+                console.log('⚠️ Timeline API found no issue links, falling back to text parsing');
+                // フォールバック: テキスト解析
+                const title = context.payload.pull_request.title;
+                const body = context.payload.pull_request.body || '';
                 
-                console.log('Timeline events found:', timelineEvents.length);
+                console.log('PR Title:', title);
+                console.log('PR Body length:', body.length);
                 
-                // connected/cross-referencedイベントからIssue番号を抽出
-                for (const event of timelineEvents) {
-                  if ((event.event === 'connected' || event.event === 'cross-referenced') && 
-                      event.source && event.source.issue) {
-                    const issueNumber = event.source.issue.number;
-                    foundIssues.push(issueNumber);
+                const patterns = [
+                  /(?:close|closes|closed|fix|fixes|fixed|resolve|resolves|resolved)\s+#\d+/gi,
+                  /\B#\d+\b/g
+                ];
+                
+                let foundReferences = [];
+                const textToCheck = title + ' ' + body;
+                
+                for (const pattern of patterns) {
+                  const matches = textToCheck.match(pattern);
+                  if (matches) {
                     hasValidIssueReference = true;
-                    console.log(`✅ Found linked issue #${issueNumber} (${event.event})`);
+                    foundReferences.push(...matches);
                   }
                 }
                 
-                if (hasValidIssueReference) {
-                  core.notice(`✅ PR is properly linked to issues via Timeline API: ${foundIssues.map(n => '#' + n).join(', ')}`);
-                  console.log('✅ Issue reference validation passed via Timeline API');
-                }
+                console.log('Fallback text parsing found:', foundReferences);
                 
-              } catch (timelineError) {
-                console.log('⚠️ Timeline API also failed:', timelineError.message);
+                if (hasValidIssueReference) {
+                  core.notice(`✅ Found issue references via fallback: ${foundReferences.join(', ')}`);
+                  console.log('✅ Issue reference found via text parsing fallback');
+                }
               }
-              
-              if (!hasValidIssueReference) {
-                throw new Error(
-                  '❌ PR must reference an issue number.\n\n' +
-                  'Please include one of the following in your PR title or description:\n' +
-                  '• "Fixes #123" - Automatically closes the issue when PR is merged\n' +
-                  '• "Closes #123" - Automatically closes the issue when PR is merged\n' +
-                  '• "Resolves #123" - Automatically closes the issue when PR is merged\n' +
-                  '• "#123" - References the issue without auto-closing\n\n' +
-                  'This ensures proper issue tracking and project management.'
-                );
-              }
+            } catch (error) {
+              console.log('❌ Both Timeline API and fallback failed:', error.message);
+            }
+            
+            if (!hasValidIssueReference) {
+              throw new Error(
+                '❌ PR must reference an issue number.\n\n' +
+                'Please include one of the following in your PR title or description:\n' +
+                '• "Fixes #123" - Automatically closes the issue when PR is merged\n' +
+                '• "Closes #123" - Automatically closes the issue when PR is merged\n' +
+                '• "Resolves #123" - Automatically closes the issue when PR is merged\n' +
+                '• "#123" - References the issue without auto-closing\n\n' +
+                'This ensures proper issue tracking and project management.'
+              );
             }
 
   validate-pr-format:

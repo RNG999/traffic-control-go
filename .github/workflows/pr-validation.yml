@@ -21,65 +21,111 @@ jobs:
             let hasValidIssueReference = false;
             let foundIssues = [];
             
-            console.log('🔍 Using Timeline API for authoritative issue linking...');
+            console.log('🔍 Using GraphQL API for authoritative issue linking...');
             
-            // Exponential Backoffでリトライする
-            async function checkTimelineWithExponentialBackoff(maxRetries = 4, baseDelayMs = 500) {
+            // GraphQL APIでclosingIssuesReferencesを取得
+            async function checkGraphQLIssueReferences(maxRetries = 3, delayMs = 1000) {
               for (let attempt = 1; attempt <= maxRetries; attempt++) {
                 try {
-                  console.log(`Timeline API attempt ${attempt}/${maxRetries}`);
+                  console.log(`GraphQL API attempt ${attempt}/${maxRetries}`);
                   
-                  const { data: timelineEvents } = await github.rest.issues.listEventsForTimeline({
+                  const graphqlQuery = `
+                    query($owner: String!, $repo: String!, $number: Int!) {
+                      repository(owner: $owner, name: $repo) {
+                        pullRequest(number: $number) {
+                          number
+                          title
+                          closingIssuesReferences(first: 10) {
+                            nodes {
+                              number
+                              title
+                              url
+                            }
+                          }
+                          timelineItems(itemTypes: [CROSS_REFERENCED_EVENT, CONNECTED_EVENT], first: 10) {
+                            nodes {
+                              __typename
+                              ... on CrossReferencedEvent {
+                                source {
+                                  __typename
+                                  ... on Issue {
+                                    number
+                                    title
+                                  }
+                                }
+                              }
+                              ... on ConnectedEvent {
+                                subject {
+                                  __typename
+                                  ... on Issue {
+                                    number
+                                    title
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  `;
+                  
+                  const variables = {
                     owner: context.repo.owner,
                     repo: context.repo.repo,
-                    issue_number: prNumber
-                  });
+                    number: prNumber
+                  };
                   
-                  console.log(`Timeline events found: ${timelineEvents.length}`);
+                  const response = await github.graphql(graphqlQuery, variables);
+                  const pullRequest = response.repository.pullRequest;
                   
-                  // デバッグ: 全イベントの詳細をログ
-                  timelineEvents.forEach((event, index) => {
-                    console.log(`Event ${index + 1}: type="${event.event}", actor="${event.actor?.login}", created="${event.created_at}"`);
-                    if (event.source) {
-                      console.log(`  - Source: type="${event.source.type}", issue=${!!event.source.issue}`);
-                      if (event.source.issue) {
-                        console.log(`  - Issue: #${event.source.issue.number} "${event.source.issue.title}"`);
+                  console.log('GraphQL PR data retrieved successfully');
+                  console.log(`Closing issues: ${pullRequest.closingIssuesReferences.nodes.length}`);
+                  console.log(`Timeline items: ${pullRequest.timelineItems.nodes.length}`);
+                  
+                  // closingIssuesReferencesから自動クローズ対象のIssueを取得
+                  const closingIssues = pullRequest.closingIssuesReferences.nodes.map(issue => issue.number);
+                  foundIssues.push(...closingIssues);
+                  
+                  // TimelineからCross-referencedなIssueも取得
+                  pullRequest.timelineItems.nodes.forEach(item => {
+                    if (item.__typename === 'CrossReferencedEvent' && item.source?.__typename === 'Issue') {
+                      const issueNumber = item.source.number;
+                      if (!foundIssues.includes(issueNumber)) {
+                        foundIssues.push(issueNumber);
+                      }
+                    } else if (item.__typename === 'ConnectedEvent' && item.subject?.__typename === 'Issue') {
+                      const issueNumber = item.subject.number;
+                      if (!foundIssues.includes(issueNumber)) {
+                        foundIssues.push(issueNumber);
                       }
                     }
                   });
                   
-                  // connected/cross-referencedイベントからIssue番号を抽出
-                  for (const event of timelineEvents) {
-                    if ((event.event === 'connected' || event.event === 'cross-referenced') && 
-                        event.source && event.source.issue) {
-                      const issueNumber = event.source.issue.number;
-                      foundIssues.push(issueNumber);
-                      hasValidIssueReference = true;
-                      console.log(`✅ Found linked issue #${issueNumber} (${event.event})`);
-                    }
+                  if (closingIssues.length > 0) {
+                    hasValidIssueReference = true;
+                    console.log(`✅ Found ${closingIssues.length} closing issue(s): ${closingIssues.map(n => '#' + n).join(', ')}`);
+                    core.notice(`✅ PR will auto-close issues: ${closingIssues.map(n => '#' + n).join(', ')}`);
+                    return true;
                   }
                   
-                  if (hasValidIssueReference) {
-                    core.notice(`✅ PR is properly linked to issues: ${foundIssues.map(n => '#' + n).join(', ')}`);
-                    console.log('✅ Issue reference validation passed via Timeline API');
+                  if (foundIssues.length > 0) {
+                    hasValidIssueReference = true;
+                    console.log(`✅ Found ${foundIssues.length} referenced issue(s): ${foundIssues.map(n => '#' + n).join(', ')}`);
+                    core.notice(`✅ PR references issues: ${foundIssues.map(n => '#' + n).join(', ')}`);
                     return true;
                   }
                   
                   if (attempt < maxRetries) {
-                    // Exponential backoff: 500ms, 1s, 2s, 4s
-                    const delayMs = baseDelayMs * Math.pow(2, attempt - 1);
-                    console.log(`⏳ No issue links found yet, waiting ${delayMs}ms (exponential backoff)...`);
+                    console.log(`⏳ No issue references found yet, waiting ${delayMs}ms before retry...`);
                     await new Promise(resolve => setTimeout(resolve, delayMs));
                   }
                   
                 } catch (error) {
-                  console.log(`❌ Timeline API attempt ${attempt} failed:`, error.message);
+                  console.log(`❌ GraphQL API attempt ${attempt} failed:`, error.message);
                   if (attempt === maxRetries) {
                     throw error;
                   }
-                  // API エラーでもexponential backoff
-                  const delayMs = baseDelayMs * Math.pow(2, attempt - 1);
-                  console.log(`⏳ Retrying after ${delayMs}ms (exponential backoff)...`);
                   await new Promise(resolve => setTimeout(resolve, delayMs));
                 }
               }
@@ -87,9 +133,9 @@ jobs:
             }
             
             try {
-              const timelineSuccess = await checkTimelineWithExponentialBackoff();
-              if (!timelineSuccess) {
-                console.log('⚠️ Timeline API found no issue links, falling back to text parsing');
+              const graphqlSuccess = await checkGraphQLIssueReferences();
+              if (!graphqlSuccess) {
+                console.log('⚠️ GraphQL API found no issue links, falling back to text parsing');
                 // フォールバック: テキスト解析
                 const title = context.payload.pull_request.title;
                 const body = context.payload.pull_request.body || '';
@@ -121,7 +167,7 @@ jobs:
                 }
               }
             } catch (error) {
-              console.log('❌ Both Timeline API and fallback failed:', error.message);
+              console.log('❌ Both GraphQL API and fallback failed:', error.message);
             }
             
             if (!hasValidIssueReference) {

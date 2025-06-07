@@ -10,27 +10,22 @@ import (
 	"github.com/rng999/traffic-control-go/pkg/tc"
 )
 
-// CreateTBFQdiscHandler handles the creation of TBF qdiscs
+// CreateTBFQdiscHandler handles CreateTBFQdiscCommand with type safety
 type CreateTBFQdiscHandler struct {
 	eventStore eventstore.EventStoreWithContext
 }
 
-// NewCreateTBFQdiscHandler creates a new handler
+// NewCreateTBFQdiscHandler creates a new type-safe TBF handler
 func NewCreateTBFQdiscHandler(eventStore eventstore.EventStoreWithContext) *CreateTBFQdiscHandler {
 	return &CreateTBFQdiscHandler{
 		eventStore: eventStore,
 	}
 }
 
-// Handle processes the CreateTBFQdiscCommand
-func (h *CreateTBFQdiscHandler) Handle(ctx context.Context, command interface{}) error {
-	cmd, ok := command.(*models.CreateTBFQdiscCommand)
-	if !ok {
-		return fmt.Errorf("invalid command type")
-	}
-
+// HandleTyped processes the CreateTBFQdiscCommand with compile-time type safety
+func (h *CreateTBFQdiscHandler) HandleTyped(ctx context.Context, command *models.CreateTBFQdiscCommand) error {
 	// Create device value object
-	device, err := tc.NewDeviceName(cmd.DeviceName)
+	device, err := tc.NewDeviceName(command.DeviceName)
 	if err != nil {
 		return fmt.Errorf("invalid device name: %w", err)
 	}
@@ -42,20 +37,19 @@ func (h *CreateTBFQdiscHandler) Handle(ctx context.Context, command interface{})
 	}
 
 	// Parse handle
-	var handleMajor, handleMinor uint16
-	if n, err := fmt.Sscanf(cmd.Handle, "%x:%x", &handleMajor, &handleMinor); err != nil || n != 2 {
-		return fmt.Errorf("invalid handle format: %s", cmd.Handle)
+	handle, err := tc.ParseHandle(command.Handle)
+	if err != nil {
+		return fmt.Errorf("invalid handle format: %w", err)
 	}
-	handle := tc.NewHandle(handleMajor, handleMinor)
 
-	// Parse bandwidth
-	rate, err := tc.ParseBandwidth(cmd.Rate)
+	// Parse rate
+	rate, err := tc.ParseBandwidth(command.Rate)
 	if err != nil {
 		return fmt.Errorf("invalid rate: %w", err)
 	}
 
 	// Execute business logic
-	if err := aggregate.AddTBFQdisc(handle, rate, cmd.Buffer, cmd.Limit, cmd.Burst); err != nil {
+	if err := aggregate.AddTBFQdisc(handle, rate, command.Buffer, command.Limit, command.Burst); err != nil {
 		return err
 	}
 
@@ -67,27 +61,22 @@ func (h *CreateTBFQdiscHandler) Handle(ctx context.Context, command interface{})
 	return nil
 }
 
-// CreatePRIOQdiscHandler handles the creation of PRIO qdiscs
+// CreatePRIOQdiscHandler handles CreatePRIOQdiscCommand with type safety
 type CreatePRIOQdiscHandler struct {
 	eventStore eventstore.EventStoreWithContext
 }
 
-// NewCreatePRIOQdiscHandler creates a new handler
+// NewCreatePRIOQdiscHandler creates a new type-safe PRIO handler
 func NewCreatePRIOQdiscHandler(eventStore eventstore.EventStoreWithContext) *CreatePRIOQdiscHandler {
 	return &CreatePRIOQdiscHandler{
 		eventStore: eventStore,
 	}
 }
 
-// Handle processes the CreatePRIOQdiscCommand
-func (h *CreatePRIOQdiscHandler) Handle(ctx context.Context, command interface{}) error {
-	cmd, ok := command.(*models.CreatePRIOQdiscCommand)
-	if !ok {
-		return fmt.Errorf("invalid command type")
-	}
-
+// HandleTyped processes the CreatePRIOQdiscCommand with compile-time type safety
+func (h *CreatePRIOQdiscHandler) HandleTyped(ctx context.Context, command *models.CreatePRIOQdiscCommand) error {
 	// Create device value object
-	device, err := tc.NewDeviceName(cmd.DeviceName)
+	device, err := tc.NewDeviceName(command.DeviceName)
 	if err != nil {
 		return fmt.Errorf("invalid device name: %w", err)
 	}
@@ -99,14 +88,13 @@ func (h *CreatePRIOQdiscHandler) Handle(ctx context.Context, command interface{}
 	}
 
 	// Parse handle
-	var handleMajor, handleMinor uint16
-	if n, err := fmt.Sscanf(cmd.Handle, "%x:%x", &handleMajor, &handleMinor); err != nil || n != 2 {
-		return fmt.Errorf("invalid handle format: %s", cmd.Handle)
+	handle, err := tc.ParseHandle(command.Handle)
+	if err != nil {
+		return fmt.Errorf("invalid handle format: %w", err)
 	}
-	handle := tc.NewHandle(handleMajor, handleMinor)
 
 	// Execute business logic
-	if err := aggregate.AddPRIOQdisc(handle, cmd.Bands, cmd.Priomap); err != nil {
+	if err := aggregate.AddPRIOQdisc(handle, command.Bands, command.Priomap); err != nil {
 		return err
 	}
 
@@ -118,27 +106,22 @@ func (h *CreatePRIOQdiscHandler) Handle(ctx context.Context, command interface{}
 	return nil
 }
 
-// CreateFQCODELQdiscHandler handles the creation of FQ_CODEL qdiscs
+// CreateFQCODELQdiscHandler handles CreateFQCODELQdiscCommand with type safety
 type CreateFQCODELQdiscHandler struct {
 	eventStore eventstore.EventStoreWithContext
 }
 
-// NewCreateFQCODELQdiscHandler creates a new handler
+// NewCreateFQCODELQdiscHandler creates a new type-safe FQ_CODEL handler
 func NewCreateFQCODELQdiscHandler(eventStore eventstore.EventStoreWithContext) *CreateFQCODELQdiscHandler {
 	return &CreateFQCODELQdiscHandler{
 		eventStore: eventStore,
 	}
 }
 
-// Handle processes the CreateFQCODELQdiscCommand
-func (h *CreateFQCODELQdiscHandler) Handle(ctx context.Context, command interface{}) error {
-	cmd, ok := command.(*models.CreateFQCODELQdiscCommand)
-	if !ok {
-		return fmt.Errorf("invalid command type")
-	}
-
+// HandleTyped processes the CreateFQCODELQdiscCommand with compile-time type safety
+func (h *CreateFQCODELQdiscHandler) HandleTyped(ctx context.Context, command *models.CreateFQCODELQdiscCommand) error {
 	// Create device value object
-	device, err := tc.NewDeviceName(cmd.DeviceName)
+	device, err := tc.NewDeviceName(command.DeviceName)
 	if err != nil {
 		return fmt.Errorf("invalid device name: %w", err)
 	}
@@ -150,22 +133,13 @@ func (h *CreateFQCODELQdiscHandler) Handle(ctx context.Context, command interfac
 	}
 
 	// Parse handle
-	var handleMajor, handleMinor uint16
-	if n, err := fmt.Sscanf(cmd.Handle, "%x:%x", &handleMajor, &handleMinor); err != nil || n != 2 {
-		return fmt.Errorf("invalid handle format: %s", cmd.Handle)
+	handle, err := tc.ParseHandle(command.Handle)
+	if err != nil {
+		return fmt.Errorf("invalid handle format: %w", err)
 	}
-	handle := tc.NewHandle(handleMajor, handleMinor)
 
 	// Execute business logic
-	if err := aggregate.AddFQCODELQdisc(
-		handle,
-		cmd.Limit,
-		cmd.Flows,
-		cmd.Target,
-		cmd.Interval,
-		cmd.Quantum,
-		cmd.ECN,
-	); err != nil {
+	if err := aggregate.AddFQCODELQdisc(handle, command.Limit, command.Flows, command.Target, command.Interval, command.Quantum, command.ECN); err != nil {
 		return err
 	}
 

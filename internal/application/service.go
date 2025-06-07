@@ -22,7 +22,6 @@ type TrafficControlService struct {
 	eventStore        eventstore.EventStoreWithContext
 	netlinkAdapter    netlink.Adapter
 	commandBus        *CommandBus
-	genericCommandBus *GenericCommandBus
 	queryBus          *QueryBus
 	eventBus          *EventBus
 	projectionManager *projections.Manager
@@ -63,7 +62,6 @@ func NewTrafficControlService(
 
 	// Initialize buses
 	service.commandBus = NewCommandBus(service)
-	service.genericCommandBus = NewGenericCommandBus(service)
 	service.queryBus = NewQueryBus(service)
 	service.eventBus = NewEventBus(service)
 
@@ -83,21 +81,15 @@ func NewTrafficControlService(
 
 // registerHandlers registers all command and query handlers
 func (s *TrafficControlService) registerHandlers() {
-	// Register legacy command handlers (to be deprecated)
-	s.commandBus.Register("CreateHTBQdisc", chandlers.NewCreateHTBQdiscHandler(s.eventStore))
-	s.commandBus.Register("CreateTBFQdisc", chandlers.NewCreateTBFQdiscHandler(s.eventStore))
-	s.commandBus.Register("CreatePRIOQdisc", chandlers.NewCreatePRIOQdiscHandler(s.eventStore))
-	s.commandBus.Register("CreateFQCODELQdisc", chandlers.NewCreateFQCODELQdiscHandler(s.eventStore))
-	s.commandBus.Register("CreateHTBClass", chandlers.NewCreateHTBClassHandler(s.eventStore))
-	s.commandBus.Register("CreateFilter", chandlers.NewCreateFilterHandler(s.eventStore))
+	// Legacy command handlers removed - now using type-safe generic handlers only
 
-	// Register new type-safe generic command handlers
-	RegisterHandlerFor[*models.CreateHTBQdiscCommand](s.genericCommandBus, chandlers.NewGenericCreateHTBQdiscHandler(s.eventStore))
-	RegisterHandlerFor[*models.CreateHTBClassCommand](s.genericCommandBus, chandlers.NewGenericCreateHTBClassHandler(s.eventStore))
-	RegisterHandlerFor[*models.CreateFilterCommand](s.genericCommandBus, chandlers.NewGenericCreateFilterHandler(s.eventStore))
-	RegisterHandlerFor[*models.CreateTBFQdiscCommand](s.genericCommandBus, chandlers.NewGenericCreateTBFQdiscHandler(s.eventStore))
-	RegisterHandlerFor[*models.CreatePRIOQdiscCommand](s.genericCommandBus, chandlers.NewGenericCreatePRIOQdiscHandler(s.eventStore))
-	RegisterHandlerFor[*models.CreateFQCODELQdiscCommand](s.genericCommandBus, chandlers.NewGenericCreateFQCODELQdiscHandler(s.eventStore))
+	// Register type-safe command handlers
+	RegisterHandlerFor[*models.CreateHTBQdiscCommand](s.commandBus, chandlers.NewCreateHTBQdiscHandler(s.eventStore))
+	RegisterHandlerFor[*models.CreateHTBClassCommand](s.commandBus, chandlers.NewCreateHTBClassHandler(s.eventStore))
+	RegisterHandlerFor[*models.CreateFilterCommand](s.commandBus, chandlers.NewCreateFilterHandler(s.eventStore))
+	RegisterHandlerFor[*models.CreateTBFQdiscCommand](s.commandBus, chandlers.NewCreateTBFQdiscHandler(s.eventStore))
+	RegisterHandlerFor[*models.CreatePRIOQdiscCommand](s.commandBus, chandlers.NewCreatePRIOQdiscHandler(s.eventStore))
+	RegisterHandlerFor[*models.CreateFQCODELQdiscCommand](s.commandBus, chandlers.NewCreateFQCODELQdiscHandler(s.eventStore))
 
 	// Register query handlers with read model support
 	// Note: Query handlers temporarily disabled due to interface compatibility issues
@@ -144,7 +136,7 @@ func (s *TrafficControlService) CreateHTBQdisc(ctx context.Context, device strin
 		DefaultClass: defaultClass,
 	}
 
-	if err := s.commandBus.Execute(ctx, "CreateHTBQdisc", cmd); err != nil {
+	if err := s.commandBus.ExecuteCommand(ctx, cmd); err != nil {
 		return fmt.Errorf("failed to create HTB qdisc: %w", err)
 	}
 
@@ -162,7 +154,7 @@ func (s *TrafficControlService) CreateTBFQdisc(ctx context.Context, device strin
 		Burst:      burst,
 	}
 
-	if err := s.commandBus.Execute(ctx, "CreateTBFQdisc", cmd); err != nil {
+	if err := s.commandBus.ExecuteCommand(ctx, cmd); err != nil {
 		return fmt.Errorf("failed to create TBF qdisc: %w", err)
 	}
 
@@ -178,7 +170,7 @@ func (s *TrafficControlService) CreatePRIOQdisc(ctx context.Context, device stri
 		Priomap:    priomap,
 	}
 
-	if err := s.commandBus.Execute(ctx, "CreatePRIOQdisc", cmd); err != nil {
+	if err := s.commandBus.ExecuteCommand(ctx, cmd); err != nil {
 		return fmt.Errorf("failed to create PRIO qdisc: %w", err)
 	}
 
@@ -198,7 +190,7 @@ func (s *TrafficControlService) CreateFQCODELQdisc(ctx context.Context, device s
 		ECN:        ecn,
 	}
 
-	if err := s.commandBus.Execute(ctx, "CreateFQCODELQdisc", cmd); err != nil {
+	if err := s.commandBus.ExecuteCommand(ctx, cmd); err != nil {
 		return fmt.Errorf("failed to create FQ_CODEL qdisc: %w", err)
 	}
 
@@ -215,7 +207,7 @@ func (s *TrafficControlService) CreateHTBClass(ctx context.Context, device strin
 		Ceil:       ceil,
 	}
 
-	if err := s.commandBus.Execute(ctx, "CreateHTBClass", cmd); err != nil {
+	if err := s.commandBus.ExecuteCommand(ctx, cmd); err != nil {
 		return fmt.Errorf("failed to create HTB class: %w", err)
 	}
 
@@ -233,7 +225,7 @@ func (s *TrafficControlService) CreateFilter(ctx context.Context, device string,
 		Match:      match,
 	}
 
-	if err := s.commandBus.Execute(ctx, "CreateFilter", cmd); err != nil {
+	if err := s.commandBus.ExecuteCommand(ctx, cmd); err != nil {
 		return fmt.Errorf("failed to create filter: %w", err)
 	}
 

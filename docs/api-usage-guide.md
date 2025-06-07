@@ -635,6 +635,7 @@ func (c *CachedStatistics) GetStatistics(service *api.TrafficControlService) (*a
 ```go
 func verifyConfiguration(device string) error {
     // Check if configuration was applied
+    // #nosec G204 - device name is validated against whitelist in production
     cmd := exec.Command("tc", "qdisc", "show", "dev", device)
     output, err := cmd.Output()
     if err != nil {

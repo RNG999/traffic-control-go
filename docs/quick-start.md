@@ -214,6 +214,7 @@ sudo ./your-program
 ### Changes Not Taking Effect
 ```go
 // Clear existing rules first
+// #nosec G204 - device name is hardcoded for example purposes
 exec.Command("tc", "qdisc", "del", "dev", "eth0", "root").Run()
 ```
 

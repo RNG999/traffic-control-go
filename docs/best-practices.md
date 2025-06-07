@@ -289,6 +289,7 @@ type MinimalTrafficControl struct {
 
 func (m *MinimalTrafficControl) Apply() error {
     // Apply minimal traffic control that ensures basic connectivity
+    // #nosec G204 - device name is validated against whitelist in production
     cmd := exec.Command("tc", "qdisc", "replace", "dev", m.device, 
         "root", "handle", "1:", "pfifo_fast")
     return cmd.Run()

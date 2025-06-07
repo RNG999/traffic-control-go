@@ -1,7 +1,6 @@
 package api
 
 import (
-	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -568,37 +567,3 @@ func TestFinalizePendingClasses(t *testing.T) {
 	})
 }
 
-// Mock for service testing - this would normally be in a separate file
-type mockTrafficControlService struct {
-	createHTBQdiscError   error
-	createHTBClassError   error
-	createFilterError     error
-	getDeviceStatsError   error
-	getRealtimeStatsError error
-}
-
-func (m *mockTrafficControlService) CreateHTBQdisc(ctx context.Context, deviceName, handle, defaultClass string) error {
-	return m.createHTBQdiscError
-}
-
-func (m *mockTrafficControlService) CreateHTBClass(ctx context.Context, deviceName, parent, handle, rate, ceil string) error {
-	return m.createHTBClassError
-}
-
-func (m *mockTrafficControlService) CreateFilter(ctx context.Context, deviceName, parent string, priority uint16, protocol, flowID string, match map[string]string) error {
-	return m.createFilterError
-}
-
-func (m *mockTrafficControlService) CreateTBFQdisc(ctx context.Context, deviceName, handle, rate string, buffer, limit, burst uint32) error {
-	return nil
-}
-
-func (m *mockTrafficControlService) CreatePRIOQdisc(ctx context.Context, deviceName, handle string, bands uint8, priomap []uint8) error {
-	return nil
-}
-
-func (m *mockTrafficControlService) CreateFQCODELQdisc(ctx context.Context, deviceName, handle string, limit, flows, target, interval, quantum uint32, ecn bool) error {
-	return nil
-}
-
-// Additional service methods would be implemented as needed for testing

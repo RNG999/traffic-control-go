@@ -133,6 +133,7 @@ func (b *TrafficClassBuilder) WithPriority(priority int) *TrafficClassBuilder {
 	} else if priority > 7 {
 		priority = 7
 	}
+	// #nosec G115 -- priority is explicitly clamped to 0-7 range above
 	p := uint8(priority)
 	b.class.priority = &p
 	return b

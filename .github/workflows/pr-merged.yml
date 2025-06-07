@@ -87,42 +87,9 @@ jobs:
               console.log(`🔗 Found ${referencedIssues.length} referenced issues: ${referencedIssues.map(n => '#' + n).join(', ')}`);
               
             } catch (graphqlError) {
-              console.log('⚠️ GraphQL API failed, falling back to text parsing');
+              console.log('⚠️ GraphQL API failed - no fallback, strict validation');
               console.log('GraphQL Error:', graphqlError.message);
-              
-              // フォールバック: テキスト解析
-              const title = context.payload.pull_request.title;
-              const body = context.payload.pull_request.body || '';
-              
-              const autoClosePatterns = [
-                /(?:close|closes|closed|fix|fixes|fixed|resolve|resolves|resolved)\s+#(\d+)/gi,
-                /(?:close|closes|closed|fix|fixes|fixed|resolve|resolves|resolved)\s+https:\/\/github\.com\/[^\/]+\/[^\/]+\/issues\/(\d+)/gi
-              ];
-              
-              const referencePattern = /\B#(\d+)\b/g;
-              const textToCheck = title + ' ' + body;
-              
-              for (const pattern of autoClosePatterns) {
-                let match;
-                while ((match = pattern.exec(textToCheck)) !== null) {
-                  const issueNumber = match[1];
-                  if (!autoCloseIssues.includes(issueNumber)) {
-                    autoCloseIssues.push(issueNumber);
-                  }
-                }
-              }
-              
-              let match;
-              while ((match = referencePattern.exec(textToCheck)) !== null) {
-                const issueNumber = match[1];
-                if (!referencedIssues.includes(issueNumber) && !autoCloseIssues.includes(issueNumber)) {
-                  referencedIssues.push(issueNumber);
-                }
-              }
-              
-              console.log('Fallback text parsing results:');
-              console.log('Auto-close issues:', autoCloseIssues);
-              console.log('Referenced issues:', referencedIssues);
+              core.warning(`GraphQL API error in PR merged workflow: ${graphqlError.message}`);
             }
             
             core.setOutput('auto-close-issues', JSON.stringify(autoCloseIssues));

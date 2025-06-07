@@ -134,40 +134,14 @@ jobs:
             
             try {
               const graphqlSuccess = await checkGraphQLIssueReferences();
+              hasValidIssueReference = graphqlSuccess;
+              
               if (!graphqlSuccess) {
-                console.log('⚠️ GraphQL API found no issue links, falling back to text parsing');
-                // フォールバック: テキスト解析
-                const title = context.payload.pull_request.title;
-                const body = context.payload.pull_request.body || '';
-                
-                console.log('PR Title:', title);
-                console.log('PR Body length:', body.length);
-                
-                const patterns = [
-                  /(?:close|closes|closed|fix|fixes|fixed|resolve|resolves|resolved)\s+#\d+/gi,
-                  /\B#\d+\b/g
-                ];
-                
-                let foundReferences = [];
-                const textToCheck = title + ' ' + body;
-                
-                for (const pattern of patterns) {
-                  const matches = textToCheck.match(pattern);
-                  if (matches) {
-                    hasValidIssueReference = true;
-                    foundReferences.push(...matches);
-                  }
-                }
-                
-                console.log('Fallback text parsing found:', foundReferences);
-                
-                if (hasValidIssueReference) {
-                  core.notice(`✅ Found issue references via fallback: ${foundReferences.join(', ')}`);
-                  console.log('✅ Issue reference found via text parsing fallback');
-                }
+                console.log('⚠️ GraphQL API found no issue links - no fallback, strict validation');
               }
             } catch (error) {
-              console.log('❌ Both GraphQL API and fallback failed:', error.message);
+              console.log('❌ GraphQL API failed:', error.message);
+              core.warning(`GraphQL API error: ${error.message}`);
             }
             
             if (!hasValidIssueReference) {

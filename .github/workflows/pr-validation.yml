@@ -13,49 +13,93 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            const title = context.payload.pull_request.title;
-            const body = context.payload.pull_request.body || '';
+            const prNumber = context.payload.pull_request.number;
             
             console.log('=== PR VALIDATION DEBUG ===');
-            console.log('PR Title:', title);
-            console.log('PR Body length:', body.length);
-            console.log('PR Body preview:', body.substring(0, 200));
+            console.log('PR Number:', prNumber);
             
-            // Issue番号の正規表現パターン
-            const patterns = [
-              /(?:close|closes|closed|fix|fixes|fixed|resolve|resolves|resolved)\s+#\d+/gi,
-              /#\d+/g
-            ];
+            let hasValidIssueReference = false;
+            let foundIssues = [];
             
-            let hasIssueReference = false;
-            let foundReferences = [];
-            
-            // タイトルと本文をチェック
-            const textToCheck = title + ' ' + body;
-            
-            for (const pattern of patterns) {
-              const matches = textToCheck.match(pattern);
-              if (matches) {
-                hasIssueReference = true;
-                foundReferences.push(...matches);
+            try {
+              // GitHub APIを使用してPRに関連するIssueを取得
+              const { data: timelineEvents } = await github.rest.issues.listEventsForTimeline({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: prNumber
+              });
+              
+              console.log('Timeline events found:', timelineEvents.length);
+              
+              // connected/cross-referencedイベントからIssue番号を抽出
+              for (const event of timelineEvents) {
+                if ((event.event === 'connected' || event.event === 'cross-referenced') && 
+                    event.source && event.source.issue) {
+                  const issueNumber = event.source.issue.number;
+                  foundIssues.push(issueNumber);
+                  hasValidIssueReference = true;
+                  console.log(`✅ Found linked issue #${issueNumber} (${event.event})`);
+                }
               }
-            }
-            
-            console.log('Found references:', foundReferences);
-            
-            if (!hasIssueReference) {
-              throw new Error(
-                '❌ PR must reference an issue number.\n\n' +
-                'Please include one of the following in your PR title or description:\n' +
-                '• "Fixes #123" - Automatically closes the issue when PR is merged\n' +
-                '• "Closes #123" - Automatically closes the issue when PR is merged\n' +
-                '• "Resolves #123" - Automatically closes the issue when PR is merged\n' +
-                '• "#123" - References the issue without auto-closing\n\n' +
-                'This ensures proper issue tracking and project management.'
-              );
-            } else {
-              console.log('✅ Issue reference found:', foundReferences.join(', '));
-              core.notice(`✅ Found issue references: ${foundReferences.join(', ')}`);
+              
+              if (hasValidIssueReference) {
+                core.notice(`✅ PR is properly linked to issues: ${foundIssues.map(n => '#' + n).join(', ')}`);
+                console.log('✅ Issue reference validation passed');
+              } else {
+                throw new Error(
+                  '❌ PR must reference an issue number.\n\n' +
+                  'Please include one of the following in your PR title or description:\n' +
+                  '• "Fixes #123" - Automatically closes the issue when PR is merged\n' +
+                  '• "Closes #123" - Automatically closes the issue when PR is merged\n' +
+                  '• "Resolves #123" - Automatically closes the issue when PR is merged\n' +
+                  '• "#123" - References the issue without auto-closing\n\n' +
+                  'This ensures proper issue tracking and project management.'
+                );
+              }
+              
+            } catch (apiError) {
+              console.log('⚠️ GitHub API failed, falling back to text parsing');
+              console.log('API Error:', apiError.message);
+              
+              // フォールバック: テキスト解析
+              const title = context.payload.pull_request.title;
+              const body = context.payload.pull_request.body || '';
+              
+              console.log('PR Title:', title);
+              console.log('PR Body length:', body.length);
+              
+              const patterns = [
+                /(?:close|closes|closed|fix|fixes|fixed|resolve|resolves|resolved)\s+#\d+/gi,
+                /\B#\d+\b/g
+              ];
+              
+              let foundReferences = [];
+              const textToCheck = title + ' ' + body;
+              
+              for (const pattern of patterns) {
+                const matches = textToCheck.match(pattern);
+                if (matches) {
+                  hasValidIssueReference = true;
+                  foundReferences.push(...matches);
+                }
+              }
+              
+              console.log('Fallback found references:', foundReferences);
+              
+              if (!hasValidIssueReference) {
+                throw new Error(
+                  '❌ PR must reference an issue number.\n\n' +
+                  'Please include one of the following in your PR title or description:\n' +
+                  '• "Fixes #123" - Automatically closes the issue when PR is merged\n' +
+                  '• "Closes #123" - Automatically closes the issue when PR is merged\n' +
+                  '• "Resolves #123" - Automatically closes the issue when PR is merged\n' +
+                  '• "#123" - References the issue without auto-closing\n\n' +
+                  'This ensures proper issue tracking and project management.'
+                );
+              } else {
+                console.log('✅ Fallback issue reference found:', foundReferences.join(', '));
+                core.notice(`✅ Found issue references: ${foundReferences.join(', ')}`);
+              }
             }
 
   validate-pr-format:
@@ -92,23 +136,4 @@ jobs:
               );
             } else {
               console.log('✅ PR title follows conventional commit format');
-            }
-
-      - name: Check PR Description
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const body = context.payload.pull_request.body || '';
-            
-            if (body.length < 20) {
-              core.warning(
-                '⚠️ PR description is very short.\n\n' +
-                'Consider adding:\n' +
-                '• What changes were made\n' +
-                '• Why these changes were necessary\n' +
-                '• How to test the changes\n' +
-                '• Any breaking changes or dependencies'
-              );
-            } else {
-              console.log('✅ PR has adequate description');
             }

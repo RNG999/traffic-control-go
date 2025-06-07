@@ -6,7 +6,7 @@ on:
 
 jobs:
   handle-merged-pr:
-    if: github.event.pull_request.merged == true
+    if: github.event.pull_request.merged == true && github.event.action == 'closed'
     runs-on: ubuntu-latest
     name: Handle Merged PR
     steps:
@@ -15,46 +15,83 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            const { context } = require('@actions/github');
-            const title = context.payload.pull_request.title;
-            const body = context.payload.pull_request.body || '';
+            console.log('=== PR MERGED WORKFLOW DEBUG ===');
+            console.log('Event action:', context.payload.action);
+            console.log('PR merged:', context.payload.pull_request.merged);
+            console.log('PR state:', context.payload.pull_request.state);
+            console.log('PR number:', context.payload.pull_request.number);
+            
             const prNumber = context.payload.pull_request.number;
-            
-            // Issue番号を抽出（Fixes/Closes/Resolves形式のみ自動クローズ対象）
-            const autoClosePatterns = [
-              /(?:close|closes|closed|fix|fixes|fixed|resolve|resolves|resolved)\s+#(\d+)/gi,
-              /(?:close|closes|closed|fix|fixes|fixed|resolve|resolves|resolved)\s+https:\/\/github\.com\/[^\/]+\/[^\/]+\/issues\/(\d+)/gi
-            ];
-            
-            // シンプルな参照パターン（自動クローズしない）
-            const referencePattern = /#(\d+)/g;
-            
-            const textToCheck = title + ' ' + body;
             let autoCloseIssues = [];
             let referencedIssues = [];
             
-            // 自動クローズ対象のIssueを抽出
-            for (const pattern of autoClosePatterns) {
-              let match;
-              while ((match = pattern.exec(textToCheck)) !== null) {
-                const issueNumber = match[1];
-                if (!autoCloseIssues.includes(issueNumber)) {
-                  autoCloseIssues.push(issueNumber);
+            try {
+              // GitHub APIを使用してPRに関連するIssueを取得
+              const { data: timelineEvents } = await github.rest.issues.listEventsForTimeline({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: prNumber
+              });
+              
+              // connected/cross-referencedイベントからIssue番号を抽出
+              for (const event of timelineEvents) {
+                if (event.event === 'connected' && event.source && event.source.issue) {
+                  const issueNumber = event.source.issue.number.toString();
+                  if (!autoCloseIssues.includes(issueNumber)) {
+                    autoCloseIssues.push(issueNumber);
+                  }
+                  console.log(`✅ Found connected issue #${issueNumber}`);
+                } else if (event.event === 'cross-referenced' && event.source && event.source.issue) {
+                  const issueNumber = event.source.issue.number.toString();
+                  if (!referencedIssues.includes(issueNumber) && !autoCloseIssues.includes(issueNumber)) {
+                    referencedIssues.push(issueNumber);
+                  }
+                  console.log(`🔗 Found referenced issue #${issueNumber}`);
                 }
               }
-            }
-            
-            // すべての参照されたIssueを抽出
-            let match;
-            while ((match = referencePattern.exec(textToCheck)) !== null) {
-              const issueNumber = match[1];
-              if (!referencedIssues.includes(issueNumber) && !autoCloseIssues.includes(issueNumber)) {
-                referencedIssues.push(issueNumber);
+              
+              console.log('GitHub API results:');
+              console.log('Auto-close issues:', autoCloseIssues);
+              console.log('Referenced issues:', referencedIssues);
+              
+            } catch (apiError) {
+              console.log('⚠️ GitHub API failed, falling back to text parsing');
+              console.log('API Error:', apiError.message);
+              
+              // フォールバック: テキスト解析
+              const title = context.payload.pull_request.title;
+              const body = context.payload.pull_request.body || '';
+              
+              const autoClosePatterns = [
+                /(?:close|closes|closed|fix|fixes|fixed|resolve|resolves|resolved)\s+#(\d+)/gi,
+                /(?:close|closes|closed|fix|fixes|fixed|resolve|resolves|resolved)\s+https:\/\/github\.com\/[^\/]+\/[^\/]+\/issues\/(\d+)/gi
+              ];
+              
+              const referencePattern = /\B#(\d+)\b/g;
+              const textToCheck = title + ' ' + body;
+              
+              for (const pattern of autoClosePatterns) {
+                let match;
+                while ((match = pattern.exec(textToCheck)) !== null) {
+                  const issueNumber = match[1];
+                  if (!autoCloseIssues.includes(issueNumber)) {
+                    autoCloseIssues.push(issueNumber);
+                  }
+                }
               }
+              
+              let match;
+              while ((match = referencePattern.exec(textToCheck)) !== null) {
+                const issueNumber = match[1];
+                if (!referencedIssues.includes(issueNumber) && !autoCloseIssues.includes(issueNumber)) {
+                  referencedIssues.push(issueNumber);
+                }
+              }
+              
+              console.log('Fallback text parsing results:');
+              console.log('Auto-close issues:', autoCloseIssues);
+              console.log('Referenced issues:', referencedIssues);
             }
-            
-            console.log('Auto-close issues:', autoCloseIssues);
-            console.log('Referenced issues:', referencedIssues);
             
             core.setOutput('auto-close-issues', JSON.stringify(autoCloseIssues));
             core.setOutput('referenced-issues', JSON.stringify(referencedIssues));
@@ -123,7 +160,7 @@ jobs:
             console.log(`🔗 URL: ${prUrl}`);
 
   cleanup-on-close:
-    if: github.event.pull_request.merged == false
+    if: github.event.pull_request.merged == false && github.event.action == 'closed'
     runs-on: ubuntu-latest
     name: Handle Closed PR
     steps:

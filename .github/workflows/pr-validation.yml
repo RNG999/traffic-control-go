@@ -24,7 +24,7 @@ jobs:
             // Issue番号の正規表現パターン
             const patterns = [
               /(?:close|closes|closed|fix|fixes|fixed|resolve|resolves|resolved)\s+#\d+/gi,
-              /#\d+/g
+              /\B#\d+\b/g
             ];
             
             let hasIssueReference = false;

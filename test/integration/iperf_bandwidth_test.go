@@ -235,6 +235,8 @@ func TestMultipleClassesConcurrent(t *testing.T) {
 		t.Skip("Skipping concurrent test in short mode")
 	}
 
+	// Test with smaller bandwidth values that work in CI environment
+
 	if os.Geteuid() != 0 {
 		t.Skip("Test requires root privileges")
 	}
@@ -263,21 +265,21 @@ func TestMultipleClassesConcurrent(t *testing.T) {
 
 	time.Sleep(2 * time.Second)
 
-	// Apply traffic control with two classes
+	// Apply traffic control with two classes (smaller values for CI compatibility)
 	tcController := api.NetworkInterface(device)
-	tcController.WithHardLimitBandwidth("100mbit")
+	tcController.WithHardLimitBandwidth("20mbit")
 
-	// High priority class - 60% bandwidth
+	// High priority class - more bandwidth
 	tcController.CreateTrafficClass("high-priority").
-		WithGuaranteedBandwidth("60mbit").
-		WithSoftLimitBandwidth("80mbit").
+		WithGuaranteedBandwidth("12mbit").
+		WithSoftLimitBandwidth("15mbit").
 		WithPriority(1).
 		ForPort(5201)
 
-	// Low priority class - 20% bandwidth
+	// Low priority class - less bandwidth
 	tcController.CreateTrafficClass("low-priority").
-		WithGuaranteedBandwidth("20mbit").
-		WithSoftLimitBandwidth("40mbit").
+		WithGuaranteedBandwidth("4mbit").
+		WithSoftLimitBandwidth("8mbit").
 		WithPriority(6).
 		ForPort(5202)
 
@@ -329,11 +331,13 @@ func TestMultipleClassesConcurrent(t *testing.T) {
 	require.Greater(t, highBandwidth, lowBandwidth*1.5,
 		"High priority should get at least 1.5x more bandwidth than low priority")
 
-	// High priority should be close to its guaranteed bandwidth
-	require.Greater(t, highBandwidth, 50.0, "High priority bandwidth too low")
+	// High priority should be close to its guaranteed bandwidth (12mbit = 12 Mbps)
+	require.Greater(t, highBandwidth, 8.0, "High priority bandwidth too low")
+	require.Less(t, highBandwidth, 20.0, "High priority bandwidth too high")
 
-	// Low priority should be limited
-	require.Less(t, lowBandwidth, 30.0, "Low priority bandwidth too high")
+	// Low priority should be limited (4mbit = 4 Mbps) 
+	require.Greater(t, lowBandwidth, 2.0, "Low priority bandwidth too low")
+	require.Less(t, lowBandwidth, 10.0, "Low priority bandwidth too high")
 }
 
 // TestDynamicBandwidthChange tests changing bandwidth limits during active traffic

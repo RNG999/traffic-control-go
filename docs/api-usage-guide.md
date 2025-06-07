@@ -483,11 +483,13 @@ func saveConfiguration(controller *api.TrafficController) error {
         return err
     }
     
+    // #nosec G306 - config file permissions are intentionally readable for backup purposes
     return os.WriteFile("tc-config-backup.json", data, 0644)
 }
 
 // Restore configuration
 func restoreConfiguration(filename string) error {
+    // #nosec G304 - filename is controlled by application, not user input
     data, err := os.ReadFile(filename)
     if err != nil {
         return err

@@ -339,6 +339,7 @@ func validateConfiguration(config *TrafficConfiguration) error {
 
 // loadConfiguration loads configuration from a JSON file
 func loadConfiguration(filename string) (*TrafficConfiguration, error) {
+	// #nosec G304 - filename is controlled by application, not user input
 	data, err := os.ReadFile(filename)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read config file: %w", err)

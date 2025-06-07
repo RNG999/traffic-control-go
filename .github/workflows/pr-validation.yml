@@ -1,0 +1,115 @@
+name: PR Validation
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize]
+
+jobs:
+  validate-issue-link:
+    runs-on: ubuntu-latest
+    name: Validate Issue Link
+    steps:
+      - name: Check for Issue Reference
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { context } = require('@actions/github');
+            const title = context.payload.pull_request.title;
+            const body = context.payload.pull_request.body || '';
+            
+            // Issue番号の正規表現パターン
+            const issuePatterns = [
+              /(?:close|closes|closed|fix|fixes|fixed|resolve|resolves|resolved)\s+#\d+/gi,
+              /(?:close|closes|closed|fix|fixes|fixed|resolve|resolves|resolved)\s+https:\/\/github\.com\/[^\/]+\/[^\/]+\/issues\/\d+/gi,
+              /#\d+/g  // シンプルな #123 形式も許可
+            ];
+            
+            let hasIssueReference = false;
+            let foundReferences = [];
+            
+            // タイトルと本文をチェック
+            const textToCheck = title + ' ' + body;
+            
+            for (const pattern of issuePatterns) {
+              const matches = textToCheck.match(pattern);
+              if (matches) {
+                hasIssueReference = true;
+                foundReferences = foundReferences.concat(matches);
+              }
+            }
+            
+            console.log('PR Title:', title);
+            console.log('PR Body:', body);
+            console.log('Found Issue References:', foundReferences);
+            
+            if (!hasIssueReference) {
+              core.setFailed(
+                '❌ PR must reference an issue number.\n\n' +
+                'Please include one of the following in your PR title or description:\n' +
+                '• "Fixes #123" - Automatically closes the issue when PR is merged\n' +
+                '• "Closes #123" - Automatically closes the issue when PR is merged\n' +
+                '• "Resolves #123" - Automatically closes the issue when PR is merged\n' +
+                '• "#123" - References the issue without auto-closing\n\n' +
+                'This ensures proper issue tracking and project management.'
+              );
+            } else {
+              console.log('✅ Issue reference found:', foundReferences.join(', '));
+              core.notice(`✅ Found issue references: ${foundReferences.join(', ')}`);
+            }
+
+  validate-pr-format:
+    runs-on: ubuntu-latest
+    name: Validate PR Format
+    steps:
+      - name: Check PR Title Format
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { context } = require('@actions/github');
+            const title = context.payload.pull_request.title;
+            
+            // 推奨されるPRタイトル形式をチェック
+            const validPrefixes = [
+              'feat:', 'fix:', 'docs:', 'style:', 'refactor:', 
+              'test:', 'chore:', 'ci:', 'build:', 'perf:'
+            ];
+            
+            const hasValidPrefix = validPrefixes.some(prefix => 
+              title.toLowerCase().startsWith(prefix)
+            );
+            
+            if (!hasValidPrefix) {
+              core.warning(
+                '⚠️ Consider using conventional commit format for PR title.\n\n' +
+                'Recommended formats:\n' +
+                '• feat: add new feature\n' +
+                '• fix: resolve bug\n' +
+                '• docs: update documentation\n' +
+                '• refactor: improve code structure\n' +
+                '• test: add or update tests\n' +
+                '• chore: maintenance tasks\n\n' +
+                'Current title: ' + title
+              );
+            } else {
+              console.log('✅ PR title follows conventional commit format');
+            }
+
+      - name: Check PR Description
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { context } = require('@actions/github');
+            const body = context.payload.pull_request.body || '';
+            
+            if (body.length < 20) {
+              core.warning(
+                '⚠️ PR description is very short.\n\n' +
+                'Consider adding:\n' +
+                '• What changes were made\n' +
+                '• Why these changes were necessary\n' +
+                '• How to test the changes\n' +
+                '• Any breaking changes or dependencies'
+              );
+            } else {
+              console.log('✅ PR has adequate description');
+            }

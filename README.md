@@ -346,7 +346,41 @@ sudo make test-integration  # Integration tests (requires root)
 # Format and lint
 make fmt
 make lint
+```
 
+### GitHub Automation 🤖
+
+This project uses comprehensive GitHub Actions for automated project management:
+
+#### PR Requirements
+- **Issue Linking Required**: All PRs must reference an issue using:
+  - `Fixes #123` (auto-closes on merge) 
+  - `Closes #123` (auto-closes on merge)
+  - `Resolves #123` (auto-closes on merge)
+  - `#123` (reference only)
+
+#### Automated Workflows
+- **PR Validation**: Checks issue references and format on PR creation
+- **CI Integration**: Full test suite with automatic notifications
+- **Issue Management**: Auto-close issues when CI passes after PR merge
+- **Project Tracking**: Links PRs and issues for complete traceability
+
+#### Issue Commands
+Comment in any issue to trigger actions:
+```
+/close or /done    - Mark issue as completed
+/reopen           - Reopen a closed issue  
+/help            - Show available commands
+```
+
+#### Issue Templates
+- 🐛 **Bug Report**: Structured bug reporting with reproduction steps
+- ✨ **Feature Request**: Feature proposals with use cases and priority
+- 📋 **Task/Improvement**: Development tasks with acceptance criteria
+
+For details, see [GitHub Automation Guide](docs/github-automation.md).
+
+```bash
 # Run all quality checks
 make check
 ```

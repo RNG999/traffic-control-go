@@ -1,0 +1,91 @@
+name: 📋 Task/Improvement
+description: General development task or improvement
+title: "task: "
+labels: ["task", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this template for development tasks, improvements, or maintenance work.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: 📝 Task Description
+      description: Describe what needs to be done
+      placeholder: Clear description of the task or improvement...
+    validations:
+      required: true
+
+  - type: dropdown
+    id: category
+    attributes:
+      label: 🏷️ Category
+      description: What type of task is this?
+      options:
+        - Documentation
+        - Testing
+        - Performance
+        - Refactoring
+        - CI/CD
+        - Security
+        - Maintenance
+        - Other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: 📊 Priority
+      description: How urgent is this task?
+      options:
+        - High - Should be done soon
+        - Medium - Can be scheduled
+        - Low - When time permits
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance-criteria
+    attributes:
+      label: ✅ Acceptance Criteria
+      description: How will we know when this task is complete?
+      placeholder: |
+        - [ ] Criterion 1
+        - [ ] Criterion 2
+        - [ ] Criterion 3
+    validations:
+      required: true
+
+  - type: textarea
+    id: technical-notes
+    attributes:
+      label: 🔧 Technical Notes
+      description: Any technical details, implementation notes, or constraints
+      placeholder: Technical considerations, dependencies, etc.
+
+  - type: input
+    id: estimated-effort
+    attributes:
+      label: ⏱️ Estimated Effort
+      description: Rough estimate of effort required
+      placeholder: e.g., 1-2 hours, half day, 1 week
+
+  - type: textarea
+    id: context
+    attributes:
+      label: 📋 Additional Context
+      description: Any other relevant information
+      placeholder: Background information, related issues, etc.
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: ✅ Checklist
+      description: Please confirm the following
+      options:
+        - label: I have provided clear acceptance criteria
+          required: true
+        - label: I have checked for related existing issues
+          required: true

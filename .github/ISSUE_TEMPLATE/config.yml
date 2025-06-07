@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 📚 Documentation
+    url: https://github.com/RNG999/traffic-control-go/blob/main/README.md
+    about: Check the documentation first for usage examples and API reference
+  - name: 💬 Discussions
+    url: https://github.com/RNG999/traffic-control-go/discussions
+    about: Ask questions, share ideas, or discuss the project with the community
+  - name: 🚨 Security Issue
+    url: https://github.com/RNG999/traffic-control-go/security/advisories/new
+    about: Report security vulnerabilities privately

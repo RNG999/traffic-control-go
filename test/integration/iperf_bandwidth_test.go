@@ -235,7 +235,7 @@ func TestMultipleClassesConcurrent(t *testing.T) {
 		t.Skip("Skipping concurrent test in short mode")
 	}
 
-	if os.Getenv("CI") != "true" && os.Geteuid() != 0 {
+	if os.Geteuid() != 0 {
 		t.Skip("Test requires root privileges")
 	}
 
@@ -243,21 +243,22 @@ func TestMultipleClassesConcurrent(t *testing.T) {
 		t.Skip("iperf3 not installed, skipping test")
 	}
 
-	device := findTestInterface(t)
-	if device == "" {
-		t.Skip("No suitable network interface found for testing")
-	}
+	// Create veth pair for proper network testing
+	_, cleanup := setupIperfVethPair(t, "concurrent")
+	defer cleanup()
+	
+	device := "concurrent"
 
 	// Start iperf3 servers on different ports
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	// Server 1 on port 5201
-	server1 := exec.CommandContext(ctx, "iperf3", "-s", "-p", "5201", "-1")
+	// Server 1 on port 5201 (bind to veth peer IP)
+	server1 := exec.CommandContext(ctx, "iperf3", "-s", "-B", "10.0.1.2", "-p", "5201", "-1")
 	go func() { _ = server1.Run() }()
 
-	// Server 2 on port 5202
-	server2 := exec.CommandContext(ctx, "iperf3", "-s", "-p", "5202", "-1")
+	// Server 2 on port 5202 (bind to veth peer IP)
+	server2 := exec.CommandContext(ctx, "iperf3", "-s", "-B", "10.0.1.2", "-p", "5202", "-1")
 	go func() { _ = server2.Run() }()
 
 	time.Sleep(2 * time.Second)
@@ -293,7 +294,7 @@ func TestMultipleClassesConcurrent(t *testing.T) {
 	// High priority traffic
 	go func() {
 		defer wg.Done()
-		cmd := exec.Command("iperf3", "-c", "localhost", "-p", "5201", "-t", "10", "-f", "m")
+		cmd := exec.Command("iperf3", "-c", "10.0.1.2", "-p", "5201", "-t", "10", "-f", "m")
 		output, err := cmd.CombinedOutput()
 		if err != nil {
 			highErr = err
@@ -307,7 +308,7 @@ func TestMultipleClassesConcurrent(t *testing.T) {
 		defer wg.Done()
 		// Start slightly later to ensure both are running concurrently
 		time.Sleep(1 * time.Second)
-		cmd := exec.Command("iperf3", "-c", "localhost", "-p", "5202", "-t", "8", "-f", "m")
+		cmd := exec.Command("iperf3", "-c", "10.0.1.2", "-p", "5202", "-t", "8", "-f", "m")
 		output, err := cmd.CombinedOutput()
 		if err != nil {
 			lowErr = err

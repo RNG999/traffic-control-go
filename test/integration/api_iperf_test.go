@@ -103,6 +103,11 @@ func TestAPIWithIperf3BandwidthLimiting(t *testing.T) {
 		t.Skip("iperf3 not installed, skipping bandwidth test")
 	}
 	
+	// Skip iperf3 tests in CI environment due to virtualization limitations
+	if os.Getenv("CI") == "true" {
+		t.Skip("Skipping iperf3 bandwidth tests in CI environment")
+	}
+	
 	t.Run("Basic Bandwidth Limiting", func(t *testing.T) {
 		// Create veth pair with IPs
 		_, cleanup := setupIperfVethPair(t, "bw-test")
@@ -304,6 +309,11 @@ func TestAPIPerformanceWithIperf3(t *testing.T) {
 	
 	if _, err := exec.LookPath("iperf3"); err != nil {
 		t.Skip("iperf3 not installed")
+	}
+	
+	// Skip iperf3 tests in CI environment due to virtualization limitations  
+	if os.Getenv("CI") == "true" {
+		t.Skip("Skipping iperf3 performance tests in CI environment")
 	}
 	
 	t.Run("API Response Time Under Load", func(t *testing.T) {

@@ -37,6 +37,17 @@ jobs:
                   
                   console.log(`Timeline events found: ${timelineEvents.length}`);
                   
+                  // デバッグ: 全イベントの詳細をログ
+                  timelineEvents.forEach((event, index) => {
+                    console.log(`Event ${index + 1}: type="${event.event}", actor="${event.actor?.login}", created="${event.created_at}"`);
+                    if (event.source) {
+                      console.log(`  - Source: type="${event.source.type}", issue=${!!event.source.issue}`);
+                      if (event.source.issue) {
+                        console.log(`  - Issue: #${event.source.issue.number} "${event.source.issue.title}"`);
+                      }
+                    }
+                  });
+                  
                   // connected/cross-referencedイベントからIssue番号を抽出
                   for (const event of timelineEvents) {
                     if ((event.event === 'connected' || event.event === 'cross-referenced') && 

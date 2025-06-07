@@ -14,7 +14,8 @@ type CommandHandler interface {
 	Handle(ctx context.Context, command interface{}) error
 }
 
-// GenericCommandHandler defines a type-safe command handler interface using generics
+// GenericCommandHandler defines a type-safe command handler interface using Go generics.
+// This provides compile-time type safety and eliminates runtime type assertions.
 type GenericCommandHandler[T any] interface {
 	HandleTyped(ctx context.Context, command T) error
 }
@@ -49,7 +50,8 @@ func NewCommandHandlerWrapper[T any](handler GenericCommandHandler[T], logger lo
 	}
 }
 
-// CommandBus provides type-safe command execution capabilities
+// CommandBus provides type-safe command execution capabilities using Go generics.
+// It bridges type-safe handlers with the legacy interface for backward compatibility.
 type CommandBus struct {
 	handlers map[reflect.Type]CommandHandler
 	mu       sync.RWMutex

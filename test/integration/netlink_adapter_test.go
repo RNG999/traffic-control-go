@@ -1,7 +1,7 @@
-//go:build ignore
-// +build ignore
+//go:build integration
+// +build integration
 
-package integration
+package integration_test
 
 import (
 	"testing"

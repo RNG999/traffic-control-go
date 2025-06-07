@@ -8,12 +8,12 @@ import (
 
 	nl "github.com/vishvananda/netlink"
 
-	"github.com/rng999/traffic-control-go/internal/domain/valueobjects"
+	"github.com/rng999/traffic-control-go/pkg/tc"
 	"github.com/rng999/traffic-control-go/pkg/types"
 )
 
 // GetDetailedQdiscStats returns detailed statistics for a qdisc
-func (a *RealNetlinkAdapter) GetDetailedQdiscStats(device valueobjects.DeviceName, handle valueobjects.Handle) types.Result[DetailedQdiscStats] {
+func (a *RealNetlinkAdapter) GetDetailedQdiscStats(device tc.DeviceName, handle tc.Handle) types.Result[DetailedQdiscStats] {
 	// Get the network link
 	link, err := nl.LinkByName(device.String())
 	if err != nil {
@@ -66,7 +66,7 @@ func (a *RealNetlinkAdapter) GetDetailedQdiscStats(device valueobjects.DeviceNam
 }
 
 // GetDetailedClassStats returns detailed statistics for a class
-func (a *RealNetlinkAdapter) GetDetailedClassStats(device valueobjects.DeviceName, handle valueobjects.Handle) types.Result[DetailedClassStats] {
+func (a *RealNetlinkAdapter) GetDetailedClassStats(device tc.DeviceName, handle tc.Handle) types.Result[DetailedClassStats] {
 	// Get the network link
 	link, err := nl.LinkByName(device.String())
 	if err != nil {

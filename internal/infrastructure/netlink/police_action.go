@@ -8,17 +8,17 @@ import (
 
 	nl "github.com/vishvananda/netlink"
 
-	"github.com/rng999/traffic-control-go/internal/domain/valueobjects"
+	"github.com/rng999/traffic-control-go/pkg/tc"
 	"github.com/rng999/traffic-control-go/pkg/types"
 )
 
 // PoliceAction represents a policing action
 type PoliceAction struct {
-	Rate     valueobjects.Bandwidth  // Rate limit
-	Burst    uint32                  // Burst size in bytes
-	MTU      uint32                  // MTU
-	Action   PoliceActionType        // Action when exceeded
-	PeakRate *valueobjects.Bandwidth // Optional peak rate
+	Rate     tc.Bandwidth     // Rate limit
+	Burst    uint32           // Burst size in bytes
+	MTU      uint32           // MTU
+	Action   PoliceActionType // Action when exceeded
+	PeakRate *tc.Bandwidth    // Optional peak rate
 }
 
 // PoliceActionType represents the action to take when rate is exceeded
@@ -33,7 +33,7 @@ const (
 )
 
 // AddPoliceFilter adds a filter with police action
-func (a *RealNetlinkAdapter) AddPoliceFilter(device valueobjects.DeviceName, parent valueobjects.Handle, priority uint16, police PoliceAction) types.Result[Unit] {
+func (a *RealNetlinkAdapter) AddPoliceFilter(device tc.DeviceName, parent tc.Handle, priority uint16, police PoliceAction) types.Result[Unit] {
 	// Get the network link
 	link, err := nl.LinkByName(device.String())
 	if err != nil {

@@ -8,12 +8,12 @@ import (
 	chandlers "github.com/rng999/traffic-control-go/internal/commands/handlers"
 	"github.com/rng999/traffic-control-go/internal/commands/models"
 	"github.com/rng999/traffic-control-go/internal/domain/events"
-	"github.com/rng999/traffic-control-go/internal/domain/valueobjects"
 	"github.com/rng999/traffic-control-go/internal/infrastructure/eventstore"
 	"github.com/rng999/traffic-control-go/internal/infrastructure/netlink"
 	"github.com/rng999/traffic-control-go/internal/projections"
 	qmodels "github.com/rng999/traffic-control-go/internal/queries/models"
 	"github.com/rng999/traffic-control-go/pkg/logging"
+	"github.com/rng999/traffic-control-go/pkg/tc"
 )
 
 // TrafficControlService is the main application service that coordinates
@@ -251,7 +251,7 @@ func (s *TrafficControlService) GetConfiguration(ctx context.Context, device str
 
 // GetDeviceStatistics retrieves comprehensive statistics for a device
 func (s *TrafficControlService) GetDeviceStatistics(ctx context.Context, device string) (*qmodels.DeviceStatisticsView, error) {
-	deviceName, err := valueobjects.NewDevice(device)
+	deviceName, err := tc.NewDevice(device)
 	if err != nil {
 		return nil, fmt.Errorf("invalid device name: %w", err)
 	}
@@ -273,7 +273,7 @@ func (s *TrafficControlService) GetDeviceStatistics(ctx context.Context, device 
 
 // GetQdiscStatistics retrieves statistics for a specific qdisc
 func (s *TrafficControlService) GetQdiscStatistics(ctx context.Context, device string, handle string) (*qmodels.QdiscStatisticsView, error) {
-	deviceName, err := valueobjects.NewDevice(device)
+	deviceName, err := tc.NewDevice(device)
 	if err != nil {
 		return nil, fmt.Errorf("invalid device name: %w", err)
 	}
@@ -300,7 +300,7 @@ func (s *TrafficControlService) GetQdiscStatistics(ctx context.Context, device s
 
 // GetClassStatistics retrieves statistics for a specific class
 func (s *TrafficControlService) GetClassStatistics(ctx context.Context, device string, handle string) (*qmodels.ClassStatisticsView, error) {
-	deviceName, err := valueobjects.NewDevice(device)
+	deviceName, err := tc.NewDevice(device)
 	if err != nil {
 		return nil, fmt.Errorf("invalid device name: %w", err)
 	}
@@ -327,7 +327,7 @@ func (s *TrafficControlService) GetClassStatistics(ctx context.Context, device s
 
 // GetRealtimeStatistics retrieves real-time statistics without using read models
 func (s *TrafficControlService) GetRealtimeStatistics(ctx context.Context, device string) (*qmodels.DeviceStatisticsView, error) {
-	deviceName, err := valueobjects.NewDevice(device)
+	deviceName, err := tc.NewDevice(device)
 	if err != nil {
 		return nil, fmt.Errorf("invalid device name: %w", err)
 	}
@@ -357,13 +357,13 @@ func (s *TrafficControlService) MonitorStatistics(ctx context.Context, device st
 }
 
 // parseHandle converts string handle to valueobject (helper function)
-func parseHandle(handleStr string) (valueobjects.Handle, error) {
+func parseHandle(handleStr string) (tc.Handle, error) {
 	var major, minor uint16
 	n, err := fmt.Sscanf(handleStr, "%x:%x", &major, &minor)
 	if err != nil || n != 2 {
-		return valueobjects.Handle{}, fmt.Errorf("invalid handle format: %s", handleStr)
+		return tc.Handle{}, fmt.Errorf("invalid handle format: %s", handleStr)
 	}
-	return valueobjects.NewHandle(major, minor), nil
+	return tc.NewHandle(major, minor), nil
 }
 
 // convertApplicationStatsToView converts application model to view model

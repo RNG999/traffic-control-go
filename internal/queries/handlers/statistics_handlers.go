@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/rng999/traffic-control-go/internal/domain/valueobjects"
 	"github.com/rng999/traffic-control-go/internal/infrastructure/netlink"
 	"github.com/rng999/traffic-control-go/internal/projections"
 	"github.com/rng999/traffic-control-go/internal/queries/models"
 	"github.com/rng999/traffic-control-go/pkg/logging"
+	"github.com/rng999/traffic-control-go/pkg/tc"
 	"github.com/rng999/traffic-control-go/pkg/types"
 )
 
@@ -92,7 +92,7 @@ func (s *StatisticsQueryService) GetDeviceStatistics(ctx context.Context, device
 		// Continue anyway - we can still get raw statistics
 	}
 
-	device, err := valueobjects.NewDevice(deviceName)
+	device, err := tc.NewDevice(deviceName)
 	if err != nil {
 		return nil, fmt.Errorf("invalid device name: %w", err)
 	}
@@ -190,7 +190,7 @@ func (s *StatisticsQueryService) GetDeviceStatistics(ctx context.Context, device
 
 // GetRealtimeStatistics gets real-time statistics without read model
 func (s *StatisticsQueryService) GetRealtimeStatistics(ctx context.Context, deviceName string) (*DeviceStatistics, error) {
-	device, err := valueobjects.NewDevice(deviceName)
+	device, err := tc.NewDevice(deviceName)
 	if err != nil {
 		return nil, fmt.Errorf("invalid device name: %w", err)
 	}
@@ -233,13 +233,13 @@ func (s *StatisticsQueryService) GetRealtimeStatistics(ctx context.Context, devi
 }
 
 // parseHandle converts string handle to valueobject
-func parseHandle(handleStr string) (valueobjects.Handle, error) {
+func parseHandle(handleStr string) (tc.Handle, error) {
 	var major, minor uint16
 	n, err := fmt.Sscanf(handleStr, "%x:%x", &major, &minor)
 	if err != nil || n != 2 {
-		return valueobjects.Handle{}, fmt.Errorf("invalid handle format: %s", handleStr)
+		return tc.Handle{}, fmt.Errorf("invalid handle format: %s", handleStr)
 	}
-	return valueobjects.NewHandle(major, minor), nil
+	return tc.NewHandle(major, minor), nil
 }
 
 // GetDeviceStatisticsHandler handles queries for device statistics

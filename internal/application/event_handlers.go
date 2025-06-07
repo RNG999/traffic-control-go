@@ -6,15 +6,15 @@ import (
 
 	"github.com/rng999/traffic-control-go/internal/domain/entities"
 	"github.com/rng999/traffic-control-go/internal/domain/events"
-	"github.com/rng999/traffic-control-go/internal/domain/valueobjects"
 	"github.com/rng999/traffic-control-go/pkg/logging"
+	"github.com/rng999/traffic-control-go/pkg/tc"
 )
 
 // handleQdiscCreated handles QdiscCreated events and applies them to netlink
 func (s *TrafficControlService) handleQdiscCreated(ctx context.Context, event interface{}) error {
 	// Type assert to the event types we expect
-	var device valueobjects.DeviceName
-	var handle valueobjects.Handle
+	var device tc.DeviceName
+	var handle tc.Handle
 	var qdiscType entities.QdiscType
 	var defaultClass string
 
@@ -43,7 +43,7 @@ func (s *TrafficControlService) handleQdiscCreated(ctx context.Context, event in
 	switch qdiscType {
 	case entities.QdiscTypeHTB:
 		// Parse default class handle
-		defaultHandle, err := valueobjects.ParseHandle(defaultClass)
+		defaultHandle, err := tc.ParseHandle(defaultClass)
 		if err != nil {
 			return fmt.Errorf("invalid default class handle: %w", err)
 		}

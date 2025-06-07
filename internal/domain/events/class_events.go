@@ -2,21 +2,21 @@ package events
 
 import (
 	"github.com/rng999/traffic-control-go/internal/domain/entities"
-	"github.com/rng999/traffic-control-go/internal/domain/valueobjects"
+	"github.com/rng999/traffic-control-go/pkg/tc"
 )
 
 // ClassCreatedEvent is emitted when a traffic class is created
 type ClassCreatedEvent struct {
 	BaseEvent
-	DeviceName valueobjects.DeviceName
-	Handle     valueobjects.Handle
-	Parent     valueobjects.Handle
+	DeviceName tc.DeviceName
+	Handle     tc.Handle
+	Parent     tc.Handle
 	Name       string
 	Priority   entities.Priority
 }
 
 // NewClassCreatedEvent creates a new ClassCreatedEvent
-func NewClassCreatedEvent(aggregateID string, version int, device valueobjects.DeviceName, handle valueobjects.Handle, parent valueobjects.Handle, name string, priority entities.Priority) *ClassCreatedEvent {
+func NewClassCreatedEvent(aggregateID string, version int, device tc.DeviceName, handle tc.Handle, parent tc.Handle, name string, priority entities.Priority) *ClassCreatedEvent {
 	return &ClassCreatedEvent{
 		BaseEvent:  NewBaseEvent(aggregateID, "ClassCreated", version),
 		DeviceName: device,
@@ -30,18 +30,18 @@ func NewClassCreatedEvent(aggregateID string, version int, device valueobjects.D
 // HTBClassCreatedEvent is emitted when an HTB class is created
 type HTBClassCreatedEvent struct {
 	BaseEvent
-	DeviceName valueobjects.DeviceName
-	Handle     valueobjects.Handle
-	Parent     valueobjects.Handle
+	DeviceName tc.DeviceName
+	Handle     tc.Handle
+	Parent     tc.Handle
 	Name       string
-	Rate       valueobjects.Bandwidth
-	Ceil       valueobjects.Bandwidth
+	Rate       tc.Bandwidth
+	Ceil       tc.Bandwidth
 	Burst      uint32
 	Cburst     uint32
 }
 
 // NewHTBClassCreatedEvent creates a new HTBClassCreatedEvent
-func NewHTBClassCreatedEvent(aggregateID string, version int, device valueobjects.DeviceName, handle valueobjects.Handle, parent valueobjects.Handle, name string, rate valueobjects.Bandwidth, ceil valueobjects.Bandwidth) *HTBClassCreatedEvent {
+func NewHTBClassCreatedEvent(aggregateID string, version int, device tc.DeviceName, handle tc.Handle, parent tc.Handle, name string, rate tc.Bandwidth, ceil tc.Bandwidth) *HTBClassCreatedEvent {
 	return &HTBClassCreatedEvent{
 		BaseEvent:  NewBaseEvent(aggregateID, "HTBClassCreated", version),
 		DeviceName: device,
@@ -56,12 +56,12 @@ func NewHTBClassCreatedEvent(aggregateID string, version int, device valueobject
 // ClassDeletedEvent is emitted when a class is deleted
 type ClassDeletedEvent struct {
 	BaseEvent
-	DeviceName valueobjects.DeviceName
-	Handle     valueobjects.Handle
+	DeviceName tc.DeviceName
+	Handle     tc.Handle
 }
 
 // NewClassDeletedEvent creates a new ClassDeletedEvent
-func NewClassDeletedEvent(aggregateID string, version int, device valueobjects.DeviceName, handle valueobjects.Handle) *ClassDeletedEvent {
+func NewClassDeletedEvent(aggregateID string, version int, device tc.DeviceName, handle tc.Handle) *ClassDeletedEvent {
 	return &ClassDeletedEvent{
 		BaseEvent:  NewBaseEvent(aggregateID, "ClassDeleted", version),
 		DeviceName: device,
@@ -72,13 +72,13 @@ func NewClassDeletedEvent(aggregateID string, version int, device valueobjects.D
 // ClassModifiedEvent is emitted when a class is modified
 type ClassModifiedEvent struct {
 	BaseEvent
-	DeviceName valueobjects.DeviceName
-	Handle     valueobjects.Handle
+	DeviceName tc.DeviceName
+	Handle     tc.Handle
 	Changes    map[string]interface{}
 }
 
 // NewClassModifiedEvent creates a new ClassModifiedEvent
-func NewClassModifiedEvent(aggregateID string, version int, device valueobjects.DeviceName, handle valueobjects.Handle, changes map[string]interface{}) *ClassModifiedEvent {
+func NewClassModifiedEvent(aggregateID string, version int, device tc.DeviceName, handle tc.Handle, changes map[string]interface{}) *ClassModifiedEvent {
 	// Create a copy of changes to ensure immutability
 	changesCopy := make(map[string]interface{})
 	for k, v := range changes {
@@ -96,14 +96,14 @@ func NewClassModifiedEvent(aggregateID string, version int, device valueobjects.
 // ClassPriorityChangedEvent is emitted when a class priority is changed
 type ClassPriorityChangedEvent struct {
 	BaseEvent
-	DeviceName  valueobjects.DeviceName
-	Handle      valueobjects.Handle
+	DeviceName  tc.DeviceName
+	Handle      tc.Handle
 	OldPriority entities.Priority
 	NewPriority entities.Priority
 }
 
 // NewClassPriorityChangedEvent creates a new ClassPriorityChangedEvent
-func NewClassPriorityChangedEvent(aggregateID string, version int, device valueobjects.DeviceName, handle valueobjects.Handle, oldPriority, newPriority entities.Priority) *ClassPriorityChangedEvent {
+func NewClassPriorityChangedEvent(aggregateID string, version int, device tc.DeviceName, handle tc.Handle, oldPriority, newPriority entities.Priority) *ClassPriorityChangedEvent {
 	return &ClassPriorityChangedEvent{
 		BaseEvent:   NewBaseEvent(aggregateID, "ClassPriorityChanged", version),
 		DeviceName:  device,

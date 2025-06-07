@@ -8,21 +8,21 @@ import (
 
 	nl "github.com/vishvananda/netlink"
 
-	"github.com/rng999/traffic-control-go/internal/domain/valueobjects"
+	"github.com/rng999/traffic-control-go/pkg/tc"
 	"github.com/rng999/traffic-control-go/pkg/types"
 )
 
 // FwFilterConfig represents a firewall mark filter configuration
 type FwFilterConfig struct {
-	Parent   valueobjects.Handle
+	Parent   tc.Handle
 	Priority uint16
-	Mark     uint32              // Firewall mark value
-	Mask     uint32              // Mark mask (optional)
-	FlowID   valueobjects.Handle // Target class
+	Mark     uint32    // Firewall mark value
+	Mask     uint32    // Mark mask (optional)
+	FlowID   tc.Handle // Target class
 }
 
 // AddFwFilter adds a firewall mark filter
-func (a *RealNetlinkAdapter) AddFwFilter(device valueobjects.DeviceName, config FwFilterConfig) types.Result[Unit] {
+func (a *RealNetlinkAdapter) AddFwFilter(device tc.DeviceName, config FwFilterConfig) types.Result[Unit] {
 	// Get the network link
 	link, err := nl.LinkByName(device.String())
 	if err != nil {
@@ -62,7 +62,7 @@ func (a *RealNetlinkAdapter) AddFwFilter(device valueobjects.DeviceName, config 
 }
 
 // DeleteFwFilter deletes a firewall mark filter
-func (a *RealNetlinkAdapter) DeleteFwFilter(device valueobjects.DeviceName, parent valueobjects.Handle, priority uint16) types.Result[Unit] {
+func (a *RealNetlinkAdapter) DeleteFwFilter(device tc.DeviceName, parent tc.Handle, priority uint16) types.Result[Unit] {
 	// Get the network link
 	link, err := nl.LinkByName(device.String())
 	if err != nil {

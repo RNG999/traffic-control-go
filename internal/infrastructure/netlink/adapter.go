@@ -11,8 +11,8 @@ import (
 	"github.com/vishvananda/netlink"
 
 	"github.com/rng999/traffic-control-go/internal/domain/entities"
-	"github.com/rng999/traffic-control-go/internal/domain/valueobjects"
 	"github.com/rng999/traffic-control-go/pkg/logging"
+	"github.com/rng999/traffic-control-go/pkg/tc"
 	"github.com/rng999/traffic-control-go/pkg/types"
 )
 
@@ -78,7 +78,7 @@ func (a *RealNetlinkAdapter) AddQdisc(ctx context.Context, qdiscEntity *entities
 }
 
 // DeleteQdisc deletes a qdisc using netlink
-func (a *RealNetlinkAdapter) DeleteQdisc(device valueobjects.DeviceName, handle valueobjects.Handle) types.Result[Unit] {
+func (a *RealNetlinkAdapter) DeleteQdisc(device tc.DeviceName, handle tc.Handle) types.Result[Unit] {
 	// Get the network link
 	link, err := netlink.LinkByName(device.String())
 	if err != nil {
@@ -103,7 +103,7 @@ func (a *RealNetlinkAdapter) DeleteQdisc(device valueobjects.DeviceName, handle 
 }
 
 // GetQdiscs returns all qdiscs for a device
-func (a *RealNetlinkAdapter) GetQdiscs(device valueobjects.DeviceName) types.Result[[]QdiscInfo] {
+func (a *RealNetlinkAdapter) GetQdiscs(device tc.DeviceName) types.Result[[]QdiscInfo] {
 	// Get the network link
 	link, err := netlink.LinkByName(device.String())
 	if err != nil {
@@ -120,7 +120,7 @@ func (a *RealNetlinkAdapter) GetQdiscs(device valueobjects.DeviceName) types.Res
 	var result []QdiscInfo
 	for _, qdisc := range qdiscs {
 		info := QdiscInfo{
-			Handle: valueobjects.HandleFromUint32(qdisc.Attrs().Handle),
+			Handle: tc.HandleFromUint32(qdisc.Attrs().Handle),
 			Statistics: QdiscStats{
 				BytesSent:    0, // Actual stats would be retrieved differently
 				PacketsSent:  0, // Statistics struct differs across netlink versions
@@ -132,7 +132,7 @@ func (a *RealNetlinkAdapter) GetQdiscs(device valueobjects.DeviceName) types.Res
 
 		// Set parent if not root
 		if qdisc.Attrs().Parent != netlink.HANDLE_ROOT {
-			parent := valueobjects.HandleFromUint32(qdisc.Attrs().Parent)
+			parent := tc.HandleFromUint32(qdisc.Attrs().Parent)
 			info.Parent = &parent
 		}
 
@@ -220,7 +220,7 @@ func (a *RealNetlinkAdapter) AddClass(ctx context.Context, classEntity interface
 }
 
 // DeleteClass deletes a class using netlink
-func (a *RealNetlinkAdapter) DeleteClass(device valueobjects.DeviceName, handle valueobjects.Handle) types.Result[Unit] {
+func (a *RealNetlinkAdapter) DeleteClass(device tc.DeviceName, handle tc.Handle) types.Result[Unit] {
 	// Get the network link
 	link, err := netlink.LinkByName(device.String())
 	if err != nil {
@@ -244,7 +244,7 @@ func (a *RealNetlinkAdapter) DeleteClass(device valueobjects.DeviceName, handle 
 }
 
 // GetClasses returns all classes for a device
-func (a *RealNetlinkAdapter) GetClasses(device valueobjects.DeviceName) types.Result[[]ClassInfo] {
+func (a *RealNetlinkAdapter) GetClasses(device tc.DeviceName) types.Result[[]ClassInfo] {
 	// Get the network link
 	link, err := netlink.LinkByName(device.String())
 	if err != nil {
@@ -268,8 +268,8 @@ func (a *RealNetlinkAdapter) GetClasses(device valueobjects.DeviceName) types.Re
 
 		for _, class := range classes {
 			info := ClassInfo{
-				Handle: valueobjects.HandleFromUint32(class.Attrs().Handle),
-				Parent: valueobjects.HandleFromUint32(class.Attrs().Parent),
+				Handle: tc.HandleFromUint32(class.Attrs().Handle),
+				Parent: tc.HandleFromUint32(class.Attrs().Parent),
 				Statistics: ClassStats{
 					BytesSent:      0, // Actual stats would be retrieved differently
 					PacketsSent:    0, // Statistics struct differs across netlink versions
@@ -338,7 +338,7 @@ func (a *RealNetlinkAdapter) AddFilter(ctx context.Context, filterEntity *entiti
 }
 
 // DeleteFilter deletes a filter using netlink
-func (a *RealNetlinkAdapter) DeleteFilter(device valueobjects.DeviceName, parent valueobjects.Handle, priority uint16, handle valueobjects.Handle) types.Result[Unit] {
+func (a *RealNetlinkAdapter) DeleteFilter(device tc.DeviceName, parent tc.Handle, priority uint16, handle tc.Handle) types.Result[Unit] {
 	// Get the network link
 	link, err := netlink.LinkByName(device.String())
 	if err != nil {
@@ -363,7 +363,7 @@ func (a *RealNetlinkAdapter) DeleteFilter(device valueobjects.DeviceName, parent
 }
 
 // GetFilters returns all filters for a device
-func (a *RealNetlinkAdapter) GetFilters(device valueobjects.DeviceName) types.Result[[]FilterInfo] {
+func (a *RealNetlinkAdapter) GetFilters(device tc.DeviceName) types.Result[[]FilterInfo] {
 	// Get the network link
 	link, err := netlink.LinkByName(device.String())
 	if err != nil {
@@ -387,15 +387,15 @@ func (a *RealNetlinkAdapter) GetFilters(device valueobjects.DeviceName) types.Re
 
 		for _, filter := range filters {
 			info := FilterInfo{
-				Parent:   valueobjects.HandleFromUint32(filter.Attrs().Parent),
+				Parent:   tc.HandleFromUint32(filter.Attrs().Parent),
 				Priority: filter.Attrs().Priority,
-				Handle:   valueobjects.HandleFromUint32(filter.Attrs().Handle),
+				Handle:   tc.HandleFromUint32(filter.Attrs().Handle),
 				Protocol: convertProtocolBack(filter.Attrs().Protocol),
 			}
 
 			// Handle U32 filters
 			if u32, ok := filter.(*netlink.U32); ok {
-				info.FlowID = valueobjects.HandleFromUint32(u32.ClassId)
+				info.FlowID = tc.HandleFromUint32(u32.ClassId)
 				// Extract matches - this is simplified
 				// Real implementation would need to parse U32 sel
 			}

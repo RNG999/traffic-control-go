@@ -2,17 +2,17 @@ package events
 
 import (
 	"github.com/rng999/traffic-control-go/internal/domain/entities"
-	"github.com/rng999/traffic-control-go/internal/domain/valueobjects"
+	"github.com/rng999/traffic-control-go/pkg/tc"
 )
 
 // FilterCreatedEvent is emitted when a filter is created
 type FilterCreatedEvent struct {
 	BaseEvent
-	DeviceName valueobjects.DeviceName
-	Parent     valueobjects.Handle
+	DeviceName tc.DeviceName
+	Parent     tc.Handle
 	Priority   uint16
-	Handle     valueobjects.Handle
-	FlowID     valueobjects.Handle
+	Handle     tc.Handle
+	FlowID     tc.Handle
 	Protocol   entities.Protocol
 	Matches    []MatchData
 }
@@ -24,7 +24,7 @@ type MatchData struct {
 }
 
 // NewFilterCreatedEvent creates a new FilterCreatedEvent
-func NewFilterCreatedEvent(aggregateID string, version int, device valueobjects.DeviceName, parent valueobjects.Handle, priority uint16, handle valueobjects.Handle, flowID valueobjects.Handle) *FilterCreatedEvent {
+func NewFilterCreatedEvent(aggregateID string, version int, device tc.DeviceName, parent tc.Handle, priority uint16, handle tc.Handle, flowID tc.Handle) *FilterCreatedEvent {
 	return &FilterCreatedEvent{
 		BaseEvent:  NewBaseEvent(aggregateID, "FilterCreated", version),
 		DeviceName: device,
@@ -48,14 +48,14 @@ func (e *FilterCreatedEvent) AddMatch(matchType entities.MatchType, value string
 // FilterDeletedEvent is emitted when a filter is deleted
 type FilterDeletedEvent struct {
 	BaseEvent
-	DeviceName valueobjects.DeviceName
-	Parent     valueobjects.Handle
+	DeviceName tc.DeviceName
+	Parent     tc.Handle
 	Priority   uint16
-	Handle     valueobjects.Handle
+	Handle     tc.Handle
 }
 
 // NewFilterDeletedEvent creates a new FilterDeletedEvent
-func NewFilterDeletedEvent(aggregateID string, version int, device valueobjects.DeviceName, parent valueobjects.Handle, priority uint16, handle valueobjects.Handle) *FilterDeletedEvent {
+func NewFilterDeletedEvent(aggregateID string, version int, device tc.DeviceName, parent tc.Handle, priority uint16, handle tc.Handle) *FilterDeletedEvent {
 	return &FilterDeletedEvent{
 		BaseEvent:  NewBaseEvent(aggregateID, "FilterDeleted", version),
 		DeviceName: device,
@@ -68,16 +68,16 @@ func NewFilterDeletedEvent(aggregateID string, version int, device valueobjects.
 // FilterModifiedEvent is emitted when a filter is modified
 type FilterModifiedEvent struct {
 	BaseEvent
-	DeviceName valueobjects.DeviceName
-	Parent     valueobjects.Handle
+	DeviceName tc.DeviceName
+	Parent     tc.Handle
 	Priority   uint16
-	Handle     valueobjects.Handle
-	NewFlowID  *valueobjects.Handle
+	Handle     tc.Handle
+	NewFlowID  *tc.Handle
 	NewMatches []MatchData
 }
 
 // NewFilterModifiedEvent creates a new FilterModifiedEvent
-func NewFilterModifiedEvent(aggregateID string, version int, device valueobjects.DeviceName, parent valueobjects.Handle, priority uint16, handle valueobjects.Handle) *FilterModifiedEvent {
+func NewFilterModifiedEvent(aggregateID string, version int, device tc.DeviceName, parent tc.Handle, priority uint16, handle tc.Handle) *FilterModifiedEvent {
 	return &FilterModifiedEvent{
 		BaseEvent:  NewBaseEvent(aggregateID, "FilterModified", version),
 		DeviceName: device,
@@ -89,7 +89,7 @@ func NewFilterModifiedEvent(aggregateID string, version int, device valueobjects
 }
 
 // SetNewFlowID sets a new flow ID
-func (e *FilterModifiedEvent) SetNewFlowID(flowID valueobjects.Handle) {
+func (e *FilterModifiedEvent) SetNewFlowID(flowID tc.Handle) {
 	e.NewFlowID = &flowID
 }
 

@@ -1,12 +1,12 @@
 package models
 
 import (
-	"github.com/rng999/traffic-control-go/internal/domain/valueobjects"
+	"github.com/rng999/traffic-control-go/pkg/tc"
 )
 
 // Command is the base interface for all commands
 type Command interface {
-	DeviceName() valueobjects.DeviceName
+	DeviceName() tc.DeviceName
 }
 
 // CreateHTBQdiscCommand creates an HTB qdisc
@@ -67,12 +67,12 @@ type CreateFilterCommand struct {
 
 // DeleteQdiscCommand deletes a qdisc
 type DeleteQdiscCommand struct {
-	deviceName valueobjects.DeviceName
-	handle     valueobjects.Handle
+	deviceName tc.DeviceName
+	handle     tc.Handle
 }
 
 // NewDeleteQdiscCommand creates a new DeleteQdiscCommand
-func NewDeleteQdiscCommand(deviceName valueobjects.DeviceName, handle valueobjects.Handle) *DeleteQdiscCommand {
+func NewDeleteQdiscCommand(deviceName tc.DeviceName, handle tc.Handle) *DeleteQdiscCommand {
 	return &DeleteQdiscCommand{
 		deviceName: deviceName,
 		handle:     handle,
@@ -80,11 +80,11 @@ func NewDeleteQdiscCommand(deviceName valueobjects.DeviceName, handle valueobjec
 }
 
 // DeviceName returns the device name
-func (c *DeleteQdiscCommand) DeviceName() valueobjects.DeviceName {
+func (c *DeleteQdiscCommand) DeviceName() tc.DeviceName {
 	return c.deviceName
 }
 
 // Handle returns the qdisc handle
-func (c *DeleteQdiscCommand) Handle() valueobjects.Handle {
+func (c *DeleteQdiscCommand) Handle() tc.Handle {
 	return c.handle
 }

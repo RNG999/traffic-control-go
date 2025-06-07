@@ -1,4 +1,4 @@
-package valueobjects
+package tc
 
 import (
 	"fmt"

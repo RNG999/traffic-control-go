@@ -6,17 +6,17 @@ import (
 	"time"
 
 	"github.com/rng999/traffic-control-go/internal/application"
-	"github.com/rng999/traffic-control-go/internal/domain/valueobjects"
 	"github.com/rng999/traffic-control-go/internal/infrastructure/eventstore"
 	"github.com/rng999/traffic-control-go/internal/infrastructure/netlink"
 	qmodels "github.com/rng999/traffic-control-go/internal/queries/models"
 	"github.com/rng999/traffic-control-go/pkg/logging"
+	"github.com/rng999/traffic-control-go/pkg/tc"
 )
 
 // TrafficController is the main entry point for traffic control configuration
 type TrafficController struct {
 	deviceName      string
-	totalBandwidth  valueobjects.Bandwidth
+	totalBandwidth  tc.Bandwidth
 	classes         []*TrafficClass
 	pendingBuilders []*TrafficClassBuilder
 	logger          logging.Logger
@@ -26,8 +26,8 @@ type TrafficController struct {
 // TrafficClass represents a traffic classification with its rules
 type TrafficClass struct {
 	name                string
-	guaranteedBandwidth valueobjects.Bandwidth
-	maxBandwidth        valueobjects.Bandwidth
+	guaranteedBandwidth tc.Bandwidth
+	maxBandwidth        tc.Bandwidth
 	priority            *Priority // Priority is now required and must be explicitly set
 	filters             []Filter
 }
@@ -74,19 +74,19 @@ func NetworkInterface(deviceName string) *TrafficController {
 }
 
 // WithHardLimitBandwidth sets the absolute physical bandwidth limit for the network interface
-func (tc *TrafficController) WithHardLimitBandwidth(bandwidth string) *TrafficController {
-	tc.logger.Info("Setting hard limit bandwidth",
+func (controller *TrafficController) WithHardLimitBandwidth(bandwidth string) *TrafficController {
+	controller.logger.Info("Setting hard limit bandwidth",
 		logging.String("bandwidth", bandwidth),
 		logging.String("operation", logging.OperationConfigLoad),
 	)
 
-	tc.totalBandwidth = valueobjects.MustParseBandwidth(bandwidth)
-	return tc
+	controller.totalBandwidth = tc.MustParseBandwidth(bandwidth)
+	return controller
 }
 
 // CreateTrafficClass creates a new traffic class with a human-readable name
-func (tc *TrafficController) CreateTrafficClass(name string) *TrafficClassBuilder {
-	tc.logger.Info("Creating traffic class",
+func (controller *TrafficController) CreateTrafficClass(name string) *TrafficClassBuilder {
+	controller.logger.Info("Creating traffic class",
 		logging.String("class_name", name),
 		logging.String("operation", logging.OperationCreateClass),
 	)
@@ -97,12 +97,12 @@ func (tc *TrafficController) CreateTrafficClass(name string) *TrafficClassBuilde
 	}
 
 	builder := &TrafficClassBuilder{
-		controller: tc,
+		controller: controller,
 		class:      class,
 	}
 
 	// Add to pending builders list for automatic registration on Apply()
-	tc.pendingBuilders = append(tc.pendingBuilders, builder)
+	controller.pendingBuilders = append(controller.pendingBuilders, builder)
 
 	return builder
 }
@@ -116,13 +116,13 @@ type TrafficClassBuilder struct {
 
 // WithGuaranteedBandwidth sets the minimum guaranteed bandwidth
 func (b *TrafficClassBuilder) WithGuaranteedBandwidth(bandwidth string) *TrafficClassBuilder {
-	b.class.guaranteedBandwidth = valueobjects.MustParseBandwidth(bandwidth)
+	b.class.guaranteedBandwidth = tc.MustParseBandwidth(bandwidth)
 	return b
 }
 
 // WithSoftLimitBandwidth sets the policy-based bandwidth limit (borrowing allowed)
 func (b *TrafficClassBuilder) WithSoftLimitBandwidth(bandwidth string) *TrafficClassBuilder {
-	b.class.maxBandwidth = valueobjects.MustParseBandwidth(bandwidth)
+	b.class.maxBandwidth = tc.MustParseBandwidth(bandwidth)
 	return b
 }
 
@@ -201,18 +201,18 @@ func (b *TrafficClassBuilder) Apply() error {
 }
 
 // CreateHTBQdisc creates an HTB (Hierarchical Token Bucket) qdisc with fluent interface
-func (tc *TrafficController) CreateHTBQdisc(handle, defaultClass string) *HTBQdiscBuilder {
+func (controller *TrafficController) CreateHTBQdisc(handle, defaultClass string) *HTBQdiscBuilder {
 	return &HTBQdiscBuilder{
-		controller:   tc,
+		controller:   controller,
 		handle:       handle,
 		defaultClass: defaultClass,
 	}
 }
 
 // CreateTBFQdisc creates a TBF (Token Bucket Filter) qdisc with fluent interface
-func (tc *TrafficController) CreateTBFQdisc(handle, rate string) *TBFQdiscBuilder {
+func (controller *TrafficController) CreateTBFQdisc(handle, rate string) *TBFQdiscBuilder {
 	return &TBFQdiscBuilder{
-		controller: tc,
+		controller: controller,
 		handle:     handle,
 		rate:       rate,
 		buffer:     32768, // default buffer
@@ -222,9 +222,9 @@ func (tc *TrafficController) CreateTBFQdisc(handle, rate string) *TBFQdiscBuilde
 }
 
 // CreatePRIOQdisc creates a PRIO (Priority Scheduler) qdisc with fluent interface
-func (tc *TrafficController) CreatePRIOQdisc(handle string, bands uint8) *PRIOQdiscBuilder {
+func (controller *TrafficController) CreatePRIOQdisc(handle string, bands uint8) *PRIOQdiscBuilder {
 	return &PRIOQdiscBuilder{
-		controller: tc,
+		controller: controller,
 		handle:     handle,
 		bands:      bands,
 		priomap:    []uint8{1, 2, 2, 2, 1, 2, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1}, // default priomap
@@ -232,9 +232,9 @@ func (tc *TrafficController) CreatePRIOQdisc(handle string, bands uint8) *PRIOQd
 }
 
 // CreateFQCODELQdisc creates a FQ_CODEL (Fair Queuing Controlled Delay) qdisc with fluent interface
-func (tc *TrafficController) CreateFQCODELQdisc(handle string) *FQCODELQdiscBuilder {
+func (controller *TrafficController) CreateFQCODELQdisc(handle string) *FQCODELQdiscBuilder {
 	return &FQCODELQdiscBuilder{
-		controller: tc,
+		controller: controller,
 		handle:     handle,
 		limit:      10240,  // default limit
 		flows:      1024,   // default flows
@@ -389,36 +389,36 @@ func (b *FQCODELQdiscBuilder) Apply() error {
 }
 
 // finalizePendingClasses automatically registers all pending class builders
-func (tc *TrafficController) finalizePendingClasses() {
-	for _, builder := range tc.pendingBuilders {
+func (controller *TrafficController) finalizePendingClasses() {
+	for _, builder := range controller.pendingBuilders {
 		if !builder.finalized {
-			tc.classes = append(tc.classes, builder.class)
+			controller.classes = append(controller.classes, builder.class)
 			builder.finalized = true
 		}
 	}
-	tc.pendingBuilders = nil // Clear pending builders
+	controller.pendingBuilders = nil // Clear pending builders
 }
 
 // Apply applies the configuration
-func (tc *TrafficController) Apply() error {
+func (controller *TrafficController) Apply() error {
 	// Finalize any pending class builders
-	tc.finalizePendingClasses()
+	controller.finalizePendingClasses()
 
-	tc.logger.Info("Starting traffic control configuration application",
+	controller.logger.Info("Starting traffic control configuration application",
 		logging.String("operation", logging.OperationApplyConfig),
-		logging.Int("class_count", len(tc.classes)),
+		logging.Int("class_count", len(controller.classes)),
 	)
 
 	// Validation
-	if err := tc.validate(); err != nil {
-		tc.logger.Error("Configuration validation failed",
+	if err := controller.validate(); err != nil {
+		controller.logger.Error("Configuration validation failed",
 			logging.Error(err),
 			logging.String("operation", logging.OperationValidation),
 		)
 		return err
 	}
 
-	tc.logger.Info("Configuration validation successful")
+	controller.logger.Info("Configuration validation successful")
 
 	// Apply configuration through the application service
 	ctx := context.Background()
@@ -426,29 +426,29 @@ func (tc *TrafficController) Apply() error {
 	// Create HTB qdisc
 	handle := "1:0"
 	defaultClass := "1:999" // Default class for unclassified traffic
-	if err := tc.service.CreateHTBQdisc(ctx, tc.deviceName, handle, defaultClass); err != nil {
-		tc.logger.Error("Failed to create HTB qdisc",
+	if err := controller.service.CreateHTBQdisc(ctx, controller.deviceName, handle, defaultClass); err != nil {
+		controller.logger.Error("Failed to create HTB qdisc",
 			logging.Error(err),
-			logging.String("device", tc.deviceName),
+			logging.String("device", controller.deviceName),
 		)
 		return fmt.Errorf("failed to create HTB qdisc: %w", err)
 	}
 
 	// Create classes
-	for i, class := range tc.classes {
+	for i, class := range controller.classes {
 		classID := fmt.Sprintf("1:%d", i+10) // Start class IDs at 1:10
 		parent := "1:0"                      // Parent is the root qdisc
 
-		tc.logger.Debug("Creating HTB class",
+		controller.logger.Debug("Creating HTB class",
 			logging.String("class_name", class.name),
 			logging.String("class_id", classID),
 			logging.String("guaranteed_bandwidth", class.guaranteedBandwidth.String()),
 			logging.String("max_bandwidth", class.maxBandwidth.String()),
 		)
 
-		if err := tc.service.CreateHTBClass(ctx, tc.deviceName, parent, classID,
+		if err := controller.service.CreateHTBClass(ctx, controller.deviceName, parent, classID,
 			class.guaranteedBandwidth.String(), class.maxBandwidth.String()); err != nil {
-			tc.logger.Error("Failed to create HTB class",
+			controller.logger.Error("Failed to create HTB class",
 				logging.Error(err),
 				logging.String("class_name", class.name),
 			)
@@ -463,9 +463,9 @@ func (tc *TrafficController) Apply() error {
 			flowID := classID
 			match := make(map[string]string) // Empty match = catch all
 
-			if err := tc.service.CreateFilter(ctx, tc.deviceName, parent, priority,
+			if err := controller.service.CreateFilter(ctx, controller.deviceName, parent, priority,
 				protocol, flowID, match); err != nil {
-				tc.logger.Error("Failed to create catch-all filter",
+				controller.logger.Error("Failed to create catch-all filter",
 					logging.Error(err),
 					logging.String("class_name", class.name),
 				)
@@ -482,14 +482,14 @@ func (tc *TrafficController) Apply() error {
 				protocol := "ip"
 				flowID := classID
 
-				match := tc.buildFilterMatch(filter)
+				match := controller.buildFilterMatch(filter)
 				if len(match) == 0 {
 					continue // Skip unsupported filters
 				}
 
-				if err := tc.service.CreateFilter(ctx, tc.deviceName, parent, priority,
+				if err := controller.service.CreateFilter(ctx, controller.deviceName, parent, priority,
 					protocol, flowID, match); err != nil {
-					tc.logger.Error("Failed to create filter",
+					controller.logger.Error("Failed to create filter",
 						logging.Error(err),
 						logging.String("class_name", class.name),
 						logging.String("filter_type", fmt.Sprintf("%v", filter.filterType)),
@@ -501,25 +501,25 @@ func (tc *TrafficController) Apply() error {
 	}
 
 	// Create default class for unclassified traffic
-	if err := tc.service.CreateHTBClass(ctx, tc.deviceName, "1:0", "1:999",
-		"1mbit", tc.totalBandwidth.String()); err != nil {
-		tc.logger.Error("Failed to create default HTB class",
+	if err := controller.service.CreateHTBClass(ctx, controller.deviceName, "1:0", "1:999",
+		"1mbit", controller.totalBandwidth.String()); err != nil {
+		controller.logger.Error("Failed to create default HTB class",
 			logging.Error(err),
 		)
 		return fmt.Errorf("failed to create default HTB class: %w", err)
 	}
 
-	tc.logger.Info("Traffic control configuration applied successfully",
-		logging.String("device", tc.deviceName),
-		logging.String("total_bandwidth", tc.totalBandwidth.String()),
-		logging.Int("classes_applied", len(tc.classes)),
+	controller.logger.Info("Traffic control configuration applied successfully",
+		logging.String("device", controller.deviceName),
+		logging.String("total_bandwidth", controller.totalBandwidth.String()),
+		logging.Int("classes_applied", len(controller.classes)),
 	)
 
 	return nil
 }
 
 // buildFilterMatch converts a Filter to a match map for the CQRS command
-func (tc *TrafficController) buildFilterMatch(filter Filter) map[string]string {
+func (controller *TrafficController) buildFilterMatch(filter Filter) map[string]string {
 	match := make(map[string]string)
 
 	switch filter.filterType {
@@ -549,23 +549,23 @@ func (tc *TrafficController) buildFilterMatch(filter Filter) map[string]string {
 }
 
 // validate checks if the configuration is valid
-func (tc *TrafficController) validate() error {
-	tc.logger.Debug("Starting configuration validation",
+func (controller *TrafficController) validate() error {
+	controller.logger.Debug("Starting configuration validation",
 		logging.String("operation", logging.OperationValidation),
-		logging.Int("class_count", len(tc.classes)),
+		logging.Int("class_count", len(controller.classes)),
 	)
 
-	if tc.totalBandwidth.BitsPerSecond() == 0 {
-		tc.logger.Warn("Total bandwidth not set",
+	if controller.totalBandwidth.BitsPerSecond() == 0 {
+		controller.logger.Warn("Total bandwidth not set",
 			logging.String("validation_error", "missing_total_bandwidth"),
 		)
 		return fmt.Errorf("total bandwidth not set. Use WithHardLimitBandwidth() to specify the interface bandwidth")
 	}
 
 	// Check if all classes have priority set
-	for _, class := range tc.classes {
+	for _, class := range controller.classes {
 		if class.priority == nil {
-			tc.logger.Warn("Traffic class missing priority",
+			controller.logger.Warn("Traffic class missing priority",
 				logging.String("class_name", class.name),
 				logging.String("validation_error", "missing_priority"),
 			)
@@ -578,11 +578,11 @@ func (tc *TrafficController) validate() error {
 	}
 
 	// Check if guaranteed bandwidth sum doesn't exceed total
-	var totalGuaranteed valueobjects.Bandwidth
-	for _, class := range tc.classes {
+	var totalGuaranteed tc.Bandwidth
+	for _, class := range controller.classes {
 		totalGuaranteed = totalGuaranteed.Add(class.guaranteedBandwidth)
 
-		tc.logger.Debug("Validating traffic class",
+		controller.logger.Debug("Validating traffic class",
 			logging.String("class_name", class.name),
 			logging.String("guaranteed_bandwidth", class.guaranteedBandwidth.String()),
 			logging.String("max_bandwidth", class.maxBandwidth.String()),
@@ -590,11 +590,11 @@ func (tc *TrafficController) validate() error {
 		)
 
 		// Check if max bandwidth exceeds total
-		if class.maxBandwidth.GreaterThan(tc.totalBandwidth) {
-			tc.logger.Warn("Class max bandwidth exceeds total bandwidth",
+		if class.maxBandwidth.GreaterThan(controller.totalBandwidth) {
+			controller.logger.Warn("Class max bandwidth exceeds total bandwidth",
 				logging.String("class_name", class.name),
 				logging.String("max_bandwidth", class.maxBandwidth.String()),
-				logging.String("total_bandwidth", tc.totalBandwidth.String()),
+				logging.String("total_bandwidth", controller.totalBandwidth.String()),
 				logging.String("validation_error", "max_exceeds_total"),
 			)
 			return fmt.Errorf(
@@ -602,13 +602,13 @@ func (tc *TrafficController) validate() error {
 					"Suggestion: Either reduce the max bandwidth or increase the total bandwidth",
 				class.name,
 				class.maxBandwidth,
-				tc.totalBandwidth,
+				controller.totalBandwidth,
 			)
 		}
 
 		// Check if guaranteed > max
 		if class.guaranteedBandwidth.GreaterThan(class.maxBandwidth) && class.maxBandwidth.BitsPerSecond() > 0 {
-			tc.logger.Warn("Class guaranteed bandwidth exceeds max bandwidth",
+			controller.logger.Warn("Class guaranteed bandwidth exceeds max bandwidth",
 				logging.String("class_name", class.name),
 				logging.String("guaranteed_bandwidth", class.guaranteedBandwidth.String()),
 				logging.String("max_bandwidth", class.maxBandwidth.String()),
@@ -624,54 +624,54 @@ func (tc *TrafficController) validate() error {
 		}
 	}
 
-	if totalGuaranteed.GreaterThan(tc.totalBandwidth) {
-		tc.logger.Warn("Total guaranteed bandwidth exceeds interface bandwidth",
+	if totalGuaranteed.GreaterThan(controller.totalBandwidth) {
+		controller.logger.Warn("Total guaranteed bandwidth exceeds interface bandwidth",
 			logging.String("total_guaranteed", totalGuaranteed.String()),
-			logging.String("total_bandwidth", tc.totalBandwidth.String()),
+			logging.String("total_bandwidth", controller.totalBandwidth.String()),
 			logging.String("validation_error", "total_guaranteed_exceeds_total"),
 		)
 		return fmt.Errorf(
 			"total guaranteed bandwidth (%s) exceeds interface bandwidth (%s)\n"+
 				"Suggestion: Reduce guaranteed bandwidths or increase total bandwidth",
 			totalGuaranteed,
-			tc.totalBandwidth,
+			controller.totalBandwidth,
 		)
 	}
 
-	tc.logger.Debug("Configuration validation completed successfully",
+	controller.logger.Debug("Configuration validation completed successfully",
 		logging.String("total_guaranteed", totalGuaranteed.String()),
-		logging.String("total_bandwidth", tc.totalBandwidth.String()),
+		logging.String("total_bandwidth", controller.totalBandwidth.String()),
 	)
 
 	return nil
 }
 
 // GetStatistics retrieves current traffic control statistics
-func (tc *TrafficController) GetStatistics() (*qmodels.DeviceStatisticsView, error) {
+func (controller *TrafficController) GetStatistics() (*qmodels.DeviceStatisticsView, error) {
 	ctx := context.Background()
-	return tc.service.GetDeviceStatistics(ctx, tc.deviceName)
+	return controller.service.GetDeviceStatistics(ctx, controller.deviceName)
 }
 
 // GetRealtimeStatistics retrieves real-time statistics
-func (tc *TrafficController) GetRealtimeStatistics() (*qmodels.DeviceStatisticsView, error) {
+func (controller *TrafficController) GetRealtimeStatistics() (*qmodels.DeviceStatisticsView, error) {
 	ctx := context.Background()
-	return tc.service.GetRealtimeStatistics(ctx, tc.deviceName)
+	return controller.service.GetRealtimeStatistics(ctx, controller.deviceName)
 }
 
 // MonitorStatistics starts continuous monitoring of statistics
-func (tc *TrafficController) MonitorStatistics(interval time.Duration, callback func(*qmodels.DeviceStatisticsView)) error {
+func (controller *TrafficController) MonitorStatistics(interval time.Duration, callback func(*qmodels.DeviceStatisticsView)) error {
 	ctx := context.Background()
-	return tc.service.MonitorStatistics(ctx, tc.deviceName, interval, callback)
+	return controller.service.MonitorStatistics(ctx, controller.deviceName, interval, callback)
 }
 
 // GetQdiscStatistics retrieves statistics for a specific qdisc
-func (tc *TrafficController) GetQdiscStatistics(handle string) (*qmodels.QdiscStatisticsView, error) {
+func (controller *TrafficController) GetQdiscStatistics(handle string) (*qmodels.QdiscStatisticsView, error) {
 	ctx := context.Background()
-	return tc.service.GetQdiscStatistics(ctx, tc.deviceName, handle)
+	return controller.service.GetQdiscStatistics(ctx, controller.deviceName, handle)
 }
 
 // GetClassStatistics retrieves statistics for a specific class
-func (tc *TrafficController) GetClassStatistics(handle string) (*qmodels.ClassStatisticsView, error) {
+func (controller *TrafficController) GetClassStatistics(handle string) (*qmodels.ClassStatisticsView, error) {
 	ctx := context.Background()
-	return tc.service.GetClassStatistics(ctx, tc.deviceName, handle)
+	return controller.service.GetClassStatistics(ctx, controller.deviceName, handle)
 }

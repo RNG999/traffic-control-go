@@ -4,8 +4,8 @@ import (
 	"context"
 
 	"github.com/rng999/traffic-control-go/internal/domain/entities"
-	"github.com/rng999/traffic-control-go/internal/domain/valueobjects"
 	"github.com/rng999/traffic-control-go/pkg/logging"
+	"github.com/rng999/traffic-control-go/pkg/tc"
 	"github.com/rng999/traffic-control-go/pkg/types"
 )
 
@@ -42,31 +42,31 @@ func (a *AdapterWrapper) AddFilter(ctx context.Context, filter *entities.Filter)
 }
 
 // DeleteQdisc deletes a qdisc
-func (a *AdapterWrapper) DeleteQdisc(device valueobjects.DeviceName, handle valueobjects.Handle) types.Result[Unit] {
+func (a *AdapterWrapper) DeleteQdisc(device tc.DeviceName, handle tc.Handle) types.Result[Unit] {
 	return a.adapter.DeleteQdisc(device, handle)
 }
 
 // GetQdiscs returns all qdiscs for a device
-func (a *AdapterWrapper) GetQdiscs(device valueobjects.DeviceName) types.Result[[]QdiscInfo] {
+func (a *AdapterWrapper) GetQdiscs(device tc.DeviceName) types.Result[[]QdiscInfo] {
 	return a.adapter.GetQdiscs(device)
 }
 
 // DeleteClass deletes a class
-func (a *AdapterWrapper) DeleteClass(device valueobjects.DeviceName, handle valueobjects.Handle) types.Result[Unit] {
+func (a *AdapterWrapper) DeleteClass(device tc.DeviceName, handle tc.Handle) types.Result[Unit] {
 	return a.adapter.DeleteClass(device, handle)
 }
 
 // GetClasses returns all classes for a device
-func (a *AdapterWrapper) GetClasses(device valueobjects.DeviceName) types.Result[[]ClassInfo] {
+func (a *AdapterWrapper) GetClasses(device tc.DeviceName) types.Result[[]ClassInfo] {
 	return a.adapter.GetClasses(device)
 }
 
 // DeleteFilter deletes a filter
-func (a *AdapterWrapper) DeleteFilter(device valueobjects.DeviceName, parent valueobjects.Handle, priority uint16, handle valueobjects.Handle) types.Result[Unit] {
+func (a *AdapterWrapper) DeleteFilter(device tc.DeviceName, parent tc.Handle, priority uint16, handle tc.Handle) types.Result[Unit] {
 	return a.adapter.DeleteFilter(device, parent, priority, handle)
 }
 
 // GetFilters returns all filters for a device
-func (a *AdapterWrapper) GetFilters(device valueobjects.DeviceName) types.Result[[]FilterInfo] {
+func (a *AdapterWrapper) GetFilters(device tc.DeviceName) types.Result[[]FilterInfo] {
 	return a.adapter.GetFilters(device)
 }

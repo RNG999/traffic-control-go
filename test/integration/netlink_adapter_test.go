@@ -10,22 +10,22 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/rng999/traffic-control-go/internal/domain/entities"
-	"github.com/rng999/traffic-control-go/internal/domain/valueobjects"
 	"github.com/rng999/traffic-control-go/internal/infrastructure/netlink"
+	"github.com/rng999/traffic-control-go/pkg/tc"
 )
 
 // TestMockNetlinkAdapter tests the mock implementation
 func TestMockNetlinkAdapter(t *testing.T) {
-	deviceName := valueobjects.MustNewDeviceName("eth0")
+	deviceName := tc.MustNewDeviceName("eth0")
 
 	t.Run("AddAndGetQdisc", func(t *testing.T) {
 		adapter := netlink.NewMockAdapter()
 		// Test adding a qdisc
 		config := netlink.QdiscConfig{
-			Handle: valueobjects.NewHandle(1, 0),
+			Handle: tc.NewHandle(1, 0),
 			Type:   entities.QdiscTypeHTB,
 			Parameters: map[string]interface{}{
-				"defaultClass": valueobjects.NewHandle(1, 1),
+				"defaultClass": tc.NewHandle(1, 1),
 			},
 		}
 
@@ -46,7 +46,7 @@ func TestMockNetlinkAdapter(t *testing.T) {
 		adapter := netlink.NewMockAdapter()
 		// First add a parent qdisc
 		qdiscConfig := netlink.QdiscConfig{
-			Handle: valueobjects.NewHandle(1, 0),
+			Handle: tc.NewHandle(1, 0),
 			Type:   entities.QdiscTypeHTB,
 		}
 		result := adapter.AddQdisc(deviceName, qdiscConfig)
@@ -54,12 +54,12 @@ func TestMockNetlinkAdapter(t *testing.T) {
 
 		// Add a class
 		classConfig := netlink.ClassConfig{
-			Handle: valueobjects.NewHandle(1, 1),
-			Parent: valueobjects.NewHandle(1, 0),
+			Handle: tc.NewHandle(1, 1),
+			Parent: tc.NewHandle(1, 0),
 			Type:   entities.QdiscTypeHTB,
 			Parameters: map[string]interface{}{
-				"rate": valueobjects.MustParseBandwidth("10Mbps"),
-				"ceil": valueobjects.MustParseBandwidth("20Mbps"),
+				"rate": tc.MustParseBandwidth("10Mbps"),
+				"ceil": tc.MustParseBandwidth("20Mbps"),
 			},
 		}
 
@@ -83,11 +83,11 @@ func TestMockNetlinkAdapter(t *testing.T) {
 		adapter := netlink.NewMockAdapter()
 		// Add filter
 		filterConfig := netlink.FilterConfig{
-			Parent:   valueobjects.NewHandle(1, 0),
+			Parent:   tc.NewHandle(1, 0),
 			Priority: 1,
-			Handle:   valueobjects.NewHandle(800, 1),
+			Handle:   tc.NewHandle(800, 1),
 			Protocol: entities.ProtocolIP,
-			FlowID:   valueobjects.NewHandle(1, 1),
+			FlowID:   tc.NewHandle(1, 1),
 			Matches: []netlink.FilterMatch{
 				{
 					Type:  entities.MatchTypeIPDestination,
@@ -113,7 +113,7 @@ func TestMockNetlinkAdapter(t *testing.T) {
 		adapter := netlink.NewMockAdapter()
 		// Test duplicate qdisc
 		config := netlink.QdiscConfig{
-			Handle: valueobjects.NewHandle(1, 0),
+			Handle: tc.NewHandle(1, 0),
 			Type:   entities.QdiscTypeHTB,
 		}
 
@@ -126,8 +126,8 @@ func TestMockNetlinkAdapter(t *testing.T) {
 
 		// Test class without parent
 		classConfig := netlink.ClassConfig{
-			Handle: valueobjects.NewHandle(2, 1),
-			Parent: valueobjects.NewHandle(2, 0), // Non-existent parent
+			Handle: tc.NewHandle(2, 1),
+			Parent: tc.NewHandle(2, 0), // Non-existent parent
 			Type:   entities.QdiscTypeHTB,
 		}
 

@@ -9,7 +9,7 @@ import (
 
 	nl "github.com/vishvananda/netlink"
 
-	"github.com/rng999/traffic-control-go/internal/domain/valueobjects"
+	"github.com/rng999/traffic-control-go/pkg/tc"
 	"github.com/rng999/traffic-control-go/pkg/types"
 )
 
@@ -30,7 +30,7 @@ type NetemConfig struct {
 }
 
 // AddNetemQdisc adds a NETEM qdisc for network emulation
-func (a *RealNetlinkAdapter) AddNetemQdisc(device valueobjects.DeviceName, handle valueobjects.Handle, config NetemConfig) types.Result[Unit] {
+func (a *RealNetlinkAdapter) AddNetemQdisc(device tc.DeviceName, handle tc.Handle, config NetemConfig) types.Result[Unit] {
 	// Get the network link
 	link, err := nl.LinkByName(device.String())
 	if err != nil {

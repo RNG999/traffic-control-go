@@ -5,18 +5,19 @@ import (
 
 	"github.com/rng999/traffic-control-go/internal/domain/entities"
 	"github.com/rng999/traffic-control-go/internal/domain/events"
-	"github.com/rng999/traffic-control-go/internal/domain/valueobjects"
+	"github.com/rng999/traffic-control-go/pkg/tc"
+	"github.com/rng999/traffic-control-go/pkg/types"
 )
 
 // TrafficControlAggregate is the root aggregate for traffic control configuration
 type TrafficControlAggregate struct {
 	// Aggregate identity
 	id         string
-	deviceName valueobjects.DeviceName
+	deviceName tc.DeviceName
 
 	// Current state
-	qdiscs  map[valueobjects.Handle]*entities.Qdisc
-	classes map[valueobjects.Handle]*entities.Class
+	qdiscs  map[tc.Handle]*entities.Qdisc
+	classes map[tc.Handle]*entities.Class
 	filters []*entities.Filter
 
 	// Event sourcing
@@ -30,12 +31,12 @@ func (a *TrafficControlAggregate) GetID() string {
 }
 
 // NewTrafficControlAggregate creates a new aggregate
-func NewTrafficControlAggregate(deviceName valueobjects.DeviceName) *TrafficControlAggregate {
+func NewTrafficControlAggregate(deviceName tc.DeviceName) *TrafficControlAggregate {
 	return &TrafficControlAggregate{
 		id:         fmt.Sprintf("tc:%s", deviceName),
 		deviceName: deviceName,
-		qdiscs:     make(map[valueobjects.Handle]*entities.Qdisc),
-		classes:    make(map[valueobjects.Handle]*entities.Class),
+		qdiscs:     make(map[tc.Handle]*entities.Qdisc),
+		classes:    make(map[tc.Handle]*entities.Class),
 		filters:    make([]*entities.Filter, 0),
 		version:    0,
 		changes:    make([]events.DomainEvent, 0),
@@ -43,7 +44,7 @@ func NewTrafficControlAggregate(deviceName valueobjects.DeviceName) *TrafficCont
 }
 
 // FromEvents reconstructs an aggregate from events
-func FromEvents(deviceName valueobjects.DeviceName, eventList []events.DomainEvent) *TrafficControlAggregate {
+func FromEvents(deviceName tc.DeviceName, eventList []events.DomainEvent) *TrafficControlAggregate {
 	aggregate := NewTrafficControlAggregate(deviceName)
 
 	for _, event := range eventList {
@@ -58,24 +59,24 @@ func FromEvents(deviceName valueobjects.DeviceName, eventList []events.DomainEve
 }
 
 // ID returns the aggregate ID
-func (tc *TrafficControlAggregate) ID() string {
-	return tc.id
+func (ag *TrafficControlAggregate) ID() string {
+	return ag.id
 }
 
 // Version returns the current version
-func (tc *TrafficControlAggregate) Version() int {
-	return tc.version
+func (ag *TrafficControlAggregate) Version() int {
+	return ag.version
 }
 
 // DeviceName returns the device name
-func (tc *TrafficControlAggregate) DeviceName() valueobjects.DeviceName {
-	return tc.deviceName
+func (ag *TrafficControlAggregate) DeviceName() tc.DeviceName {
+	return ag.deviceName
 }
 
-// AddHTBQdisc adds an HTB qdisc
-func (tc *TrafficControlAggregate) AddHTBQdisc(handle valueobjects.Handle, defaultClass valueobjects.Handle) error {
+// AddHTBQdisc adds an HTB qdisc (DEPRECATED: use WithHTBQdisc)
+func (ag *TrafficControlAggregate) AddHTBQdisc(handle tc.Handle, defaultClass tc.Handle) error {
 	// Business rule: Check if qdisc already exists
-	if _, exists := tc.qdiscs[handle]; exists {
+	if _, exists := ag.qdiscs[handle]; exists {
 		return fmt.Errorf("qdisc with handle %s already exists", handle)
 	}
 
@@ -86,24 +87,104 @@ func (tc *TrafficControlAggregate) AddHTBQdisc(handle valueobjects.Handle, defau
 
 	// Create and apply event
 	event := events.NewHTBQdiscCreatedEvent(
-		tc.id,
-		tc.version+1,
-		tc.deviceName,
+		ag.id,
+		ag.version+1,
+		ag.deviceName,
 		handle,
 		defaultClass,
 	)
 
-	tc.ApplyEvent(event)
-	tc.changes = append(tc.changes, event)
-	tc.version++
+	ag.ApplyEvent(event)
+	ag.changes = append(ag.changes, event)
+	ag.version++
 
 	return nil
 }
 
-// AddTBFQdisc adds a TBF qdisc
-func (tc *TrafficControlAggregate) AddTBFQdisc(handle valueobjects.Handle, rate valueobjects.Bandwidth, buffer, limit, burst uint32) error {
+// WithHTBQdisc returns a new aggregate with an HTB qdisc added (immutable)
+func (ag *TrafficControlAggregate) WithHTBQdisc(handle tc.Handle, defaultClass tc.Handle) types.Result[*TrafficControlAggregate] {
 	// Business rule: Check if qdisc already exists
-	if _, exists := tc.qdiscs[handle]; exists {
+	if _, exists := ag.qdiscs[handle]; exists {
+		return types.Failure[*TrafficControlAggregate](fmt.Errorf("qdisc with handle %s already exists", handle))
+	}
+
+	// Business rule: Root qdisc must have minor = 0
+	if !handle.IsRoot() {
+		return types.Failure[*TrafficControlAggregate](fmt.Errorf("root qdisc handle must have minor = 0, got %s", handle))
+	}
+
+	// Create event
+	event := events.NewHTBQdiscCreatedEvent(
+		ag.id,
+		ag.version+1,
+		ag.deviceName,
+		handle,
+		defaultClass,
+	)
+
+	// Create new aggregate with the event applied
+	return types.Success(ag.withEvent(event))
+}
+
+// withEvent creates a new aggregate with an event applied (immutable helper)
+func (ag *TrafficControlAggregate) withEvent(event events.DomainEvent) *TrafficControlAggregate {
+	// Create a deep copy of the aggregate
+	newAggregate := &TrafficControlAggregate{
+		id:         ag.id,
+		deviceName: ag.deviceName,
+		qdiscs:     make(map[tc.Handle]*entities.Qdisc),
+		classes:    make(map[tc.Handle]*entities.Class),
+		filters:    make([]*entities.Filter, len(ag.filters)),
+		version:    ag.version + 1,
+		changes:    make([]events.DomainEvent, len(ag.changes)+1),
+	}
+
+	// Copy qdiscs
+	for k, v := range ag.qdiscs {
+		newAggregate.qdiscs[k] = v
+	}
+
+	// Copy classes
+	for k, v := range ag.classes {
+		newAggregate.classes[k] = v
+	}
+
+	// Copy filters
+	copy(newAggregate.filters, ag.filters)
+
+	// Copy existing changes and add new event
+	copy(newAggregate.changes, ag.changes)
+	newAggregate.changes[len(ag.changes)] = event
+
+	// Apply the new event
+	newAggregate.ApplyEvent(event)
+
+	return newAggregate
+}
+
+// Chain enables functional composition of aggregate operations
+func (ag *TrafficControlAggregate) Chain(operation func(*TrafficControlAggregate) types.Result[*TrafficControlAggregate]) types.Result[*TrafficControlAggregate] {
+	return operation(ag)
+}
+
+// WithOperations applies multiple operations in sequence (functional composition)
+func (ag *TrafficControlAggregate) WithOperations(operations ...func(*TrafficControlAggregate) types.Result[*TrafficControlAggregate]) types.Result[*TrafficControlAggregate] {
+	result := types.Success(ag)
+
+	for _, operation := range operations {
+		result = result.FlatMap(operation)
+		if result.IsFailure() {
+			return result
+		}
+	}
+
+	return result
+}
+
+// AddTBFQdisc adds a TBF qdisc
+func (ag *TrafficControlAggregate) AddTBFQdisc(handle tc.Handle, rate tc.Bandwidth, buffer, limit, burst uint32) error {
+	// Business rule: Check if qdisc already exists
+	if _, exists := ag.qdiscs[handle]; exists {
 		return fmt.Errorf("qdisc with handle %s already exists", handle)
 	}
 
@@ -119,9 +200,9 @@ func (tc *TrafficControlAggregate) AddTBFQdisc(handle valueobjects.Handle, rate 
 
 	// Create and apply event
 	event := events.NewTBFQdiscCreatedEvent(
-		tc.id,
-		tc.version+1,
-		tc.deviceName,
+		ag.id,
+		ag.version+1,
+		ag.deviceName,
 		handle,
 		rate,
 		buffer,
@@ -129,17 +210,17 @@ func (tc *TrafficControlAggregate) AddTBFQdisc(handle valueobjects.Handle, rate 
 		burst,
 	)
 
-	tc.ApplyEvent(event)
-	tc.changes = append(tc.changes, event)
-	tc.version++
+	ag.ApplyEvent(event)
+	ag.changes = append(ag.changes, event)
+	ag.version++
 
 	return nil
 }
 
 // AddPRIOQdisc adds a PRIO qdisc
-func (tc *TrafficControlAggregate) AddPRIOQdisc(handle valueobjects.Handle, bands uint8, priomap []uint8) error {
+func (ag *TrafficControlAggregate) AddPRIOQdisc(handle tc.Handle, bands uint8, priomap []uint8) error {
 	// Business rule: Check if qdisc already exists
-	if _, exists := tc.qdiscs[handle]; exists {
+	if _, exists := ag.qdiscs[handle]; exists {
 		return fmt.Errorf("qdisc with handle %s already exists", handle)
 	}
 
@@ -167,25 +248,25 @@ func (tc *TrafficControlAggregate) AddPRIOQdisc(handle valueobjects.Handle, band
 
 	// Create and apply event
 	event := events.NewPRIOQdiscCreatedEvent(
-		tc.id,
-		tc.version+1,
-		tc.deviceName,
+		ag.id,
+		ag.version+1,
+		ag.deviceName,
 		handle,
 		bands,
 		priomap,
 	)
 
-	tc.ApplyEvent(event)
-	tc.changes = append(tc.changes, event)
-	tc.version++
+	ag.ApplyEvent(event)
+	ag.changes = append(ag.changes, event)
+	ag.version++
 
 	return nil
 }
 
 // AddFQCODELQdisc adds a FQ_CODEL qdisc
-func (tc *TrafficControlAggregate) AddFQCODELQdisc(handle valueobjects.Handle, limit, flows, target, interval, quantum uint32, ecn bool) error {
+func (ag *TrafficControlAggregate) AddFQCODELQdisc(handle tc.Handle, limit, flows, target, interval, quantum uint32, ecn bool) error {
 	// Business rule: Check if qdisc already exists
-	if _, exists := tc.qdiscs[handle]; exists {
+	if _, exists := ag.qdiscs[handle]; exists {
 		return fmt.Errorf("qdisc with handle %s already exists", handle)
 	}
 
@@ -216,9 +297,9 @@ func (tc *TrafficControlAggregate) AddFQCODELQdisc(handle valueobjects.Handle, l
 
 	// Create and apply event
 	event := events.NewFQCODELQdiscCreatedEvent(
-		tc.id,
-		tc.version+1,
-		tc.deviceName,
+		ag.id,
+		ag.version+1,
+		ag.deviceName,
 		handle,
 		limit,
 		flows,
@@ -228,26 +309,26 @@ func (tc *TrafficControlAggregate) AddFQCODELQdisc(handle valueobjects.Handle, l
 		ecn,
 	)
 
-	tc.ApplyEvent(event)
-	tc.changes = append(tc.changes, event)
-	tc.version++
+	ag.ApplyEvent(event)
+	ag.changes = append(ag.changes, event)
+	ag.version++
 
 	return nil
 }
 
 // AddHTBClass adds an HTB class
-func (tc *TrafficControlAggregate) AddHTBClass(parent valueobjects.Handle, classHandle valueobjects.Handle, name string, rate valueobjects.Bandwidth, ceil valueobjects.Bandwidth) error {
+func (ag *TrafficControlAggregate) AddHTBClass(parent tc.Handle, classHandle tc.Handle, name string, rate tc.Bandwidth, ceil tc.Bandwidth) error {
 	// Business rule: Parent qdisc must exist
-	parentQdisc, parentExists := tc.qdiscs[parent]
+	parentQdisc, parentExists := ag.qdiscs[parent]
 	if !parentExists {
 		// Check if parent is a class
-		if _, classExists := tc.classes[parent]; !classExists {
+		if _, classExists := ag.classes[parent]; !classExists {
 			return fmt.Errorf("parent %s does not exist", parent)
 		}
 	}
 
 	// Business rule: Class handle must not already exist
-	if _, exists := tc.classes[classHandle]; exists {
+	if _, exists := ag.classes[classHandle]; exists {
 		return fmt.Errorf("class with handle %s already exists", classHandle)
 	}
 
@@ -263,9 +344,9 @@ func (tc *TrafficControlAggregate) AddHTBClass(parent valueobjects.Handle, class
 
 	// Create and apply event
 	event := events.NewHTBClassCreatedEvent(
-		tc.id,
-		tc.version+1,
-		tc.deviceName,
+		ag.id,
+		ag.version+1,
+		ag.deviceName,
 		classHandle,
 		parent,
 		name,
@@ -273,32 +354,74 @@ func (tc *TrafficControlAggregate) AddHTBClass(parent valueobjects.Handle, class
 		ceil,
 	)
 
-	tc.ApplyEvent(event)
-	tc.changes = append(tc.changes, event)
-	tc.version++
+	ag.ApplyEvent(event)
+	ag.changes = append(ag.changes, event)
+	ag.version++
 
 	return nil
 }
 
+// WithHTBClass returns a new aggregate with an HTB class added (immutable)
+func (ag *TrafficControlAggregate) WithHTBClass(parent tc.Handle, classHandle tc.Handle, name string, rate tc.Bandwidth, ceil tc.Bandwidth) types.Result[*TrafficControlAggregate] {
+	// Business rule: Parent qdisc must exist
+	parentQdisc, parentExists := ag.qdiscs[parent]
+	if !parentExists {
+		// Check if parent is a class
+		if _, classExists := ag.classes[parent]; !classExists {
+			return types.Failure[*TrafficControlAggregate](fmt.Errorf("parent %s does not exist", parent))
+		}
+	}
+
+	// Business rule: Class handle must not already exist
+	if _, exists := ag.classes[classHandle]; exists {
+		return types.Failure[*TrafficControlAggregate](fmt.Errorf("class with handle %s already exists", classHandle))
+	}
+
+	// Business rule: HTB specific - parent must be HTB
+	if parentExists && parentQdisc.Type() != entities.QdiscTypeHTB {
+		return types.Failure[*TrafficControlAggregate](fmt.Errorf("parent qdisc must be HTB type"))
+	}
+
+	// Business rule: Ceil must be >= Rate
+	if ceil.BitsPerSecond() > 0 && ceil.LessThan(rate) {
+		return types.Failure[*TrafficControlAggregate](fmt.Errorf("ceil (%s) cannot be less than rate (%s)", ceil, rate))
+	}
+
+	// Create event
+	event := events.NewHTBClassCreatedEvent(
+		ag.id,
+		ag.version+1,
+		ag.deviceName,
+		classHandle,
+		parent,
+		name,
+		rate,
+		ceil,
+	)
+
+	// Create new aggregate with the event applied
+	return types.Success(ag.withEvent(event))
+}
+
 // AddFilter adds a filter
-func (tc *TrafficControlAggregate) AddFilter(parent valueobjects.Handle, priority uint16, handle valueobjects.Handle, flowID valueobjects.Handle, matches []entities.Match) error {
+func (ag *TrafficControlAggregate) AddFilter(parent tc.Handle, priority uint16, handle tc.Handle, flowID tc.Handle, matches []entities.Match) error {
 	// Business rule: Parent must exist (either qdisc or class)
-	_, qdiscExists := tc.qdiscs[parent]
-	_, classExists := tc.classes[parent]
+	_, qdiscExists := ag.qdiscs[parent]
+	_, classExists := ag.classes[parent]
 	if !qdiscExists && !classExists {
 		return fmt.Errorf("parent %s does not exist", parent)
 	}
 
 	// Business rule: Target class (flowID) must exist
-	if _, exists := tc.classes[flowID]; !exists {
+	if _, exists := ag.classes[flowID]; !exists {
 		return fmt.Errorf("target class %s does not exist", flowID)
 	}
 
 	// Create event
 	event := events.NewFilterCreatedEvent(
-		tc.id,
-		tc.version+1,
-		tc.deviceName,
+		ag.id,
+		ag.version+1,
+		ag.deviceName,
 		parent,
 		priority,
 		handle,
@@ -310,56 +433,56 @@ func (tc *TrafficControlAggregate) AddFilter(parent valueobjects.Handle, priorit
 		event.AddMatch(match.Type(), match.String())
 	}
 
-	tc.ApplyEvent(event)
-	tc.changes = append(tc.changes, event)
-	tc.version++
+	ag.ApplyEvent(event)
+	ag.changes = append(ag.changes, event)
+	ag.version++
 
 	return nil
 }
 
 // GetUncommittedEvents returns uncommitted events
-func (tc *TrafficControlAggregate) GetUncommittedEvents() []events.DomainEvent {
-	return tc.changes
+func (ag *TrafficControlAggregate) GetUncommittedEvents() []events.DomainEvent {
+	return ag.changes
 }
 
 // MarkEventsAsCommitted clears uncommitted events
-func (tc *TrafficControlAggregate) MarkEventsAsCommitted() {
-	tc.changes = make([]events.DomainEvent, 0)
+func (ag *TrafficControlAggregate) MarkEventsAsCommitted() {
+	ag.changes = make([]events.DomainEvent, 0)
 }
 
 // LoadFromHistory rebuilds aggregate state from events
-func (tc *TrafficControlAggregate) LoadFromHistory(history []events.DomainEvent) {
+func (ag *TrafficControlAggregate) LoadFromHistory(history []events.DomainEvent) {
 	for _, event := range history {
-		tc.ApplyEvent(event)
-		tc.version++
+		ag.ApplyEvent(event)
+		ag.version++
 	}
 	// Clear changes as these are already committed
-	tc.changes = make([]events.DomainEvent, 0)
+	ag.changes = make([]events.DomainEvent, 0)
 }
 
 // GetVersion returns the current version
-func (tc *TrafficControlAggregate) GetVersion() int {
-	return tc.version
+func (ag *TrafficControlAggregate) GetVersion() int {
+	return ag.version
 }
 
 // ApplyEvent applies a domain event to update aggregate state
-func (tc *TrafficControlAggregate) ApplyEvent(event events.DomainEvent) {
+func (ag *TrafficControlAggregate) ApplyEvent(event events.DomainEvent) {
 	switch e := event.(type) {
 	case *events.HTBQdiscCreatedEvent:
 		qdisc := entities.NewHTBQdisc(e.DeviceName, e.Handle, e.DefaultClass)
-		tc.qdiscs[e.Handle] = qdisc.Qdisc
+		ag.qdiscs[e.Handle] = qdisc.Qdisc
 
 	case *events.TBFQdiscCreatedEvent:
 		qdisc := entities.NewTBFQdisc(e.DeviceName, e.Handle, e.Rate)
 		qdisc.SetBuffer(e.Buffer)
 		qdisc.SetLimit(e.Limit)
 		qdisc.SetBurst(e.Burst)
-		tc.qdiscs[e.Handle] = qdisc.Qdisc
+		ag.qdiscs[e.Handle] = qdisc.Qdisc
 
 	case *events.PRIOQdiscCreatedEvent:
 		qdisc := entities.NewPRIOQdisc(e.DeviceName, e.Handle, e.Bands)
 		qdisc.SetPriomap(e.Priomap)
-		tc.qdiscs[e.Handle] = qdisc.Qdisc
+		ag.qdiscs[e.Handle] = qdisc.Qdisc
 
 	case *events.FQCODELQdiscCreatedEvent:
 		qdisc := entities.NewFQCODELQdisc(e.DeviceName, e.Handle)
@@ -369,14 +492,14 @@ func (tc *TrafficControlAggregate) ApplyEvent(event events.DomainEvent) {
 		qdisc.SetInterval(e.Interval)
 		qdisc.SetQuantum(e.Quantum)
 		qdisc.SetECN(e.ECN)
-		tc.qdiscs[e.Handle] = qdisc.Qdisc
+		ag.qdiscs[e.Handle] = qdisc.Qdisc
 
 	case *events.HTBClassCreatedEvent:
 		// Use a default priority of 4 for event reconstruction
 		class := entities.NewHTBClass(e.DeviceName, e.Handle, e.Parent, e.Name, entities.Priority(4))
 		class.SetRate(e.Rate)
 		class.SetCeil(e.Ceil)
-		tc.classes[e.Handle] = class.Class
+		ag.classes[e.Handle] = class.Class
 
 	case *events.FilterCreatedEvent:
 		filter := entities.NewFilter(e.DeviceName, e.Parent, e.Priority, e.Handle)
@@ -397,50 +520,50 @@ func (tc *TrafficControlAggregate) ApplyEvent(event events.DomainEvent) {
 			}
 		}
 
-		tc.filters = append(tc.filters, filter)
+		ag.filters = append(ag.filters, filter)
 
 	case *events.QdiscDeletedEvent:
-		delete(tc.qdiscs, e.Handle)
+		delete(ag.qdiscs, e.Handle)
 
 	case *events.ClassDeletedEvent:
-		delete(tc.classes, e.Handle)
+		delete(ag.classes, e.Handle)
 	}
 }
 
 // GetUncommittedChanges returns events that haven't been persisted
-func (tc *TrafficControlAggregate) GetUncommittedChanges() []events.DomainEvent {
-	return tc.changes
+func (ag *TrafficControlAggregate) GetUncommittedChanges() []events.DomainEvent {
+	return ag.changes
 }
 
 // MarkChangesAsCommitted clears the uncommitted changes
-func (tc *TrafficControlAggregate) MarkChangesAsCommitted() {
-	tc.changes = make([]events.DomainEvent, 0)
+func (ag *TrafficControlAggregate) MarkChangesAsCommitted() {
+	ag.changes = make([]events.DomainEvent, 0)
 }
 
 // GetQdiscs returns all qdiscs (for queries)
-func (tc *TrafficControlAggregate) GetQdiscs() map[valueobjects.Handle]*entities.Qdisc {
+func (ag *TrafficControlAggregate) GetQdiscs() map[tc.Handle]*entities.Qdisc {
 	// Return a copy to maintain immutability
-	result := make(map[valueobjects.Handle]*entities.Qdisc)
-	for k, v := range tc.qdiscs {
+	result := make(map[tc.Handle]*entities.Qdisc)
+	for k, v := range ag.qdiscs {
 		result[k] = v
 	}
 	return result
 }
 
 // GetClasses returns all classes (for queries)
-func (tc *TrafficControlAggregate) GetClasses() map[valueobjects.Handle]*entities.Class {
+func (ag *TrafficControlAggregate) GetClasses() map[tc.Handle]*entities.Class {
 	// Return a copy to maintain immutability
-	result := make(map[valueobjects.Handle]*entities.Class)
-	for k, v := range tc.classes {
+	result := make(map[tc.Handle]*entities.Class)
+	for k, v := range ag.classes {
 		result[k] = v
 	}
 	return result
 }
 
 // GetFilters returns all filters (for queries)
-func (tc *TrafficControlAggregate) GetFilters() []*entities.Filter {
+func (ag *TrafficControlAggregate) GetFilters() []*entities.Filter {
 	// Return a copy to maintain immutability
-	result := make([]*entities.Filter, len(tc.filters))
-	copy(result, tc.filters)
+	result := make([]*entities.Filter, len(ag.filters))
+	copy(result, ag.filters)
 	return result
 }

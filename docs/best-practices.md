@@ -103,7 +103,63 @@ func (tm *TrafficManager) ApplyNewConfig(config *Config) error {
 
 ## Architecture Patterns
 
-### 1. Repository Pattern for Configuration
+### 1. CQRS with Type-Safe Command Bus
+
+The library implements CQRS (Command Query Responsibility Segregation) with a type-safe command bus using Go generics:
+
+```go
+// Example: Using the type-safe command bus directly
+import (
+    "context"
+    "github.com/rng999/traffic-control-go/internal/application"
+    "github.com/rng999/traffic-control-go/internal/commands/models"
+)
+
+func createHTBQdisc(service *application.TrafficControlService) error {
+    ctx := context.Background()
+    
+    // Type-safe command - compile-time type checking
+    cmd := &models.CreateHTBQdiscCommand{
+        DeviceName:   "eth0",
+        Handle:       "1:0", 
+        DefaultClass: "1:30",
+    }
+    
+    // No type assertions needed - fully type-safe
+    return service.CreateHTBQdisc(ctx, cmd.DeviceName, cmd.Handle, cmd.DefaultClass)
+}
+```
+
+**Benefits of Type-Safe Architecture:**
+- **Compile-time safety**: No runtime type assertion errors
+- **Better IDE support**: Full IntelliSense and refactoring support  
+- **Performance**: Zero runtime type checking overhead
+- **Maintainability**: Interface changes caught at compile time
+
+### 2. Event Sourcing Best Practices
+
+```go
+// Good: Use event sourcing for audit trails and state reconstruction
+func handleTrafficChanges(eventStore eventstore.EventStore) {
+    // All configuration changes are stored as events
+    events, err := eventStore.GetEvents("eth0-traffic-control", 0, 100)
+    if err != nil {
+        log.Fatal(err)
+    }
+    
+    // Reconstruct full configuration history
+    for _, event := range events {
+        switch e := event.(type) {
+        case *events.QdiscCreatedEvent:
+            log.Printf("Qdisc created: %s at %s", e.Handle, e.Timestamp)
+        case *events.ClassCreatedEvent:
+            log.Printf("Class created: %s with rate %s", e.ClassID, e.Rate)
+        }
+    }
+}
+```
+
+### 3. Repository Pattern for Configuration
 
 ```go
 type TrafficConfigRepository interface {

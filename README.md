@@ -123,9 +123,10 @@ controller.WithHardLimitBandwidth("2048bps")     // Raw bits per second
 
 This library focuses on providing a clean, intuitive API for Linux Traffic Control operations:
 
-- **Value Objects**: Type-safe representations of bandwidth, handles, etc.
-- **Domain Entities**: Qdiscs, Classes, Filters as first-class objects
-- **Event Sourcing**: Track all configuration changes
+- **CQRS Architecture**: Command Query Responsibility Segregation with type-safe command handlers
+- **Type-Safe Command Bus**: Go generics for compile-time type safety and zero runtime type assertions
+- **Event Sourcing**: Track all configuration changes with persistent event store
+- **Domain-Driven Design**: Value Objects, Entities, and Aggregates as first-class objects
 - **Netlink Integration**: Direct kernel communication for TC operations
 - **Flexible Configuration**: Chain API for programmatic use and Structured Configuration API for YAML/JSON configs
 - **Structured Logging**: Comprehensive logging system with context-aware, structured logging built on Zap

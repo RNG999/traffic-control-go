@@ -313,7 +313,8 @@ logger.Info("Traffic control operation started")
 - [Logging System](docs/logging.md) - Comprehensive structured logging
 
 ### Reference
-- [TC Feature Coverage](docs/tc-feature-coverage.md) - Current implementation status
+- [Performance Benchmarks](docs/benchmarks.md) - Comprehensive benchmark suite and performance guide
+- [TC Feature Coverage](docs/tc-feature-coverage.md) - Current implementation status  
 - [Documentation Hub](docs/README.md) - Complete documentation index
 
 ## Contributing
@@ -364,9 +365,18 @@ make test-examples
 # Run with coverage
 make test-coverage
 
+# Run performance benchmarks
+make bench              # All benchmarks
+make bench-compare      # Performance comparison (5 iterations)
+make bench-profile      # With CPU/memory profiling
+make bench-value-objects # Value objects only
+make bench-eventstore   # Event store only
+make bench-api          # API layer only
+
 # Run tests manually
 go test ./...
 go test -cover ./...
+go test -bench=. -benchmem ./...  # Benchmarks with memory stats
 sudo go test -v ./test/integration/...  # Integration tests require root
 ```
 

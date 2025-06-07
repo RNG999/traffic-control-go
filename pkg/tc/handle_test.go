@@ -229,3 +229,166 @@ func TestHandleRoundTripConversion(t *testing.T) {
 
 	assert.True(t, original.Equals(restored))
 }
+
+// =============================================================================
+// BENCHMARK TESTS
+// =============================================================================
+
+func BenchmarkHandleCreation(b *testing.B) {
+	b.Run("NewHandle", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			_ = tc.NewHandle(1, 10)
+		}
+	})
+
+	b.Run("HandleFromUint32", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			_ = tc.HandleFromUint32(0x0001000A)
+		}
+	})
+}
+
+func BenchmarkHandleParsing(b *testing.B) {
+	testCases := []string{
+		"1:10", "ff:20", "1:", "01:0a", "100:200", "ffff:ffff",
+	}
+
+	b.Run("ParseHandle_Multiple", func(b *testing.B) {
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			for _, testCase := range testCases {
+				_, _ = tc.ParseHandle(testCase)
+			}
+		}
+	})
+
+	b.Run("ParseHandle_Simple", func(b *testing.B) {
+		input := "1:10"
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			_, _ = tc.ParseHandle(input)
+		}
+	})
+
+	b.Run("ParseHandle_Complex", func(b *testing.B) {
+		input := "ffff:ffff"
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			_, _ = tc.ParseHandle(input)
+		}
+	})
+
+	b.Run("MustParseHandle", func(b *testing.B) {
+		input := "1:10"
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			_ = tc.MustParseHandle(input)
+		}
+	})
+}
+
+func BenchmarkHandleOperations(b *testing.B) {
+	h1 := tc.NewHandle(1, 10)
+	h2 := tc.NewHandle(1, 10)
+	h3 := tc.NewHandle(2, 20)
+
+	b.Run("Major", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			_ = h1.Major()
+		}
+	})
+
+	b.Run("Minor", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			_ = h1.Minor()
+		}
+	})
+
+	b.Run("IsRoot", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			_ = h1.IsRoot()
+		}
+	})
+
+	b.Run("Equals", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			_ = h1.Equals(h2)
+		}
+	})
+
+	b.Run("Equals_Different", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			_ = h1.Equals(h3)
+		}
+	})
+}
+
+func BenchmarkHandleConversions(b *testing.B) {
+	handle := tc.NewHandle(123, 456)
+	uint32Val := uint32(0x007B01C8)
+
+	b.Run("ToUint32", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			_ = handle.ToUint32()
+		}
+	})
+
+	b.Run("FromUint32", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			_ = tc.HandleFromUint32(uint32Val)
+		}
+	})
+
+	b.Run("RoundTrip", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			uint32Val := handle.ToUint32()
+			_ = tc.HandleFromUint32(uint32Val)
+		}
+	})
+}
+
+func BenchmarkHandleFormatting(b *testing.B) {
+	handles := []tc.Handle{
+		tc.NewHandle(1, 10),
+		tc.NewHandle(255, 65535),
+		tc.NewHandle(1, 0),
+		tc.NewHandle(0xFFFF, 0xFFFF),
+	}
+
+	b.Run("String_Simple", func(b *testing.B) {
+		handle := handles[0]
+		for i := 0; i < b.N; i++ {
+			_ = handle.String()
+		}
+	})
+
+	b.Run("String_Complex", func(b *testing.B) {
+		handle := handles[1]
+		for i := 0; i < b.N; i++ {
+			_ = handle.String()
+		}
+	})
+
+	b.Run("String_Multiple", func(b *testing.B) {
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			for _, handle := range handles {
+				_ = handle.String()
+			}
+		}
+	})
+}
+
+func BenchmarkHandleParsingVsCreation(b *testing.B) {
+	b.Run("ParseHandle", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			_, _ = tc.ParseHandle("1:10")
+		}
+	})
+
+	b.Run("DirectCreation", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			_ = tc.NewHandle(1, 16) // 0x10 = 16
+		}
+	})
+}

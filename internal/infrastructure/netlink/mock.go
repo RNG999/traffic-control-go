@@ -279,3 +279,89 @@ func (m *MockAdapter) SetClassStatistics(device tc.DeviceName, handle tc.Handle,
 		}
 	}
 }
+
+// GetDetailedQdiscStats returns detailed qdisc statistics for mock testing
+func (m *MockAdapter) GetDetailedQdiscStats(device tc.DeviceName, handle tc.Handle) types.Result[DetailedQdiscStats] {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+
+	deviceStr := device.String()
+
+	if qdiscs, exists := m.qdiscs[deviceStr]; exists {
+		if qdisc, qdiscExists := qdiscs[handle]; qdiscExists {
+			// Return mock detailed statistics
+			detailedStats := DetailedQdiscStats{
+				BasicStats:       qdisc.Statistics,
+				QueueLength:      10,
+				Backlog:          1024,
+				BacklogBytes:     1024,
+				BytesPerSecond:   1000000,
+				PacketsPerSecond: 1000,
+			}
+
+			// Add HTB-specific stats if it's an HTB qdisc
+			if qdisc.Type == entities.QdiscTypeHTB {
+				detailedStats.HTBStats = &HTBQdiscStats{
+					DirectPackets: 100,
+					Version:       3,
+				}
+			}
+
+			return types.Success(detailedStats)
+		}
+	}
+
+	return types.Failure[DetailedQdiscStats](fmt.Errorf("qdisc %s not found on device %s", handle, device))
+}
+
+// GetDetailedClassStats returns detailed class statistics for mock testing
+func (m *MockAdapter) GetDetailedClassStats(device tc.DeviceName, handle tc.Handle) types.Result[DetailedClassStats] {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+
+	deviceStr := device.String()
+
+	if classes, exists := m.classes[deviceStr]; exists {
+		if class, classExists := classes[handle]; classExists {
+			// Return mock detailed statistics
+			detailedStats := DetailedClassStats{
+				BasicStats: class.Statistics,
+			}
+
+			// Add HTB-specific stats if it's an HTB class
+			if class.Type == entities.QdiscTypeHTB {
+				detailedStats.HTBStats = &HTBClassStats{
+					Lends:   50,
+					Borrows: 25,
+					Giants:  0,
+					Tokens:  1000,
+					CTokens: 2000,
+					Rate:    1000000,
+					Ceil:    2000000,
+					Level:   1,
+				}
+			}
+
+			return types.Success(detailedStats)
+		}
+	}
+
+	return types.Failure[DetailedClassStats](fmt.Errorf("class %s not found on device %s", handle, device))
+}
+
+// GetLinkStats returns mock link statistics for testing
+func (m *MockAdapter) GetLinkStats(device tc.DeviceName) types.Result[LinkStats] {
+	// Return mock link statistics
+	stats := LinkStats{
+		RxBytes:   1000000,
+		TxBytes:   800000,
+		RxPackets: 10000,
+		TxPackets: 8000,
+		RxErrors:  0,
+		TxErrors:  0,
+		RxDropped: 5,
+		TxDropped: 2,
+	}
+
+	return types.Success(stats)
+}

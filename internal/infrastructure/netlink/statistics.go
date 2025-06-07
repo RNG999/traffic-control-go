@@ -135,3 +135,27 @@ func (a *RealNetlinkAdapter) GetDetailedClassStats(device tc.DeviceName, handle 
 
 	return types.Failure[DetailedClassStats](fmt.Errorf("class %s not found on device %s", handle, device))
 }
+
+// GetLinkStats returns network interface statistics
+func (a *RealNetlinkAdapter) GetLinkStats(device tc.DeviceName) types.Result[LinkStats] {
+	// Get the network link
+	link, err := nl.LinkByName(device.String())
+	if err != nil {
+		return types.Failure[LinkStats](fmt.Errorf("failed to find device %s: %w", device, err))
+	}
+
+	// Get link statistics
+	linkAttrs := link.Attrs()
+	stats := LinkStats{
+		RxBytes:   linkAttrs.Statistics.RxBytes,
+		TxBytes:   linkAttrs.Statistics.TxBytes,
+		RxPackets: linkAttrs.Statistics.RxPackets,
+		TxPackets: linkAttrs.Statistics.TxPackets,
+		RxErrors:  linkAttrs.Statistics.RxErrors,
+		TxErrors:  linkAttrs.Statistics.TxErrors,
+		RxDropped: linkAttrs.Statistics.RxDropped,
+		TxDropped: linkAttrs.Statistics.TxDropped,
+	}
+
+	return types.Success(stats)
+}

@@ -24,6 +24,11 @@ type Adapter interface {
 	AddFilter(ctx context.Context, filter *entities.Filter) error
 	DeleteFilter(device tc.DeviceName, parent tc.Handle, priority uint16, handle tc.Handle) types.Result[Unit]
 	GetFilters(device tc.DeviceName) types.Result[[]FilterInfo]
+
+	// Statistics operations
+	GetDetailedQdiscStats(device tc.DeviceName, handle tc.Handle) types.Result[DetailedQdiscStats]
+	GetDetailedClassStats(device tc.DeviceName, handle tc.Handle) types.Result[DetailedClassStats]
+	GetLinkStats(device tc.DeviceName) types.Result[LinkStats]
 }
 
 // Unit represents an empty value (like void)
@@ -105,4 +110,16 @@ type FilterInfo struct {
 	Protocol entities.Protocol
 	FlowID   tc.Handle
 	Matches  []FilterMatch
+}
+
+// LinkStats represents network interface statistics
+type LinkStats struct {
+	RxBytes   uint64
+	TxBytes   uint64
+	RxPackets uint64
+	TxPackets uint64
+	RxErrors  uint64
+	TxErrors  uint64
+	RxDropped uint64
+	TxDropped uint64
 }

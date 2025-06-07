@@ -107,7 +107,7 @@ func (s *StatisticsQueryService) GetDeviceStatistics(ctx context.Context, device
 
 	// Get qdisc statistics
 	for _, qdisc := range readModel.Qdiscs {
-		_, err := parseHandle(qdisc.Handle)
+		handle, err := parseHandle(qdisc.Handle)
 		if err != nil {
 			s.logger.Warn("Invalid qdisc handle",
 				logging.String("handle", qdisc.Handle),
@@ -126,8 +126,24 @@ func (s *StatisticsQueryService) GetDeviceStatistics(ctx context.Context, device
 						Stats:  info.Statistics,
 					}
 
-					// TODO: Add detailed statistics through adapter interface
-					// For now, basic statistics from netlink are sufficient
+					// Get detailed statistics through adapter interface
+					detailedResult := s.netlinkAdapter.GetDetailedQdiscStats(device, handle)
+					if detailedResult.IsSuccess() {
+						detailedStats := detailedResult.Value()
+						qdiscStat.DetailedStats = &netlink.DetailedQdiscStats{
+							BasicStats:       detailedStats.BasicStats,
+							QueueLength:      detailedStats.QueueLength,
+							Backlog:          detailedStats.Backlog,
+							BacklogBytes:     detailedStats.BacklogBytes,
+							BytesPerSecond:   detailedStats.BytesPerSecond,
+							PacketsPerSecond: detailedStats.PacketsPerSecond,
+							HTBStats:         detailedStats.HTBStats,
+						}
+					} else {
+						s.logger.Debug("Failed to get detailed qdisc statistics",
+							logging.String("handle", qdisc.Handle),
+							logging.Error(detailedResult.Error()))
+					}
 
 					stats.QdiscStats = append(stats.QdiscStats, qdiscStat)
 					break
@@ -138,7 +154,7 @@ func (s *StatisticsQueryService) GetDeviceStatistics(ctx context.Context, device
 
 	// Get class statistics
 	for _, class := range readModel.Classes {
-		_, err := parseHandle(class.Handle)
+		handle, err := parseHandle(class.Handle)
 		if err != nil {
 			s.logger.Warn("Invalid class handle",
 				logging.String("handle", class.Handle),
@@ -158,8 +174,19 @@ func (s *StatisticsQueryService) GetDeviceStatistics(ctx context.Context, device
 						Stats:  info.Statistics,
 					}
 
-					// TODO: Add detailed statistics through adapter interface
-					// For now, basic statistics from netlink are sufficient
+					// Get detailed statistics through adapter interface
+					detailedResult := s.netlinkAdapter.GetDetailedClassStats(device, handle)
+					if detailedResult.IsSuccess() {
+						detailedStats := detailedResult.Value()
+						classStat.DetailedStats = &netlink.DetailedClassStats{
+							BasicStats: detailedStats.BasicStats,
+							HTBStats:   detailedStats.HTBStats,
+						}
+					} else {
+						s.logger.Debug("Failed to get detailed class statistics",
+							logging.String("handle", class.Handle),
+							logging.Error(detailedResult.Error()))
+					}
 
 					stats.ClassStats = append(stats.ClassStats, classStat)
 					break
@@ -177,6 +204,26 @@ func (s *StatisticsQueryService) GetDeviceStatistics(ctx context.Context, device
 			MatchCount: len(filter.Matches),
 		}
 		stats.FilterStats = append(stats.FilterStats, filterStat)
+	}
+
+	// Get link statistics
+	linkResult := s.netlinkAdapter.GetLinkStats(device)
+	if linkResult.IsSuccess() {
+		linkStats := linkResult.Value()
+		stats.LinkStats = LinkStatistics{
+			RxBytes:   linkStats.RxBytes,
+			TxBytes:   linkStats.TxBytes,
+			RxPackets: linkStats.RxPackets,
+			TxPackets: linkStats.TxPackets,
+			RxErrors:  linkStats.RxErrors,
+			TxErrors:  linkStats.TxErrors,
+			RxDropped: linkStats.RxDropped,
+			TxDropped: linkStats.TxDropped,
+		}
+	} else {
+		s.logger.Debug("Failed to get link statistics",
+			logging.String("device", deviceName),
+			logging.Error(linkResult.Error()))
 	}
 
 	s.logger.Info("Device statistics collected",
@@ -416,7 +463,20 @@ func (h *GetQdiscStatisticsHandler) Handle(ctx context.Context, query *models.Ge
 				DetailedStats: make(map[string]interface{}),
 			}
 
-			// TODO: Add detailed statistics collection through adapter interface
+			// Get detailed statistics through adapter interface
+			detailedResult := h.netlinkAdapter.GetDetailedQdiscStats(query.DeviceName(), query.Handle())
+			if detailedResult.IsSuccess() {
+				detailedStats := detailedResult.Value()
+				view.Backlog = detailedStats.Backlog
+				view.QueueLength = detailedStats.QueueLength
+				view.DetailedStats["backlog_bytes"] = detailedStats.BacklogBytes
+				view.DetailedStats["bytes_per_second"] = detailedStats.BytesPerSecond
+				view.DetailedStats["packets_per_second"] = detailedStats.PacketsPerSecond
+				if detailedStats.HTBStats != nil {
+					view.DetailedStats["htb_direct_packets"] = detailedStats.HTBStats.DirectPackets
+					view.DetailedStats["htb_version"] = detailedStats.HTBStats.Version
+				}
+			}
 
 			return types.Success(view)
 		}
@@ -462,7 +522,21 @@ func (h *GetClassStatisticsHandler) Handle(ctx context.Context, query *models.Ge
 				DetailedStats:  make(map[string]interface{}),
 			}
 
-			// TODO: Add detailed statistics collection through adapter interface
+			// Get detailed statistics through adapter interface
+			detailedResult := h.netlinkAdapter.GetDetailedClassStats(query.DeviceName(), query.Handle())
+			if detailedResult.IsSuccess() {
+				detailedStats := detailedResult.Value()
+				if detailedStats.HTBStats != nil {
+					view.DetailedStats["htb_lends"] = detailedStats.HTBStats.Lends
+					view.DetailedStats["htb_borrows"] = detailedStats.HTBStats.Borrows
+					view.DetailedStats["htb_giants"] = detailedStats.HTBStats.Giants
+					view.DetailedStats["htb_tokens"] = detailedStats.HTBStats.Tokens
+					view.DetailedStats["htb_ctokens"] = detailedStats.HTBStats.CTokens
+					view.DetailedStats["htb_rate"] = detailedStats.HTBStats.Rate
+					view.DetailedStats["htb_ceil"] = detailedStats.HTBStats.Ceil
+					view.DetailedStats["htb_level"] = detailedStats.HTBStats.Level
+				}
+			}
 
 			return types.Success(view)
 		}

@@ -21,32 +21,32 @@ func main() {
 	// Using numeric priorities
 	controller.CreateTrafficClass("Critical Traffic").
 		WithGuaranteedBandwidth("100Mbps").
-		WithPriority(0).     // Highest priority
-		ForPort(5060, 5061)  // SIP/VoIP
-		
+		WithPriority(0).    // Highest priority
+		ForPort(5060, 5061) // SIP/VoIP
+
 	controller.CreateTrafficClass("Interactive Traffic").
 		WithGuaranteedBandwidth("100Mbps").
 		WithPriority(1). // High priority
 		ForPort(22)      // SSH
-		
+
 	controller.CreateTrafficClass("Normal Traffic").
 		WithGuaranteedBandwidth("400Mbps").
-		WithPriority(4).  // Must set explicit priority
-		ForPort(80, 443)  // HTTP/HTTPS
-		
+		WithPriority(4). // Must set explicit priority
+		ForPort(80, 443) // HTTP/HTTPS
+
 	controller.CreateTrafficClass("Background Traffic").
 		WithGuaranteedBandwidth("100Mbps").
 		WithPriority(6). // Low priority
 		ForPort(873)     // rsync
-		
+
 	controller.CreateTrafficClass("Database Traffic").
 		WithGuaranteedBandwidth("200Mbps").
 		WithPriority(3). // Medium-high priority
 		ForPort(3306)    // MySQL
-		
+
 	controller.CreateTrafficClass("Bulk Transfer").
 		WithGuaranteedBandwidth("100Mbps").
-		WithPriority(7). // Lowest priority
+		WithPriority(7).          // Lowest priority
 		ForPort(6881, 6882, 6883) // BitTorrent
 
 	err := controller.Apply()

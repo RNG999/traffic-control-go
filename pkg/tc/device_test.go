@@ -249,7 +249,7 @@ func BenchmarkDeviceNameValidation(b *testing.B) {
 	validNames := []string{
 		"eth0", "wlan0", "enp0s3", "docker0", "eth0.100",
 	}
-	
+
 	invalidNames := []string{
 		"", "eth 0", "eth/0", "eth:0", strings.Repeat("a", 16),
 	}
@@ -333,12 +333,12 @@ func BenchmarkDeviceNameLengthValidation(b *testing.B) {
 
 func BenchmarkDeviceNameCommonPatterns(b *testing.B) {
 	patterns := map[string]string{
-		"Traditional":  "eth0",
-		"Predictable":  "enp0s3",
-		"Wireless":     "wlp3s0",
-		"Virtual":      "veth@if2",
-		"VLAN":         "eth0.100",
-		"Bridge":       "br-docker0",
+		"Traditional": "eth0",
+		"Predictable": "enp0s3",
+		"Wireless":    "wlp3s0",
+		"Virtual":     "veth@if2",
+		"VLAN":        "eth0.100",
+		"Bridge":      "br-docker0",
 	}
 
 	for patternName, deviceName := range patterns {

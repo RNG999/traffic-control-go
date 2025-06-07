@@ -138,7 +138,7 @@ func serverInfrastructureExample() {
 	tc.CreateTrafficClass("DB Tier").
 		WithGuaranteedBandwidth("8Gbps").
 		WithSoftLimitBandwidth("15Gbps").
-		WithPriority(0). // Highest priority for database
+		WithPriority(0).                  // Highest priority for database
 		ForPort(3306, 5432, 27017, 6379). // MySQL, PostgreSQL, MongoDB, Redis
 		ForSourceIPs("10.0.4.0/24").
 		Done()
@@ -158,7 +158,7 @@ func serverInfrastructureExample() {
 		WithSoftLimitBandwidth("5Gbps").
 		WithPriority(3).
 		ForPort(22, 161, 162, 514, 5601). // SSH, SNMP, Syslog, Kibana
-		ForSourceIPs("10.0.100.0/24"). // Management subnet
+		ForSourceIPs("10.0.100.0/24").    // Management subnet
 		Done()
 
 	fmt.Printf("Server Infrastructure Configuration: Applied successfully\n")

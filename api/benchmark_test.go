@@ -111,13 +111,13 @@ func BenchmarkCompleteTrafficSetup(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			controller := api.NetworkInterface("eth0")
 			controller.WithHardLimitBandwidth("1gbps")
-			
+
 			controller.CreateTrafficClass("Web").
 				WithGuaranteedBandwidth("300mbps").
 				WithSoftLimitBandwidth("500mbps").
 				WithPriority(1).
 				ForPort(80, 443)
-			
+
 			controller.CreateTrafficClass("Database").
 				WithGuaranteedBandwidth("200mbps").
 				WithSoftLimitBandwidth("300mbps").
@@ -130,7 +130,7 @@ func BenchmarkCompleteTrafficSetup(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			controller := api.NetworkInterface("eth0")
 			controller.WithHardLimitBandwidth("10gbps")
-			
+
 			// Multiple traffic classes with various configurations
 			classes := []struct {
 				name       string
@@ -145,13 +145,13 @@ func BenchmarkCompleteTrafficSetup(b *testing.B) {
 				{"Background", "1gbps", "2gbps", 7, []int{9000}},
 				{"Default", "500mbps", "1gbps", 6, []int{}},
 			}
-			
+
 			for _, tc := range classes {
 				class := controller.CreateTrafficClass(tc.name).
 					WithGuaranteedBandwidth(tc.guaranteed).
 					WithSoftLimitBandwidth(tc.softLimit).
 					WithPriority(tc.priority)
-				
+
 				if len(tc.ports) > 0 {
 					class.ForPort(tc.ports...)
 				}

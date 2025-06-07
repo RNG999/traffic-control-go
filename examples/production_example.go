@@ -28,10 +28,10 @@ type ProductionTrafficManager struct {
 
 // TrafficConfiguration represents the traffic control configuration
 type TrafficConfiguration struct {
-	Device    string         `json:"device"`
-	Bandwidth string         `json:"bandwidth"`
-	Classes   []ClassConfig  `json:"classes"`
-	UpdatedAt time.Time      `json:"updated_at"`
+	Device    string        `json:"device"`
+	Bandwidth string        `json:"bandwidth"`
+	Classes   []ClassConfig `json:"classes"`
+	UpdatedAt time.Time     `json:"updated_at"`
 }
 
 // ClassConfig represents a traffic class configuration
@@ -264,13 +264,13 @@ func (m *ProductionTrafficManager) UpdateConfiguration(newConfig *TrafficConfigu
 		m.config = oldConfig
 		m.controller = api.NetworkInterface(oldConfig.Device)
 		m.controller.WithHardLimitBandwidth(oldConfig.Bandwidth)
-		
+
 		// Try to restore old configuration
 		if rollbackErr := m.Apply(); rollbackErr != nil {
 			m.logger.Error("Rollback failed",
 				logging.Error(rollbackErr))
 		}
-		
+
 		return err
 	}
 

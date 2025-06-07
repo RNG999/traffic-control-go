@@ -32,7 +32,7 @@ func (w *CommandHandlerWrapper[T]) Handle(ctx context.Context, command interface
 			logging.String("received", commandType.String()))
 		return fmt.Errorf("expected command type %s, got %s", expectedType, commandType)
 	}
-	
+
 	return w.handler.HandleTyped(ctx, typedCommand)
 }
 
@@ -65,43 +65,43 @@ func NewGenericCommandBus(service *TrafficControlService) *GenericCommandBus {
 func RegisterHandlerFor[T any](gcb *GenericCommandBus, handler GenericCommandHandler[T]) {
 	gcb.mu.Lock()
 	defer gcb.mu.Unlock()
-	
+
 	var commandType T
 	reflectType := reflect.TypeOf(commandType)
-	
+
 	// If T is a pointer type, we want the element type for registration
 	if reflectType.Kind() == reflect.Ptr {
 		reflectType = reflectType.Elem()
 	}
-	
+
 	// Wrap the generic handler to work with the legacy interface
 	wrapper := NewCommandHandlerWrapper(handler, gcb.logger)
 	gcb.handlers[reflectType] = wrapper
-	
-	gcb.logger.Debug("Registered generic command handler", 
+
+	gcb.logger.Debug("Registered generic command handler",
 		logging.String("type", reflectType.String()))
 }
 
 // ExecuteCommand executes a command with runtime type checking (simplified approach)
 func (gcb *GenericCommandBus) ExecuteCommand(ctx context.Context, command interface{}) error {
 	reflectType := reflect.TypeOf(command)
-	
+
 	// If command is a pointer, get the element type for lookup
 	if reflectType.Kind() == reflect.Ptr {
 		reflectType = reflectType.Elem()
 	}
-	
+
 	gcb.mu.RLock()
 	handler, exists := gcb.handlers[reflectType]
 	gcb.mu.RUnlock()
-	
+
 	if !exists {
 		return fmt.Errorf("no handler registered for command type: %s", reflectType)
 	}
-	
-	gcb.logger.Debug("Executing typed command", 
+
+	gcb.logger.Debug("Executing typed command",
 		logging.String("type", reflectType.String()))
-	
+
 	// Execute the command through the wrapper
 	if err := handler.Handle(ctx, command); err != nil {
 		gcb.logger.Error("Typed command execution failed",
@@ -109,7 +109,7 @@ func (gcb *GenericCommandBus) ExecuteCommand(ctx context.Context, command interf
 			logging.Error(err))
 		return err
 	}
-	
+
 	// Publish events after successful command execution
 	if err := gcb.publishCommandEvents(ctx, reflectType.String()); err != nil {
 		gcb.logger.Error("Failed to publish command events",
@@ -117,8 +117,8 @@ func (gcb *GenericCommandBus) ExecuteCommand(ctx context.Context, command interf
 			logging.Error(err))
 		return err
 	}
-	
-	gcb.logger.Debug("Typed command executed successfully", 
+
+	gcb.logger.Debug("Typed command executed successfully",
 		logging.String("type", reflectType.String()))
 	return nil
 }
@@ -140,7 +140,7 @@ func (gcb *GenericCommandBus) publishCommandEvents(ctx context.Context, commandT
 	case "CreateFQCODELQdiscCommand":
 		return gcb.service.eventBus.Publish(ctx, "QdiscCreated", nil)
 	}
-	
+
 	return nil
 }
 
@@ -150,6 +150,6 @@ func (cb *CommandBus) ExecuteTypedCommand(ctx context.Context, command interface
 	if cb.service.genericCommandBus == nil {
 		return fmt.Errorf("generic command bus not initialized")
 	}
-	
+
 	return cb.service.genericCommandBus.ExecuteCommand(ctx, command)
 }

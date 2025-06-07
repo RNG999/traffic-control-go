@@ -48,17 +48,17 @@ func main() {
 
 	tc2 := api.NetworkInterface(deviceName)
 	tc2.WithHardLimitBandwidth("1Gbps")
-	
+
 	tc2.CreateTrafficClass("High Priority").
 		WithGuaranteedBandwidth("300Mbps").
 		WithPriority(1).
 		ForPort(22)
-		
+
 	tc2.CreateTrafficClass("Normal Priority").
 		WithGuaranteedBandwidth("400Mbps").
 		WithPriority(4).
 		ForPort(80, 443)
-		
+
 	tc2.CreateTrafficClass("Low Priority").
 		WithGuaranteedBandwidth("300Mbps").
 		WithPriority(6).
@@ -82,13 +82,13 @@ func main() {
 
 	tc3 := api.NetworkInterface(deviceName)
 	tc3.WithHardLimitBandwidth("500Mbps")
-	
+
 	tc3.CreateTrafficClass("Database").
 		WithGuaranteedBandwidth("150Mbps").
 		WithSoftLimitBandwidth("250Mbps").
 		WithPriority(2).
 		ForPort(3306, 5432)
-		
+
 	tc3.CreateTrafficClass("Web Services").
 		WithGuaranteedBandwidth("200Mbps").
 		WithSoftLimitBandwidth("350Mbps").

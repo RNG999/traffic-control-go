@@ -56,7 +56,7 @@ func BenchmarkEventStoreRetrieve(b *testing.B) {
 
 	b.Run("MemoryEventStore", func(b *testing.B) {
 		store := eventstore.NewMemoryEventStore()
-		
+
 		// Populate with test events
 		event := createTestEvent()
 		for i := 0; i < numEvents; i++ {
@@ -102,7 +102,7 @@ func BenchmarkEventStoreRetrieveFromVersion(b *testing.B) {
 
 	b.Run("MemoryEventStore", func(b *testing.B) {
 		store := eventstore.NewMemoryEventStore()
-		
+
 		// Populate with test events
 		event := createTestEvent()
 		for i := 0; i < numEvents; i++ {
@@ -148,7 +148,7 @@ func BenchmarkEventStoreConcurrentReads(b *testing.B) {
 
 	b.Run("MemoryEventStore", func(b *testing.B) {
 		store := eventstore.NewMemoryEventStore()
-		
+
 		// Populate with test events
 		event := createTestEvent()
 		for i := 0; i < numEvents; i++ {
@@ -208,7 +208,7 @@ func BenchmarkEventStoreConcurrentWrites(b *testing.B) {
 				aggregateID := fmt.Sprintf("aggregate-%d", counter%10) // Distribute across 10 aggregates
 				version := int(counter)
 				mu.Unlock()
-				
+
 				store.Save(aggregateID, []events.DomainEvent{event}, version)
 			}
 		})
@@ -241,7 +241,7 @@ func BenchmarkEventStoreConcurrentWrites(b *testing.B) {
 				aggregateID := fmt.Sprintf("aggregate-%d", counter%10) // Distribute across 10 aggregates
 				version := int(counter)
 				mu.Unlock()
-				
+
 				store.Save(aggregateID, []events.DomainEvent{event}, version)
 			}
 		})
@@ -254,7 +254,7 @@ func BenchmarkEventStoreGetAllEvents(b *testing.B) {
 
 	b.Run("MemoryEventStore", func(b *testing.B) {
 		store := eventstore.NewMemoryEventStore()
-		
+
 		// Populate with test events across multiple aggregates
 		event := createTestEvent()
 		for aggIdx := 0; aggIdx < numAggregates; aggIdx++ {
@@ -353,7 +353,7 @@ func BenchmarkEventStoreComparison(b *testing.B) {
 				}
 
 				op.fn(store)
-				
+
 				store.Close()
 				os.Remove(tmpFile.Name())
 			}
@@ -365,7 +365,7 @@ func BenchmarkEventStoreComparison(b *testing.B) {
 func createTestEvent() *events.QdiscCreatedEvent {
 	device, _ := tc.NewDeviceName("eth0")
 	handle := tc.NewHandle(1, 0)
-	
+
 	return events.NewQdiscCreatedEvent(
 		"test-aggregate-1",
 		1,

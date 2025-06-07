@@ -181,11 +181,11 @@ func TestTrafficControlService_CreateFilter(t *testing.T) {
 
 	t.Run("creates_filter_successfully", func(t *testing.T) {
 		ctx := context.Background()
-		
+
 		// First create the parent qdisc and class
 		err := service.CreateHTBQdisc(ctx, "eth0", "1:0", "1:999")
 		assert.NoError(t, err)
-		
+
 		err = service.CreateHTBClass(ctx, "eth0", "1:0", "1:10", "10mbps", "50mbps")
 		assert.NoError(t, err)
 
@@ -199,11 +199,11 @@ func TestTrafficControlService_CreateFilter(t *testing.T) {
 
 	t.Run("creates_filter_with_multiple_matches", func(t *testing.T) {
 		ctx := context.Background()
-		
+
 		// Create separate qdisc to avoid conflicts
 		err := service.CreateHTBQdisc(ctx, "eth1", "2:0", "2:999")
 		assert.NoError(t, err)
-		
+
 		err = service.CreateHTBClass(ctx, "eth1", "2:0", "2:10", "10mbps", "50mbps")
 		assert.NoError(t, err)
 

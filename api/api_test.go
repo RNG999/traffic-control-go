@@ -566,4 +566,3 @@ func TestFinalizePendingClasses(t *testing.T) {
 		assert.True(t, builder.finalized)
 	})
 }
-

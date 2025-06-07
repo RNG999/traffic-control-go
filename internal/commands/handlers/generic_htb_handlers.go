@@ -26,7 +26,7 @@ func NewGenericCreateHTBQdiscHandler(eventStore eventstore.EventStoreWithContext
 // HandleTyped processes the CreateHTBQdiscCommand with compile-time type safety
 func (h *GenericCreateHTBQdiscHandler) HandleTyped(ctx context.Context, command *models.CreateHTBQdiscCommand) error {
 	// No type assertion needed - we receive the exact type we expect
-	
+
 	// Create device value object
 	device, err := tc.NewDeviceName(command.DeviceName)
 	if err != nil {
@@ -79,7 +79,7 @@ func NewGenericCreateHTBClassHandler(eventStore eventstore.EventStoreWithContext
 // HandleTyped processes the CreateHTBClassCommand with compile-time type safety
 func (h *GenericCreateHTBClassHandler) HandleTyped(ctx context.Context, command *models.CreateHTBClassCommand) error {
 	// No type assertion needed - compile-time type safety guaranteed
-	
+
 	// Create device value object
 	device, err := tc.NewDeviceName(command.DeviceName)
 	if err != nil {
@@ -144,7 +144,7 @@ func NewGenericCreateFilterHandler(eventStore eventstore.EventStoreWithContext) 
 // HandleTyped processes the CreateFilterCommand with compile-time type safety
 func (h *GenericCreateFilterHandler) HandleTyped(ctx context.Context, command *models.CreateFilterCommand) error {
 	// Type safety guaranteed at compile time - no runtime assertions needed
-	
+
 	// Create device value object
 	device, err := tc.NewDeviceName(command.DeviceName)
 	if err != nil {

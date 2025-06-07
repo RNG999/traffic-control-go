@@ -105,7 +105,7 @@ func (s *StatisticsService) GetDeviceStatistics(ctx context.Context, deviceName 
 
 	// Get qdisc statistics
 	for _, qdisc := range readModel.Qdiscs {
-		_, err := parseHandle(qdisc.Handle)
+		_, err := tc.ParseHandle(qdisc.Handle)
 		if err != nil {
 			s.logger.Warn("Invalid qdisc handle",
 				logging.String("handle", qdisc.Handle),
@@ -144,7 +144,7 @@ func (s *StatisticsService) GetDeviceStatistics(ctx context.Context, deviceName 
 
 	// Get class statistics
 	for _, class := range readModel.Classes {
-		_, err := parseHandle(class.Handle)
+		_, err := tc.ParseHandle(class.Handle)
 		if err != nil {
 			s.logger.Warn("Invalid class handle",
 				logging.String("handle", class.Handle),

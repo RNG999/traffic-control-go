@@ -14,45 +14,45 @@ This library provides an intuitive API for managing Linux Traffic Control, makin
 
 ## Features
 
-- **Human-Readable API**: Clean, intuitive method chaining without redundant calls
-- **Type-Safe**: Leverages Go's type system to prevent configuration errors
+- **Human-Readable API**: Clean, intuitive method chaining with automatic handle generation
+- **Priority-Based Handles**: Automatic handle generation from priority values (0-7)
+- **Type-Safe**: Leverages Go's type system to prevent configuration errors  
+- **String-Based Bandwidth**: Simple bandwidth specification ("100mbps", "1gbps")
 - **Event-Driven**: Built with CQRS and Event Sourcing for configuration history
 - **Multiple Qdiscs**: HTB, TBF, PRIO, FQ_CODEL with complete CQRS integration
 - **Event Sourcing**: SQLite-based persistent event store for configuration history
-- **Statistics**: Real-time traffic monitoring and metrics collection
-- **Well-Tested**: Extensive unit and integration tests with iperf3
+- **Statistics**: Real-time traffic monitoring and detailed metrics collection
+- **Well-Tested**: 44% API coverage, 43% application coverage with extensive tests
 - **Production Ready**: Battle-tested API for enterprise applications
 
 ## Quick Start
 
 ```go
-import (
-    "github.com/rng999/traffic-control-go/api"
-    "github.com/rng999/traffic-control-go/pkg/tc"
-    "github.com/rng999/traffic-control-go/pkg/types"
-)
+import "github.com/rng999/traffic-control-go/api"
 
-// Create a traffic controller
-deviceName, _ := tc.NewDeviceName("eth0")
-config := api.Config{
-    Device: deviceName,
-}
+// Create a human-readable traffic controller
+controller := api.NetworkInterface("eth0")
 
-result := api.NewTrafficControlService(config)
-if result.IsFailure() {
-    log.Fatal(result.Error())
-}
+// Set total bandwidth for the interface  
+controller.WithHardLimitBandwidth("100mbps")
 
-tcService := result.Value()
+// Create traffic classes with priority-based handles
+controller.CreateTrafficClass("Web Services").
+    WithGuaranteedBandwidth("30mbps").
+    WithSoftLimitBandwidth("60mbps").
+    WithPriority(1).                // Priority 1 → Handle 1:11
+    ForPort(80, 443)
 
-// Configure HTB qdisc with bandwidth control
-bandwidth := tc.Mbps(1000)
-handle := tc.NewHandle(1, 0)
-defaultClass := tc.NewHandle(1, 10)
+controller.CreateTrafficClass("SSH Management").
+    WithGuaranteedBandwidth("5mbps").
+    WithSoftLimitBandwidth("10mbps").
+    WithPriority(0).                // Priority 0 → Handle 1:10 (highest priority)
+    ForPort(22)
 
-result = tcService.CreateHTBQdisc(handle, defaultClass, bandwidth)
-if result.IsFailure() {
-    log.Fatal(result.Error())
+// Apply the configuration
+err := controller.Apply()
+if err != nil {
+    log.Fatal(err)
 }
 ```
 
@@ -66,38 +66,58 @@ tc filter add dev eth0 parent 1:0 protocol ip prio 1 u32 match ip dst 192.168.1.
 
 ## Core Concepts
 
-### Handles
-Handles are unique identifiers for qdiscs and classes in Linux Traffic Control, represented as `major:minor` format:
+### Priority-Based Handles
+Traffic Control handles are automatically generated from priority values for intuitive management:
 
 ```go
-// Create a handle with major=1, minor=0 (represents "1:0")
-rootHandle := tc.NewHandle(1, 0)     // Root qdisc handle
-classHandle := tc.NewHandle(1, 10)   // Class handle "1:10"
-defaultHandle := tc.NewHandle(1, 30) // Default class "1:30"
+// Priority values automatically determine handles
+controller.CreateTrafficClass("Critical").
+    WithPriority(0)  // Priority 0 → Handle "1:10" (highest priority)
 
-// Parse handle from string
-handle, err := tc.ParseHandle("1:10") // Parses "1:10"
+controller.CreateTrafficClass("Normal").
+    WithPriority(3)  // Priority 3 → Handle "1:13" (normal priority)
+
+controller.CreateTrafficClass("Background").
+    WithPriority(7)  // Priority 7 → Handle "1:17" (lowest priority)
 ```
 
-**Handle Rules:**
-- **Root qdiscs**: `major:0` (e.g., `1:0`, `2:0`)
-- **Classes**: `major:minor` where minor > 0 (e.g., `1:10`, `1:20`)
-- **Parent-child relationships**: Classes with same major number belong to the same qdisc
-- **Default class**: Special class that handles unclassified traffic
+**Priority-to-Handle Mapping:**
+- **Priority 0** (highest) → Handle `1:10`
+- **Priority 1** → Handle `1:11`
+- **Priority 2** → Handle `1:12`
+- **Priority 3** → Handle `1:13`
+- **Priority 4** → Handle `1:14`
+- **Priority 5** → Handle `1:15`
+- **Priority 6** → Handle `1:16`
+- **Priority 7** (lowest) → Handle `1:17`
+
+**Benefits:**
+- **Predictable**: Priority value directly maps to handle
+- **Intuitive**: Lower priority numbers = higher priority = lower handle numbers
+- **No Conflicts**: Each priority gets a unique handle
+- **Debug-Friendly**: Handle reveals priority at a glance
 
 ### Bandwidth
-Type-safe bandwidth representations with multiple creation methods:
+Human-readable bandwidth specifications with automatic parsing:
 
 ```go
-// Direct creation with unit methods
-bandwidth1 := tc.Mbps(100)     // 100 Mbps
-bandwidth2 := tc.Kbps(500)     // 500 Kbps
-bandwidth3 := tc.Gbps(1.5)     // 1.5 Gbps
+// Simple string-based bandwidth specification
+controller.WithHardLimitBandwidth("100mbps")     // Total interface bandwidth
 
-// Parse from string
-bandwidth4, err := tc.ParseBandwidth("100Mbps")
-bandwidth5, err := tc.ParseBandwidth("1.5Gbps")
+controller.CreateTrafficClass("WebTraffic").
+    WithGuaranteedBandwidth("30mbps").            // Minimum guaranteed
+    WithSoftLimitBandwidth("60mbps")              // Maximum allowed (can borrow)
+
+// Supports various formats
+controller.WithHardLimitBandwidth("1gbps")       // 1 Gigabit
+controller.WithHardLimitBandwidth("500kbps")     // 500 Kilobits
+controller.WithHardLimitBandwidth("2048bps")     // Raw bits per second
 ```
+
+**Bandwidth Types:**
+- **Hard Limit**: Physical interface capacity (total available)
+- **Guaranteed**: Minimum assured bandwidth for a class
+- **Soft Limit**: Maximum bandwidth a class can use (with borrowing)
 
 ## Library Design
 
@@ -121,31 +141,39 @@ go get github.com/rng999/traffic-control-go
 ### Home Network Fair Sharing
 
 ```go
-// Create service
-deviceName, _ := tc.NewDeviceName("eth0")
-config := api.Config{Device: deviceName}
-tc := api.NewTrafficControlService(config).Value()
+import "github.com/rng999/traffic-control-go/api"
 
-// Create root HTB qdisc
-rootHandle := tc.NewHandle(1, 0)
-defaultHandle := tc.NewHandle(1, 30)
-totalBandwidth := tc.Mbps(100)
+// Create traffic controller for home network
+controller := api.NetworkInterface("eth0")
+controller.WithHardLimitBandwidth("100mbps")
 
-tc.CreateHTBQdisc(rootHandle, defaultHandle, totalBandwidth)
+// Streaming traffic (high priority, guaranteed bandwidth)
+controller.CreateTrafficClass("Streaming").
+    WithGuaranteedBandwidth("40mbps").
+    WithSoftLimitBandwidth("60mbps").
+    WithPriority(1).                        // Priority 1 → Handle 1:11
+    ForDestination("192.168.1.100").       // Smart TV
+    ForPort(1935, 8080)                     // RTMP, HTTP streaming
 
-// Streaming class (40Mbps guaranteed, 60Mbps max)
-streamingHandle := tc.NewHandle(1, 10)
-streamingRate := tc.Mbps(40)
-streamingCeil := tc.Mbps(60)
+// Work traffic (normal priority, can borrow unused bandwidth)
+controller.CreateTrafficClass("Work").
+    WithGuaranteedBandwidth("30mbps").
+    WithSoftLimitBandwidth("100mbps").      // Can use all available if needed
+    WithPriority(3).                        // Priority 3 → Handle 1:13
+    ForDestination("192.168.1.101").       // Work laptop
+    ForPort(22, 80, 443)                    // SSH, HTTP, HTTPS
 
-tc.CreateHTBClass(rootHandle, streamingHandle, "Streaming", streamingRate, streamingCeil)
+// Background traffic (lowest priority)
+controller.CreateTrafficClass("Background").
+    WithGuaranteedBandwidth("10mbps").
+    WithSoftLimitBandwidth("40mbps").
+    WithPriority(7).                        // Priority 7 → Handle 1:17
+    ForProtocols("tcp")                     // All other TCP traffic
 
-// Work class (30Mbps guaranteed, can borrow more)
-workHandle := tc.NewHandle(1, 20)
-workRate := tc.Mbps(30)
-workCeil := tc.Mbps(100)
-
-tc.CreateHTBClass(rootHandle, workHandle, "Work", workRate, workCeil)
+err := controller.Apply()
+if err != nil {
+    log.Fatal(err)
+}
 ```
 
 ### Priority-Based Traffic Control

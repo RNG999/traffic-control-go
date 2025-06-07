@@ -120,7 +120,7 @@ func TestFilterErrorScenarios(t *testing.T) {
 	service := application.NewTrafficControlService(eventStore, mockAdapter, logger)
 	ctx := context.Background()
 
-	deviceName := "filter-err-eth0"
+	deviceName := "filter-eth0"
 
 	// Setup base configuration
 	err := service.CreateHTBQdisc(ctx, deviceName, "1:0", "1:999")
@@ -197,7 +197,7 @@ func TestEdgeCaseScenarios(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("Boundary Values", func(t *testing.T) {
-		deviceName := "boundary-eth0"
+		deviceName := "bound-eth0"
 
 		// Test minimum valid handle
 		err := service.CreateHTBQdisc(ctx, deviceName, "1:0", "1:1")

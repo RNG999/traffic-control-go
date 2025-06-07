@@ -26,6 +26,11 @@ func TestTrafficControlWithIperf3(t *testing.T) {
 		t.Skip("Skipping iperf3 test in short mode")
 	}
 
+	// Skip iperf3 tests in CI environment due to virtualization limitations
+	if os.Getenv("CI") == "true" {
+		t.Skip("Skipping iperf3 bandwidth tests in CI environment")
+	}
+
 	// Check if running as root (skip this check in CI)
 	if os.Getenv("CI") != "true" && os.Geteuid() != 0 {
 		t.Skip("Test requires root privileges")

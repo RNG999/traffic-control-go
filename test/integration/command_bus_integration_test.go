@@ -197,7 +197,7 @@ func TestEventSourcingIntegration(t *testing.T) {
 	})
 
 	t.Run("Configuration Reconstruction", func(t *testing.T) {
-		deviceName := "config-test-eth1"
+		deviceName := "config-eth1"
 
 		// Create a complex configuration
 		err := service.CreateHTBQdisc(ctx, deviceName, "1:0", "1:30")

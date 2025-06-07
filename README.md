@@ -303,6 +303,10 @@ logger.Info("Traffic control operation started")
 - [Traffic Control Basics](docs/traffic-control.md) - Linux TC fundamentals
 
 ### API Guides
+- **[Quick Start Guide](docs/quick-start.md) - Get running in 5 minutes** 🆕
+- **[Comprehensive API Usage Guide](docs/api-usage-guide.md) - Detailed examples and patterns** 🆕
+- **[Best Practices Guide](docs/best-practices.md) - Production deployment strategies** 🆕
+- **[FAQ](docs/faq.md) - Common questions and troubleshooting** 🆕
 - **[API Guide](docs/improved-api-guide.md) - Human-readable API with clear bandwidth concepts**
 - [Structured Configuration API](docs/structured-config-api.md) - YAML/JSON configuration support
 - [Priority System Guide](docs/priority-guide.md) - Numeric priority system (0-7)

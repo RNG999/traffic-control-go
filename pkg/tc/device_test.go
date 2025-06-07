@@ -200,3 +200,153 @@ func TestDeviceNameBoundaryLengths(t *testing.T) {
 		})
 	}
 }
+
+// =============================================================================
+// BENCHMARK TESTS
+// =============================================================================
+
+func BenchmarkDeviceNameCreation(b *testing.B) {
+	deviceNames := []string{
+		"eth0", "wlan0", "lo", "br-lan", "eth0.100", "veth@if2",
+		"enp0s3", "docker0", "virbr0", "tun0",
+	}
+
+	b.Run("NewDeviceName_Multiple", func(b *testing.B) {
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			for _, name := range deviceNames {
+				_, _ = tc.NewDeviceName(name)
+			}
+		}
+	})
+
+	b.Run("NewDeviceName_Simple", func(b *testing.B) {
+		name := "eth0"
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			_, _ = tc.NewDeviceName(name)
+		}
+	})
+
+	b.Run("NewDeviceName_Complex", func(b *testing.B) {
+		name := "br-abcd1234.100"
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			_, _ = tc.NewDeviceName(name)
+		}
+	})
+
+	b.Run("MustNewDeviceName", func(b *testing.B) {
+		name := "eth0"
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			_ = tc.MustNewDeviceName(name)
+		}
+	})
+}
+
+func BenchmarkDeviceNameValidation(b *testing.B) {
+	validNames := []string{
+		"eth0", "wlan0", "enp0s3", "docker0", "eth0.100",
+	}
+
+	invalidNames := []string{
+		"", "eth 0", "eth/0", "eth:0", strings.Repeat("a", 16),
+	}
+
+	b.Run("Valid_Names", func(b *testing.B) {
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			for _, name := range validNames {
+				_, _ = tc.NewDeviceName(name)
+			}
+		}
+	})
+
+	b.Run("Invalid_Names", func(b *testing.B) {
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			for _, name := range invalidNames {
+				_, _ = tc.NewDeviceName(name)
+			}
+		}
+	})
+}
+
+func BenchmarkDeviceNameOperations(b *testing.B) {
+	dev1 := tc.MustNewDeviceName("eth0")
+	dev2 := tc.MustNewDeviceName("eth0")
+	dev3 := tc.MustNewDeviceName("eth1")
+
+	b.Run("String", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			_ = dev1.String()
+		}
+	})
+
+	b.Run("Equals_Same", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			_ = dev1.Equals(dev2)
+		}
+	})
+
+	b.Run("Equals_Different", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			_ = dev1.Equals(dev3)
+		}
+	})
+}
+
+func BenchmarkDeviceNameLengthValidation(b *testing.B) {
+	b.Run("Short_Name", func(b *testing.B) {
+		name := "lo"
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			_, _ = tc.NewDeviceName(name)
+		}
+	})
+
+	b.Run("Medium_Name", func(b *testing.B) {
+		name := "eth0.100"
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			_, _ = tc.NewDeviceName(name)
+		}
+	})
+
+	b.Run("Max_Length_Name", func(b *testing.B) {
+		name := strings.Repeat("a", 15) // Max valid length
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			_, _ = tc.NewDeviceName(name)
+		}
+	})
+
+	b.Run("Too_Long_Name", func(b *testing.B) {
+		name := strings.Repeat("a", 16) // Too long
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			_, _ = tc.NewDeviceName(name)
+		}
+	})
+}
+
+func BenchmarkDeviceNameCommonPatterns(b *testing.B) {
+	patterns := map[string]string{
+		"Traditional": "eth0",
+		"Predictable": "enp0s3",
+		"Wireless":    "wlp3s0",
+		"Virtual":     "veth@if2",
+		"VLAN":        "eth0.100",
+		"Bridge":      "br-docker0",
+	}
+
+	for patternName, deviceName := range patterns {
+		b.Run(patternName, func(b *testing.B) {
+			b.ResetTimer()
+			for i := 0; i < b.N; i++ {
+				_, _ = tc.NewDeviceName(deviceName)
+			}
+		})
+	}
+}

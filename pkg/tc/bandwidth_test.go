@@ -251,3 +251,166 @@ func TestBandwidthImmutability(t *testing.T) {
 	// Original should remain unchanged
 	assert.Equal(t, tc.Mbps(100).BitsPerSecond(), original.BitsPerSecond())
 }
+
+// =============================================================================
+// BENCHMARK TESTS
+// =============================================================================
+
+func BenchmarkBandwidthParsing(b *testing.B) {
+	testCases := []string{
+		"100bps", "1kbps", "100kbps", "1mbps", "100mbps", "1gbps",
+		"1.5Mbps", "10.5Gbps", "500Kbps", "2048bps",
+	}
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		for _, testCase := range testCases {
+			_, _ = tc.ParseBandwidth(testCase)
+		}
+	}
+}
+
+func BenchmarkBandwidthParsingSimple(b *testing.B) {
+	input := "100mbps"
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_, _ = tc.ParseBandwidth(input)
+	}
+}
+
+func BenchmarkBandwidthParsingComplex(b *testing.B) {
+	input := "  1.5 Gbps  " // With spaces and decimal
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_, _ = tc.ParseBandwidth(input)
+	}
+}
+
+func BenchmarkMustParseBandwidth(b *testing.B) {
+	input := "100mbps"
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_ = tc.MustParseBandwidth(input)
+	}
+}
+
+func BenchmarkBandwidthCreation(b *testing.B) {
+	b.Run("Bps", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			_ = tc.Bps(1000)
+		}
+	})
+
+	b.Run("Kbps", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			_ = tc.Kbps(100)
+		}
+	})
+
+	b.Run("Mbps", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			_ = tc.Mbps(100)
+		}
+	})
+
+	b.Run("Gbps", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			_ = tc.Gbps(1)
+		}
+	})
+}
+
+func BenchmarkBandwidthArithmetic(b *testing.B) {
+	b1 := tc.Mbps(100)
+	b2 := tc.Mbps(50)
+
+	b.Run("Add", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			_ = b1.Add(b2)
+		}
+	})
+
+	b.Run("Subtract", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			_ = b1.Subtract(b2)
+		}
+	})
+
+	b.Run("MultiplyBy", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			_ = b1.MultiplyBy(1.5)
+		}
+	})
+
+	b.Run("Percentage", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			_ = b1.Percentage(25)
+		}
+	})
+}
+
+func BenchmarkBandwidthComparisons(b *testing.B) {
+	b1 := tc.Mbps(100)
+	b2 := tc.Mbps(50)
+	b3 := tc.Mbps(100)
+
+	b.Run("Equals", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			_ = b1.Equals(b3)
+		}
+	})
+
+	b.Run("GreaterThan", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			_ = b1.GreaterThan(b2)
+		}
+	})
+
+	b.Run("LessThan", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			_ = b2.LessThan(b1)
+		}
+	})
+}
+
+func BenchmarkBandwidthFormatting(b *testing.B) {
+	bandwidth := tc.Mbps(150.75)
+
+	b.Run("String", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			_ = bandwidth.String()
+		}
+	})
+
+	b.Run("HumanReadable", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			_ = bandwidth.HumanReadable()
+		}
+	})
+
+	b.Run("BitsPerSecond", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			_ = bandwidth.BitsPerSecond()
+		}
+	})
+
+	b.Run("MegabitsPerSecond", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			_ = bandwidth.MegabitsPerSecond()
+		}
+	})
+}
+
+func BenchmarkBandwidthParsingVsCreation(b *testing.B) {
+	b.Run("ParseBandwidth", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			_, _ = tc.ParseBandwidth("100mbps")
+		}
+	})
+
+	b.Run("DirectCreation", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			_ = tc.Mbps(100)
+		}
+	})
+}

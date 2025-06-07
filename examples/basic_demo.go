@@ -36,13 +36,13 @@ func basicExample() {
 	controller := api.NetworkInterface("eth0")
 
 	controller.WithHardLimitBandwidth("100Mbps")
-	
+
 	controller.CreateTrafficClass("Web Services").
 		WithGuaranteedBandwidth("30Mbps").
 		WithSoftLimitBandwidth("60Mbps").
 		WithPriority(4). // Normal priority
 		ForPort(80, 443)
-		
+
 	controller.CreateTrafficClass("SSH Management").
 		WithGuaranteedBandwidth("5Mbps").
 		WithSoftLimitBandwidth("10Mbps").
@@ -67,15 +67,15 @@ func priorityExample() {
 		WithGuaranteedBandwidth("300Mbps").
 		WithPriority(1). // High priority
 		ForPort(22)      // SSH
-		
+
 	controller.CreateTrafficClass("Medium Priority").
 		WithGuaranteedBandwidth("500Mbps").
-		WithPriority(4).  // Medium priority
-		ForPort(80, 443)  // HTTP/HTTPS
-		
+		WithPriority(4). // Medium priority
+		ForPort(80, 443) // HTTP/HTTPS
+
 	controller.CreateTrafficClass("Low Priority").
 		WithGuaranteedBandwidth("200Mbps").
-		WithPriority(6). // Low priority
+		WithPriority(6).                      // Low priority
 		ForPort(6881, 6882, 6883, 6884, 6885) // BitTorrent ports
 
 	err := controller.Apply()

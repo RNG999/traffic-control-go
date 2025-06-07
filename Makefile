@@ -59,6 +59,38 @@ security: ## Run security scanner
 
 check: fmt lint test ## Run all quality checks
 
+# Performance benchmarks
+bench: ## Run benchmarks
+	@echo "Running performance benchmarks..."
+	@go test -bench=. -benchmem ./...
+
+bench-compare: ## Run benchmarks with comparison (5 iterations)
+	@echo "Running benchmark comparison (5 iterations)..."
+	@go test -bench=. -benchmem -count=5 ./...
+
+bench-profile: ## Run benchmarks with CPU profiling
+	@echo "Running benchmarks with CPU profiling..."
+	@go test -bench=. -cpuprofile=cpu.prof -memprofile=mem.prof ./...
+	@echo "✓ Profiles generated: cpu.prof, mem.prof"
+	@echo "View with: go tool pprof cpu.prof"
+
+bench-value-objects: ## Run benchmarks for value objects only
+	@echo "Running value object benchmarks..."
+	@go test -bench=. -benchmem ./pkg/tc/...
+
+bench-eventstore: ## Run benchmarks for event store only
+	@echo "Running event store benchmarks..."
+	@go test -bench=. -benchmem ./internal/infrastructure/eventstore/...
+
+bench-api: ## Run benchmarks for API layer only
+	@echo "Running API layer benchmarks..."
+	@go test -bench=. -benchmem ./api/...
+
+bench-report: ## Generate benchmark report
+	@echo "Generating benchmark report..."
+	@go test -bench=. -benchmem ./... > benchmark-report.txt
+	@echo "✓ Benchmark report saved to benchmark-report.txt"
+
 # Version management
 version: ## Show current version
 	@echo "Current version: $(VERSION)"

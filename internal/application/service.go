@@ -19,16 +19,16 @@ import (
 // TrafficControlService is the main application service that coordinates
 // between the API layer, CQRS handlers, and infrastructure
 type TrafficControlService struct {
-	eventStore         eventstore.EventStoreWithContext
-	netlinkAdapter     netlink.Adapter
-	commandBus         *CommandBus
-	genericCommandBus  *GenericCommandBus
-	queryBus           *QueryBus
-	eventBus           *EventBus
-	projectionManager  *projections.Manager
-	readModelStore     projections.ReadModelStore
-	statisticsService  *StatisticsService
-	logger             logging.Logger
+	eventStore        eventstore.EventStoreWithContext
+	netlinkAdapter    netlink.Adapter
+	commandBus        *CommandBus
+	genericCommandBus *GenericCommandBus
+	queryBus          *QueryBus
+	eventBus          *EventBus
+	projectionManager *projections.Manager
+	readModelStore    projections.ReadModelStore
+	statisticsService *StatisticsService
+	logger            logging.Logger
 }
 
 // NewTrafficControlService creates a new traffic control service
@@ -92,12 +92,12 @@ func (s *TrafficControlService) registerHandlers() {
 	s.commandBus.Register("CreateFilter", chandlers.NewCreateFilterHandler(s.eventStore))
 
 	// Register new type-safe generic command handlers
-	RegisterHandlerFor(s.genericCommandBus, chandlers.NewGenericCreateHTBQdiscHandler(s.eventStore))
-	RegisterHandlerFor(s.genericCommandBus, chandlers.NewGenericCreateHTBClassHandler(s.eventStore))
-	RegisterHandlerFor(s.genericCommandBus, chandlers.NewGenericCreateFilterHandler(s.eventStore))
-	RegisterHandlerFor(s.genericCommandBus, chandlers.NewGenericCreateTBFQdiscHandler(s.eventStore))
-	RegisterHandlerFor(s.genericCommandBus, chandlers.NewGenericCreatePRIOQdiscHandler(s.eventStore))
-	RegisterHandlerFor(s.genericCommandBus, chandlers.NewGenericCreateFQCODELQdiscHandler(s.eventStore))
+	RegisterHandlerFor[*models.CreateHTBQdiscCommand](s.genericCommandBus, chandlers.NewGenericCreateHTBQdiscHandler(s.eventStore))
+	RegisterHandlerFor[*models.CreateHTBClassCommand](s.genericCommandBus, chandlers.NewGenericCreateHTBClassHandler(s.eventStore))
+	RegisterHandlerFor[*models.CreateFilterCommand](s.genericCommandBus, chandlers.NewGenericCreateFilterHandler(s.eventStore))
+	RegisterHandlerFor[*models.CreateTBFQdiscCommand](s.genericCommandBus, chandlers.NewGenericCreateTBFQdiscHandler(s.eventStore))
+	RegisterHandlerFor[*models.CreatePRIOQdiscCommand](s.genericCommandBus, chandlers.NewGenericCreatePRIOQdiscHandler(s.eventStore))
+	RegisterHandlerFor[*models.CreateFQCODELQdiscCommand](s.genericCommandBus, chandlers.NewGenericCreateFQCODELQdiscHandler(s.eventStore))
 
 	// Register query handlers with read model support
 	// Note: Query handlers temporarily disabled due to interface compatibility issues

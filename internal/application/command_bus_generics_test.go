@@ -44,24 +44,24 @@ func TestGenericCommandHandler(t *testing.T) {
 
 	t.Run("generic_handler_should_have_compile_time_type_safety", func(t *testing.T) {
 		// This test demonstrates the type safety we want to achieve
-		
+
 		// Mock generic handler that should work with specific command types
 		handler := &MockGenericHTBQdiscHandler{}
-		
+
 		// Should be able to register with compile-time type checking
 		// This will fail initially but shows our target design
 		command := &models.CreateHTBQdiscCommand{
-			DeviceName:   "eth0", 
+			DeviceName:   "eth0",
 			Handle:       "1:0",
 			DefaultClass: "1:999",
 		}
 
 		ctx := context.Background()
-		
+
 		// The handler should receive the exact command type, not interface{}
 		err := handler.HandleTyped(ctx, command)
 		require.NoError(t, err)
-		
+
 		// Verify the handler received the correct type
 		assert.True(t, handler.receivedCorrectType)
 	})
@@ -154,12 +154,12 @@ type MockGenericHTBQdiscHandler struct {
 func (h *MockGenericHTBQdiscHandler) HandleTyped(ctx context.Context, command *models.CreateHTBQdiscCommand) error {
 	// This method receives the specific command type, not interface{}
 	h.receivedCorrectType = true
-	
+
 	// Validate that we have the expected fields without type assertions
 	if command.DeviceName == "" || command.Handle == "" {
 		return assert.AnError
 	}
-	
+
 	return nil
 }
 
@@ -167,20 +167,20 @@ func (h *MockGenericHTBQdiscHandler) HandleTyped(ctx context.Context, command *m
 func TestCurrentInterfaceUsageProblems(t *testing.T) {
 	t.Run("current_handler_requires_type_assertions", func(t *testing.T) {
 		// This demonstrates the current problem with interface{} usage
-		
+
 		handler := &CurrentStyleHandler{}
-		
+
 		// Current implementation requires passing interface{}
 		var command interface{} = &models.CreateHTBQdiscCommand{
 			DeviceName:   "eth0",
-			Handle:       "1:0", 
+			Handle:       "1:0",
 			DefaultClass: "1:999",
 		}
-		
+
 		ctx := context.Background()
 		err := handler.Handle(ctx, command)
 		assert.NoError(t, err)
-		
+
 		// This shows the type assertion that should be eliminated
 		assert.True(t, handler.performedTypeAssertion)
 	})
@@ -198,13 +198,13 @@ func (h *CurrentStyleHandler) Handle(ctx context.Context, command interface{}) e
 	if !ok {
 		return assert.AnError
 	}
-	
+
 	h.performedTypeAssertion = true
-	
+
 	// Rest of the logic...
 	if cmd.DeviceName == "" {
 		return assert.AnError
 	}
-	
+
 	return nil
 }

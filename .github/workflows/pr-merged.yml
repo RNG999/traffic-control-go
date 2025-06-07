@@ -26,37 +26,69 @@ jobs:
             let referencedIssues = [];
             
             try {
-              // GitHub APIを使用してPRに関連するIssueを取得
-              const { data: timelineEvents } = await github.rest.issues.listEventsForTimeline({
+              console.log('🔍 Using GraphQL API to extract issue references...');
+              
+              const graphqlQuery = `
+                query($owner: String!, $repo: String!, $number: Int!) {
+                  repository(owner: $owner, name: $repo) {
+                    pullRequest(number: $number) {
+                      number
+                      title
+                      closingIssuesReferences(first: 20) {
+                        nodes {
+                          number
+                          title
+                        }
+                      }
+                      timelineItems(itemTypes: [CROSS_REFERENCED_EVENT], first: 20) {
+                        nodes {
+                          __typename
+                          ... on CrossReferencedEvent {
+                            source {
+                              __typename
+                              ... on Issue {
+                                number
+                                title
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              `;
+              
+              const variables = {
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                issue_number: prNumber
-              });
+                number: prNumber
+              };
               
-              // connected/cross-referencedイベントからIssue番号を抽出
-              for (const event of timelineEvents) {
-                if (event.event === 'connected' && event.source && event.source.issue) {
-                  const issueNumber = event.source.issue.number.toString();
-                  if (!autoCloseIssues.includes(issueNumber)) {
-                    autoCloseIssues.push(issueNumber);
-                  }
-                  console.log(`✅ Found connected issue #${issueNumber}`);
-                } else if (event.event === 'cross-referenced' && event.source && event.source.issue) {
-                  const issueNumber = event.source.issue.number.toString();
-                  if (!referencedIssues.includes(issueNumber) && !autoCloseIssues.includes(issueNumber)) {
+              const response = await github.graphql(graphqlQuery, variables);
+              const pullRequest = response.repository.pullRequest;
+              
+              console.log('GraphQL data retrieved successfully');
+              
+              // closingIssuesReferencesから自動クローズ対象のIssueを取得
+              autoCloseIssues = pullRequest.closingIssuesReferences.nodes.map(issue => issue.number.toString());
+              console.log(`✅ Found ${autoCloseIssues.length} auto-close issues: ${autoCloseIssues.map(n => '#' + n).join(', ')}`);
+              
+              // timelineItemsからCross-referencedなIssueを取得（自動クローズ対象以外）
+              pullRequest.timelineItems.nodes.forEach(item => {
+                if (item.__typename === 'CrossReferencedEvent' && item.source?.__typename === 'Issue') {
+                  const issueNumber = item.source.number.toString();
+                  if (!autoCloseIssues.includes(issueNumber) && !referencedIssues.includes(issueNumber)) {
                     referencedIssues.push(issueNumber);
                   }
-                  console.log(`🔗 Found referenced issue #${issueNumber}`);
                 }
-              }
+              });
               
-              console.log('GitHub API results:');
-              console.log('Auto-close issues:', autoCloseIssues);
-              console.log('Referenced issues:', referencedIssues);
+              console.log(`🔗 Found ${referencedIssues.length} referenced issues: ${referencedIssues.map(n => '#' + n).join(', ')}`);
               
-            } catch (apiError) {
-              console.log('⚠️ GitHub API failed, falling back to text parsing');
-              console.log('API Error:', apiError.message);
+            } catch (graphqlError) {
+              console.log('⚠️ GraphQL API failed, falling back to text parsing');
+              console.log('GraphQL Error:', graphqlError.message);
               
               // フォールバック: テキスト解析
               const title = context.payload.pull_request.title;

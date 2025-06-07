@@ -11,7 +11,7 @@ on:
 
 jobs:
   auto-close-on-success:
-    if: github.event.workflow_run.conclusion == 'success'
+    if: github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.name == 'CI'
     runs-on: ubuntu-latest
     name: Auto-close Issues on Successful CI
     steps:
@@ -43,10 +43,42 @@ jobs:
             
             if (associatedPR && associatedPR.merged) {
               console.log(`✅ Found merged PR #${associatedPR.number} for successful CI run`);
-              core.setOutput('pr-number', associatedPR.number.toString());
-              core.setOutput('pr-title', associatedPR.title);
-              core.setOutput('pr-body', associatedPR.body || '');
-              core.setOutput('has-pr', 'true');
+              
+              // 追加検証: すべての必須チェックが完了していることを確認
+              const { data: checkRuns } = await github.rest.checks.listForRef({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                ref: headSha
+              });
+              
+              const requiredChecks = ['validate-issue-link', 'validate-pr-format', 'test', 'lint'];
+              let allChecksPass = true;
+              let checkStatus = {};
+              
+              for (const check of checkRuns.check_runs) {
+                if (requiredChecks.includes(check.name)) {
+                  checkStatus[check.name] = check.conclusion;
+                  if (check.conclusion !== 'success') {
+                    allChecksPass = false;
+                    console.log(`❌ Check '${check.name}' status: ${check.conclusion}`);
+                  } else {
+                    console.log(`✅ Check '${check.name}' passed`);
+                  }
+                }
+              }
+              
+              console.log('All checks status:', checkStatus);
+              
+              if (allChecksPass) {
+                console.log('✅ All required checks passed - safe to close issues');
+                core.setOutput('pr-number', associatedPR.number.toString());
+                core.setOutput('pr-title', associatedPR.title);
+                core.setOutput('pr-body', associatedPR.body || '');
+                core.setOutput('has-pr', 'true');
+              } else {
+                console.log('⚠️ Not all required checks passed - skipping issue closure');
+                core.setOutput('has-pr', 'false');
+              }
             } else {
               console.log('ℹ️ No merged PR found for this workflow run');
               core.setOutput('has-pr', 'false');
@@ -99,7 +131,11 @@ jobs:
                     repo: context.repo.repo,
                     issue_number: parseInt(issueNumber),
                     body: `🎯 **Issue Completed Successfully!**\n\n` +
-                          `✅ All CI/CD checks have passed for PR #${prNumber}\n` +
+                          `✅ **All CI/CD checks passed** for PR #${prNumber}\n` +
+                          `   • Issue linking validation ✅\n` +
+                          `   • PR format validation ✅\n` +
+                          `   • Test suite ✅\n` +
+                          `   • Code linting ✅\n` +
                           `🚀 Changes have been successfully merged to main branch\n` +
                           `📋 PR Title: "${prTitle}"\n\n` +
                           `This issue is now resolved and will be closed automatically.\n\n` +

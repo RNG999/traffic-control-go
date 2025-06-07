@@ -21,119 +21,164 @@ jobs:
             let hasValidIssueReference = false;
             let foundIssues = [];
             
+            console.log('🔍 Using GraphQL API for authoritative issue linking...');
+            
+            // GraphQL APIでclosingIssuesReferencesを取得
+            async function checkGraphQLIssueReferences(maxRetries = 5, delayMs = 1000) {
+              for (let attempt = 1; attempt <= maxRetries; attempt++) {
+                try {
+                  console.log(`GraphQL API attempt ${attempt}/${maxRetries}`);
+                  
+                  const graphqlQuery = `
+                    query($owner: String!, $repo: String!, $number: Int!) {
+                      repository(owner: $owner, name: $repo) {
+                        pullRequest(number: $number) {
+                          number
+                          title
+                          closingIssuesReferences(first: 10) {
+                            nodes {
+                              number
+                              title
+                              url
+                            }
+                          }
+                          timelineItems(itemTypes: [CROSS_REFERENCED_EVENT, CONNECTED_EVENT], first: 10) {
+                            nodes {
+                              __typename
+                              ... on CrossReferencedEvent {
+                                source {
+                                  __typename
+                                  ... on Issue {
+                                    number
+                                    title
+                                  }
+                                }
+                              }
+                              ... on ConnectedEvent {
+                                subject {
+                                  __typename
+                                  ... on Issue {
+                                    number
+                                    title
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  `;
+                  
+                  const variables = {
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    number: prNumber
+                  };
+                  
+                  const response = await github.graphql(graphqlQuery, variables);
+                  const pullRequest = response.repository.pullRequest;
+                  
+                  console.log('GraphQL PR data retrieved successfully');
+                  console.log(`Closing issues: ${pullRequest.closingIssuesReferences.nodes.length}`);
+                  console.log(`Timeline items: ${pullRequest.timelineItems.nodes.length}`);
+                  
+                  // closingIssuesReferencesから自動クローズ対象のIssueを取得
+                  const closingIssues = pullRequest.closingIssuesReferences.nodes.map(issue => issue.number);
+                  foundIssues.push(...closingIssues);
+                  
+                  // TimelineからCross-referencedなIssueも取得
+                  pullRequest.timelineItems.nodes.forEach(item => {
+                    if (item.__typename === 'CrossReferencedEvent' && item.source?.__typename === 'Issue') {
+                      const issueNumber = item.source.number;
+                      if (!foundIssues.includes(issueNumber)) {
+                        foundIssues.push(issueNumber);
+                      }
+                    } else if (item.__typename === 'ConnectedEvent' && item.subject?.__typename === 'Issue') {
+                      const issueNumber = item.subject.number;
+                      if (!foundIssues.includes(issueNumber)) {
+                        foundIssues.push(issueNumber);
+                      }
+                    }
+                  });
+                  
+                  if (closingIssues.length > 0) {
+                    hasValidIssueReference = true;
+                    console.log(`✅ Found ${closingIssues.length} closing issue(s): ${closingIssues.map(n => '#' + n).join(', ')}`);
+                    core.notice(`✅ PR will auto-close issues: ${closingIssues.map(n => '#' + n).join(', ')}`);
+                    return true;
+                  }
+                  
+                  if (foundIssues.length > 0) {
+                    hasValidIssueReference = true;
+                    console.log(`✅ Found ${foundIssues.length} referenced issue(s): ${foundIssues.map(n => '#' + n).join(', ')}`);
+                    core.notice(`✅ PR references issues: ${foundIssues.map(n => '#' + n).join(', ')}`);
+                    return true;
+                  }
+                  
+                  if (attempt < maxRetries) {
+                    console.log(`⏳ No issue references found yet, waiting ${delayMs}ms before retry...`);
+                    await new Promise(resolve => setTimeout(resolve, delayMs));
+                  }
+                  
+                } catch (error) {
+                  console.log(`❌ GraphQL API attempt ${attempt} failed:`, error.message);
+                  if (attempt === maxRetries) {
+                    throw error;
+                  }
+                  await new Promise(resolve => setTimeout(resolve, delayMs));
+                }
+              }
+              return false;
+            }
+            
             try {
-              // GitHub APIを使用してPRに関連するIssueを取得
-              const { data: timelineEvents } = await github.rest.issues.listEventsForTimeline({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: prNumber
-              });
-              
-              console.log('Timeline events found:', timelineEvents.length);
-              
-              // connected/cross-referencedイベントからIssue番号を抽出
-              for (const event of timelineEvents) {
-                if ((event.event === 'connected' || event.event === 'cross-referenced') && 
-                    event.source && event.source.issue) {
-                  const issueNumber = event.source.issue.number;
-                  foundIssues.push(issueNumber);
-                  hasValidIssueReference = true;
-                  console.log(`✅ Found linked issue #${issueNumber} (${event.event})`);
+              const graphqlSuccess = await checkGraphQLIssueReferences();
+              if (!graphqlSuccess) {
+                console.log('⚠️ GraphQL API found no issue links, falling back to text parsing');
+                // フォールバック: テキスト解析
+                const title = context.payload.pull_request.title;
+                const body = context.payload.pull_request.body || '';
+                
+                console.log('PR Title:', title);
+                console.log('PR Body length:', body.length);
+                
+                const patterns = [
+                  /(?:close|closes|closed|fix|fixes|fixed|resolve|resolves|resolved)\s+#\d+/gi,
+                  /\B#\d+\b/g
+                ];
+                
+                let foundReferences = [];
+                const textToCheck = title + ' ' + body;
+                
+                for (const pattern of patterns) {
+                  const matches = textToCheck.match(pattern);
+                  if (matches) {
+                    hasValidIssueReference = true;
+                    foundReferences.push(...matches);
+                  }
+                }
+                
+                console.log('Fallback text parsing found:', foundReferences);
+                
+                if (hasValidIssueReference) {
+                  core.notice(`✅ Found issue references via fallback: ${foundReferences.join(', ')}`);
+                  console.log('✅ Issue reference found via text parsing fallback');
                 }
               }
-              
-              if (hasValidIssueReference) {
-                core.notice(`✅ PR is properly linked to issues: ${foundIssues.map(n => '#' + n).join(', ')}`);
-                console.log('✅ Issue reference validation passed');
-              } else {
-                throw new Error(
-                  '❌ PR must reference an issue number.\n\n' +
-                  'Please include one of the following in your PR title or description:\n' +
-                  '• "Fixes #123" - Automatically closes the issue when PR is merged\n' +
-                  '• "Closes #123" - Automatically closes the issue when PR is merged\n' +
-                  '• "Resolves #123" - Automatically closes the issue when PR is merged\n' +
-                  '• "#123" - References the issue without auto-closing\n\n' +
-                  'This ensures proper issue tracking and project management.'
-                );
-              }
-              
-            } catch (apiError) {
-              console.log('⚠️ GitHub API failed, falling back to text parsing');
-              console.log('API Error:', apiError.message);
-              
-              // フォールバック: テキスト解析
-              const title = context.payload.pull_request.title;
-              const body = context.payload.pull_request.body || '';
-              
-              console.log('PR Title:', title);
-              console.log('PR Body length:', body.length);
-              
-              const patterns = [
-                /(?:close|closes|closed|fix|fixes|fixed|resolve|resolves|resolved)\s+#\d+/gi,
-                /\B#\d+\b/g
-              ];
-              
-              let foundReferences = [];
-              const textToCheck = title + ' ' + body;
-              
-              for (const pattern of patterns) {
-                const matches = textToCheck.match(pattern);
-                if (matches) {
-                  hasValidIssueReference = true;
-                  foundReferences.push(...matches);
-                }
-              }
-              
-              console.log('Fallback found references:', foundReferences);
-              
-              if (!hasValidIssueReference) {
-                throw new Error(
-                  '❌ PR must reference an issue number.\n\n' +
-                  'Please include one of the following in your PR title or description:\n' +
-                  '• "Fixes #123" - Automatically closes the issue when PR is merged\n' +
-                  '• "Closes #123" - Automatically closes the issue when PR is merged\n' +
-                  '• "Resolves #123" - Automatically closes the issue when PR is merged\n' +
-                  '• "#123" - References the issue without auto-closing\n\n' +
-                  'This ensures proper issue tracking and project management.'
-                );
-              } else {
-                console.log('✅ Fallback issue reference found:', foundReferences.join(', '));
-                core.notice(`✅ Found issue references: ${foundReferences.join(', ')}`);
-              }
+            } catch (error) {
+              console.log('❌ Both GraphQL API and fallback failed:', error.message);
+            }
+            
+            if (!hasValidIssueReference) {
+              throw new Error(
+                '❌ PR must reference an issue number.\n\n' +
+                'Please include one of the following in your PR title or description:\n' +
+                '• "Fixes #123" - Automatically closes the issue when PR is merged\n' +
+                '• "Closes #123" - Automatically closes the issue when PR is merged\n' +
+                '• "Resolves #123" - Automatically closes the issue when PR is merged\n' +
+                '• "#123" - References the issue without auto-closing\n\n' +
+                'This ensures proper issue tracking and project management.'
+              );
             }
 
-  validate-pr-format:
-    runs-on: ubuntu-latest
-    name: Validate PR Format
-    steps:
-      - name: Check PR Title Format
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const title = context.payload.pull_request.title;
-            
-            // 推奨されるPRタイトル形式をチェック
-            const validPrefixes = [
-              'feat:', 'fix:', 'docs:', 'style:', 'refactor:', 
-              'test:', 'chore:', 'ci:', 'build:', 'perf:'
-            ];
-            
-            const hasValidPrefix = validPrefixes.some(prefix => 
-              title.toLowerCase().startsWith(prefix)
-            );
-            
-            if (!hasValidPrefix) {
-              core.warning(
-                '⚠️ Consider using conventional commit format for PR title.\n\n' +
-                'Recommended formats:\n' +
-                '• feat: add new feature\n' +
-                '• fix: resolve bug\n' +
-                '• docs: update documentation\n' +
-                '• refactor: improve code structure\n' +
-                '• test: add or update tests\n' +
-                '• chore: maintenance tasks\n\n' +
-                'Current title: ' + title
-              );
-            } else {
-              console.log('✅ PR title follows conventional commit format');
-            }

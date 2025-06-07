@@ -18,6 +18,31 @@ This is a Go library for Linux Traffic Control (TC) that provides an intuitive, 
 
 These rules must be consulted and strictly followed for any coding or project management tasks.
 
+## Issue and PR Workflow
+
+The following rules govern the lifecycle of issues and Pull Requests. This workflow ensures that all work is tracked and properly linked.
+
+- **1. Issue-First Principle**:
+    - All work must start with an Issue. Before creating a Pull Request (PR), ensure a corresponding Issue exists.
+    - If a relevant Issue does not exist, you **MUST** create one first that describes the feature or bug.
+
+- **2. One-to-One Correspondence**:
+    - Each Issue **MUST** correspond to a single Pull Request, and each PR **MUST** resolve a single Issue.
+    - This one-to-one mapping is strict. Do not bundle fixes for multiple, unrelated Issues into a single PR.
+
+- **3. Linking PRs to Issues**:
+    - When you create a PR, you **MUST** reference its corresponding Issue number in the PR's description (e.g., `Fixes #123`, `Closes #123`). This creates a formal link.
+
+- **4. Closing an Issue on Merge**:
+    - An Issue should be closed once its single, linked PR has been merged.
+    - To identify which Issue to close, you **MUST** find the Issue number referenced in the PR's description or comments.
+    - The trigger for closing the Issue can be either your own confirmation of the merge or a notification from the user.
+
+- **5. Re-opening an Issue on Failure**:
+    - A previously closed Issue **MUST** be re-opened if any negative factors arise after the PR merge. This includes situations such as:
+        - The CI/CD pipeline triggered by the merge fails.
+        - Any other regressions or problems are discovered as a result of the merge.
+
 ## Development Commands
 
 Common commands for this project (from Makefile):

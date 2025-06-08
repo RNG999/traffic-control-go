@@ -6,6 +6,7 @@ package integration_test
 import (
 	"context"
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -263,7 +264,12 @@ func TestAdapterConcurrency(t *testing.T) {
 		for i := 0; i < totalOps; i++ {
 			if err := <-errors; err != nil {
 				errorCount++
-				t.Logf("Mixed concurrent operation failed: %v", err)
+				// Concurrency conflicts are expected in event sourcing
+				if strings.Contains(err.Error(), "concurrency conflict") {
+					t.Logf("Expected concurrency conflict occurred: %v", err)
+				} else {
+					t.Logf("Unexpected error in concurrent operation: %v", err)
+				}
 			}
 		}
 

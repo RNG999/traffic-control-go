@@ -29,7 +29,7 @@ func TestCreateHTBQdiscHandler_TypeSafe(t *testing.T) {
 
 	// Execute handler
 	err := handler.HandleTyped(ctx, cmd)
-	
+
 	// Verify success
 	assert.NoError(t, err)
 
@@ -79,7 +79,7 @@ func TestCreateHTBClassHandler_TypeSafe(t *testing.T) {
 
 	// Execute handler
 	err = classHandler.HandleTyped(ctx, classCmd)
-	
+
 	// Verify success
 	assert.NoError(t, err)
 
@@ -224,19 +224,19 @@ func TestCreateFilterHandler_PortMatching(t *testing.T) {
 	// Create initial qdisc and class
 	deviceName, _ := tc.NewDeviceName("eth0")
 	aggregate := aggregates.NewTrafficControlAggregate(deviceName)
-	
+
 	// Add qdisc first
 	qHandle, _ := tc.ParseHandle("1:0")
 	defaultHandle, _ := tc.ParseHandle("1:30")
 	err := aggregate.AddHTBQdisc(qHandle, defaultHandle)
 	require.NoError(t, err)
-	
+
 	// Add class
 	classHandle, _ := tc.ParseHandle("1:10")
 	bandwidth := tc.MustParseBandwidth("100Mbps")
 	err = aggregate.AddHTBClass(qHandle, classHandle, "testclass", bandwidth, bandwidth)
 	require.NoError(t, err)
-	
+
 	// Save initial state
 	err = store.SaveAggregate(ctx, aggregate)
 	require.NoError(t, err)
@@ -266,11 +266,11 @@ func TestCreateFilterHandler_PortMatching(t *testing.T) {
 
 		filters := aggregate.GetFilters()
 		require.Len(t, filters, 1)
-		
+
 		filter := filters[0]
 		matches := filter.Matches()
 		require.Len(t, matches, 1)
-		
+
 		// Verify it's a destination port match for port 5201
 		portMatch, ok := matches[0].(*entities.PortMatch)
 		require.True(t, ok, "Match should be a PortMatch")
@@ -284,7 +284,7 @@ func TestCreateFilterHandler_PortMatching(t *testing.T) {
 			DeviceName: "eth0",
 			Parent:     "1:0",
 			Priority:   200,
-			Protocol:   "ip", 
+			Protocol:   "ip",
 			FlowID:     "1:10",
 			Match: map[string]string{
 				"src_port": "8080",
@@ -301,7 +301,7 @@ func TestCreateFilterHandler_PortMatching(t *testing.T) {
 
 		filters := aggregate.GetFilters()
 		require.Len(t, filters, 2) // Previous + this one
-		
+
 		// Find the source port filter
 		var sourceFilter *entities.Filter
 		for _, f := range filters {
@@ -311,10 +311,10 @@ func TestCreateFilterHandler_PortMatching(t *testing.T) {
 			}
 		}
 		require.NotNil(t, sourceFilter, "Source port filter should exist")
-		
+
 		matches := sourceFilter.Matches()
 		require.Len(t, matches, 1)
-		
+
 		portMatch, ok := matches[0].(*entities.PortMatch)
 		require.True(t, ok)
 		assert.Equal(t, entities.MatchTypePortSource, portMatch.Type())
@@ -345,7 +345,7 @@ func TestCreateFilterHandler_PortMatching(t *testing.T) {
 
 		filters := aggregate.GetFilters()
 		require.Len(t, filters, 3)
-		
+
 		// Find the multi-match filter
 		var multiFilter *entities.Filter
 		for _, f := range filters {
@@ -355,10 +355,10 @@ func TestCreateFilterHandler_PortMatching(t *testing.T) {
 			}
 		}
 		require.NotNil(t, multiFilter)
-		
+
 		matches := multiFilter.Matches()
 		require.Len(t, matches, 2) // Port + IP match
-		
+
 		// Verify we have both types
 		var hasPortMatch, hasIPMatch bool
 		for _, match := range matches {
@@ -398,7 +398,7 @@ func TestCreateFilterHandler_PortMatching(t *testing.T) {
 
 		filters := aggregate.GetFilters()
 		require.Len(t, filters, 4)
-		
+
 		// Find the filter
 		var invalidPortFilter *entities.Filter
 		for _, f := range filters {
@@ -408,7 +408,7 @@ func TestCreateFilterHandler_PortMatching(t *testing.T) {
 			}
 		}
 		require.NotNil(t, invalidPortFilter)
-		
+
 		// Should have no matches due to invalid port
 		matches := invalidPortFilter.Matches()
 		assert.Len(t, matches, 0)

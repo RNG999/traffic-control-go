@@ -150,7 +150,7 @@ func (s *TrafficControlService) handleFilterCreated(ctx context.Context, event i
 			logging.Int("type", int(matchData.Type)),
 			logging.String("value", matchData.Value),
 		)
-		
+
 		// Convert match data back to proper match objects
 		match, err := convertMatchData(matchData)
 		if err != nil {
@@ -161,13 +161,13 @@ func (s *TrafficControlService) handleFilterCreated(ctx context.Context, event i
 			)
 			continue
 		}
-		
+
 		s.logger.Debug("Successfully converted and added match",
 			logging.Int("type", int(matchData.Type)),
 			logging.String("value", matchData.Value),
 			logging.String("match_string", match.String()),
 		)
-		
+
 		filter.AddMatch(match)
 	}
 
@@ -233,13 +233,13 @@ func parsePortFromString(value string) (uint16, error) {
 	if len(parts) < 3 {
 		return 0, fmt.Errorf("invalid port match format: %s", value)
 	}
-	
+
 	// Parse the port number (third part)
 	port, err := strconv.ParseUint(parts[2], 10, 16)
 	if err != nil {
 		return 0, fmt.Errorf("invalid port number: %s", parts[2])
 	}
-	
+
 	return uint16(port), nil
 }
 
@@ -250,13 +250,13 @@ func parseProtocolFromString(value string) (entities.TransportProtocol, error) {
 	if len(parts) < 3 {
 		return 0, fmt.Errorf("invalid protocol match format: %s", value)
 	}
-	
+
 	// Parse the protocol number (third part)
 	protocol, err := strconv.ParseUint(parts[2], 10, 8)
 	if err != nil {
 		return 0, fmt.Errorf("invalid protocol number: %s", parts[2])
 	}
-	
+
 	return entities.TransportProtocol(protocol), nil
 }
 
@@ -269,7 +269,7 @@ func parseIPFromString(value, expectedPrefix string) (string, error) {
 	if _, err := fmt.Sscanf(value, pattern, &cidr); err != nil {
 		return "", fmt.Errorf("invalid IP match format: %s (expected '%s CIDR')", value, expectedPrefix)
 	}
-	
+
 	return cidr, nil
 }
 
@@ -280,12 +280,12 @@ func parseMarkFromString(value string) (uint32, error) {
 	if len(parts) < 2 {
 		return 0, fmt.Errorf("invalid mark match format: %s", value)
 	}
-	
+
 	// Parse the mark value (second part)
 	mark, err := strconv.ParseUint(parts[1], 0, 32) // 0 base allows 0x prefix
 	if err != nil {
 		return 0, fmt.Errorf("invalid mark value: %s", parts[1])
 	}
-	
+
 	return uint32(mark), nil
 }

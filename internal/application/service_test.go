@@ -293,14 +293,19 @@ func TestTrafficControlService_GetDeviceStatistics(t *testing.T) {
 		assert.Contains(t, err.Error(), "invalid device name")
 	})
 
-	t.Run("fails_when_query_bus_execution_fails", func(t *testing.T) {
+	t.Run("succeeds_with_empty_statistics_when_no_configuration", func(t *testing.T) {
 		ctx := context.Background()
 
 		stats, err := service.GetDeviceStatistics(ctx, "eth0")
 
-		assert.Error(t, err)
-		assert.Nil(t, stats)
-		assert.Contains(t, err.Error(), "failed to get device statistics")
+		// With the new CQRS implementation, this should succeed but return empty stats
+		assert.NoError(t, err)
+		if assert.NotNil(t, stats, "stats should not be nil") {
+			assert.Equal(t, "eth0", stats.DeviceName)
+			assert.Empty(t, stats.QdiscStats)
+			assert.Empty(t, stats.ClassStats)
+			assert.Empty(t, stats.FilterStats)
+		}
 	})
 }
 

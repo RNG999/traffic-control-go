@@ -11,6 +11,7 @@ import (
 	"github.com/rng999/traffic-control-go/internal/infrastructure/eventstore"
 	"github.com/rng999/traffic-control-go/internal/infrastructure/netlink"
 	"github.com/rng999/traffic-control-go/internal/projections"
+	qhandlers "github.com/rng999/traffic-control-go/internal/queries/handlers"
 	qmodels "github.com/rng999/traffic-control-go/internal/queries/models"
 	"github.com/rng999/traffic-control-go/pkg/logging"
 	"github.com/rng999/traffic-control-go/pkg/tc"
@@ -91,22 +92,22 @@ func (s *TrafficControlService) registerHandlers() {
 	RegisterHandlerFor[*models.CreatePRIOQdiscCommand](s.commandBus, chandlers.NewCreatePRIOQdiscHandler(s.eventStore))
 	RegisterHandlerFor[*models.CreateFQCODELQdiscCommand](s.commandBus, chandlers.NewCreateFQCODELQdiscHandler(s.eventStore))
 
-	// Register query handlers with read model support
-	// Note: Query handlers temporarily disabled due to interface compatibility issues
-	// TODO: Fix query handler interfaces to match CQRS bus expectations
-	// s.queryBus.Register("GetQdisc", qhandlers.NewGetQdiscByDeviceHandler(s.eventStore))
-	// s.queryBus.Register("GetClass", qhandlers.NewGetClassesByDeviceHandler(s.eventStore))
-	// s.queryBus.Register("GetFilter", qhandlers.NewGetFiltersByDeviceHandler(s.eventStore))
-	// s.queryBus.Register("GetConfiguration", qhandlers.NewGetTrafficControlConfigHandler(s.eventStore))
+	// Register query handlers with event store access for aggregate reconstruction
+	if baseEventStore, ok := s.eventStore.(eventstore.EventStore); ok {
+		s.queryBus.Register("GetQdisc", qhandlers.NewGetQdiscByDeviceHandler(baseEventStore))
+		s.queryBus.Register("GetClass", qhandlers.NewGetClassesByDeviceHandler(baseEventStore))
+		s.queryBus.Register("GetFilter", qhandlers.NewGetFiltersByDeviceHandler(baseEventStore))
+		s.queryBus.Register("GetConfiguration", qhandlers.NewGetTrafficControlConfigHandler(baseEventStore))
+	}
 
 	// Create statistics query service
-	// statisticsQueryService := qhandlers.NewStatisticsQueryService(s.netlinkAdapter, s.readModelStore)
+	statisticsQueryService := qhandlers.NewStatisticsQueryService(s.netlinkAdapter, s.readModelStore)
 
 	// Register statistics query handlers
-	// s.queryBus.Register("GetDeviceStatistics", qhandlers.NewGetDeviceStatisticsHandler(statisticsQueryService))
-	// s.queryBus.Register("GetQdiscStatistics", qhandlers.NewGetQdiscStatisticsHandler(s.netlinkAdapter))
-	// s.queryBus.Register("GetClassStatistics", qhandlers.NewGetClassStatisticsHandler(s.netlinkAdapter))
-	// s.queryBus.Register("GetRealtimeStatistics", qhandlers.NewGetRealtimeStatisticsHandler(statisticsQueryService))
+	s.queryBus.Register("GetDeviceStatistics", qhandlers.NewGetDeviceStatisticsHandler(statisticsQueryService))
+	s.queryBus.Register("GetQdiscStatistics", qhandlers.NewGetQdiscStatisticsHandler(s.netlinkAdapter))
+	s.queryBus.Register("GetClassStatistics", qhandlers.NewGetClassStatisticsHandler(s.netlinkAdapter))
+	s.queryBus.Register("GetRealtimeStatistics", qhandlers.NewGetRealtimeStatisticsHandler(statisticsQueryService))
 
 	// Register event handlers for netlink integration
 	s.eventBus.Subscribe("QdiscCreated", s.handleQdiscCreated)
@@ -234,21 +235,32 @@ func (s *TrafficControlService) CreateFilter(ctx context.Context, device string,
 
 // GetConfiguration retrieves the current traffic control configuration
 func (s *TrafficControlService) GetConfiguration(ctx context.Context, device string) (*qmodels.ConfigurationView, error) {
-	query := &qmodels.GetConfigurationQuery{
-		DeviceName: device,
+	deviceName, err := tc.NewDevice(device)
+	if err != nil {
+		return nil, fmt.Errorf("invalid device name: %w", err)
 	}
+
+	query := qmodels.NewGetTrafficControlConfigQuery(deviceName)
 
 	result, err := s.queryBus.Execute(ctx, "GetConfiguration", query)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get configuration: %w", err)
 	}
 
-	config, ok := result.(*qmodels.ConfigurationView)
+	config, ok := result.(qmodels.TrafficControlConfigView)
 	if !ok {
-		return nil, fmt.Errorf("unexpected result type")
+		return nil, fmt.Errorf("unexpected result type: %T", result)
 	}
 
-	return config, nil
+	// Convert to expected return type
+	view := &qmodels.ConfigurationView{
+		DeviceName: config.DeviceName,
+		Qdiscs:     config.Qdiscs,
+		Classes:    config.Classes,
+		Filters:    config.Filters,
+	}
+
+	return view, nil
 }
 
 // GetDeviceStatistics retrieves comprehensive statistics for a device
@@ -265,12 +277,12 @@ func (s *TrafficControlService) GetDeviceStatistics(ctx context.Context, device 
 		return nil, fmt.Errorf("failed to get device statistics: %w", err)
 	}
 
-	stats, ok := result.(*qmodels.DeviceStatisticsView)
+	stats, ok := result.(qmodels.DeviceStatisticsView)
 	if !ok {
-		return nil, fmt.Errorf("unexpected result type")
+		return nil, fmt.Errorf("unexpected result type: %T", result)
 	}
 
-	return stats, nil
+	return &stats, nil
 }
 
 // GetQdiscStatistics retrieves statistics for a specific qdisc
@@ -292,12 +304,12 @@ func (s *TrafficControlService) GetQdiscStatistics(ctx context.Context, device s
 		return nil, fmt.Errorf("failed to get qdisc statistics: %w", err)
 	}
 
-	stats, ok := result.(*qmodels.QdiscStatisticsView)
+	stats, ok := result.(qmodels.QdiscStatisticsView)
 	if !ok {
-		return nil, fmt.Errorf("unexpected result type")
+		return nil, fmt.Errorf("unexpected result type: %T", result)
 	}
 
-	return stats, nil
+	return &stats, nil
 }
 
 // GetClassStatistics retrieves statistics for a specific class
@@ -319,12 +331,12 @@ func (s *TrafficControlService) GetClassStatistics(ctx context.Context, device s
 		return nil, fmt.Errorf("failed to get class statistics: %w", err)
 	}
 
-	stats, ok := result.(*qmodels.ClassStatisticsView)
+	stats, ok := result.(qmodels.ClassStatisticsView)
 	if !ok {
-		return nil, fmt.Errorf("unexpected result type")
+		return nil, fmt.Errorf("unexpected result type: %T", result)
 	}
 
-	return stats, nil
+	return &stats, nil
 }
 
 // GetRealtimeStatistics retrieves real-time statistics without using read models
@@ -341,12 +353,12 @@ func (s *TrafficControlService) GetRealtimeStatistics(ctx context.Context, devic
 		return nil, fmt.Errorf("failed to get realtime statistics: %w", err)
 	}
 
-	stats, ok := result.(*qmodels.DeviceStatisticsView)
+	stats, ok := result.(qmodels.DeviceStatisticsView)
 	if !ok {
-		return nil, fmt.Errorf("unexpected result type")
+		return nil, fmt.Errorf("unexpected result type: %T", result)
 	}
 
-	return stats, nil
+	return &stats, nil
 }
 
 // MonitorStatistics starts continuous monitoring of statistics

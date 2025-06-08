@@ -51,8 +51,13 @@ type CreateHTBClassCommand struct {
 	DeviceName string
 	Parent     string
 	ClassID    string
+	Name       string // Human-readable name for the class
 	Rate       string
 	Ceil       string
+	Priority   int    // HTB priority (0-7, where 0 is highest)
+	Burst      uint32 // Burst size in bytes (0 = auto-calculate)
+	Cburst     uint32 // Ceil burst size in bytes (0 = auto-calculate)
+	UseDefaults bool  // Whether to use sensible defaults for advanced parameters
 }
 
 // CreateFilterCommand creates a filter

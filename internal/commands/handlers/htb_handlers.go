@@ -116,9 +116,36 @@ func (h *CreateHTBClassHandler) HandleTyped(ctx context.Context, command *models
 	}
 
 	// Execute business logic
-	// Use ClassID as the name for now - in a real implementation you might want a separate name field
-	className := command.ClassID
-	if err := aggregate.AddHTBClass(parentHandle, classHandle, className, rate, ceil); err != nil {
+	// Use provided name or fall back to ClassID
+	className := command.Name
+	if className == "" {
+		className = command.ClassID
+	}
+
+	// Convert priority to entities.Priority type
+	priority := entities.Priority(command.Priority)
+	if command.Priority < 0 || command.Priority > 7 {
+		priority = entities.Priority(4) // Default to normal priority
+	}
+
+	// Calculate burst values if not provided
+	burst := command.Burst
+	cburst := command.Cburst
+	if command.UseDefaults {
+		// Create temporary HTB class to calculate burst values
+		tempClass := entities.NewHTBClass(device, classHandle, parentHandle, className, priority)
+		tempClass.SetRate(rate)
+		tempClass.SetCeil(ceil)
+		if burst == 0 {
+			burst = tempClass.CalculateBurst()
+		}
+		if cburst == 0 {
+			cburst = tempClass.CalculateCburst()
+		}
+	}
+
+	if err := aggregate.AddHTBClassWithAdvancedParameters(
+		parentHandle, classHandle, className, rate, ceil, priority, burst, cburst); err != nil {
 		return err
 	}
 

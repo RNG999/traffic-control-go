@@ -361,6 +361,68 @@ func (ag *TrafficControlAggregate) AddHTBClass(parent tc.Handle, classHandle tc.
 	return nil
 }
 
+// AddHTBClassWithAdvancedParameters adds an HTB class with advanced parameters including priority and burst settings
+func (ag *TrafficControlAggregate) AddHTBClassWithAdvancedParameters(
+	parent tc.Handle,
+	classHandle tc.Handle, 
+	name string,
+	rate tc.Bandwidth,
+	ceil tc.Bandwidth,
+	priority entities.Priority,
+	burst uint32,
+	cburst uint32,
+) error {
+	// Business rule: Parent qdisc must exist
+	parentQdisc, parentExists := ag.qdiscs[parent]
+	if !parentExists {
+		// Check if parent is a class
+		if _, classExists := ag.classes[parent]; !classExists {
+			return fmt.Errorf("parent %s does not exist", parent)
+		}
+	}
+
+	// Business rule: Class handle must not already exist
+	if _, exists := ag.classes[classHandle]; exists {
+		return fmt.Errorf("class with handle %s already exists", classHandle)
+	}
+
+	// Business rule: HTB specific - parent must be HTB
+	if parentExists && parentQdisc.Type() != entities.QdiscTypeHTB {
+		return fmt.Errorf("parent qdisc must be HTB type")
+	}
+
+	// Business rule: Ceil must be >= Rate
+	if ceil.BitsPerSecond() > 0 && ceil.LessThan(rate) {
+		return fmt.Errorf("ceil (%s) cannot be less than rate (%s)", ceil, rate)
+	}
+
+	// Business rule: Priority must be in valid range (0-7)
+	if priority < 0 || priority > 7 {
+		return fmt.Errorf("HTB priority must be between 0-7, got %d", priority)
+	}
+
+	// Create and apply event with advanced parameters
+	event := events.NewHTBClassCreatedEventWithAdvancedParameters(
+		ag.id,
+		ag.version+1,
+		ag.deviceName,
+		classHandle,
+		parent,
+		name,
+		rate,
+		ceil,
+		int(priority),
+		burst,
+		cburst,
+	)
+
+	ag.ApplyEvent(event)
+	ag.changes = append(ag.changes, event)
+	ag.version++
+
+	return nil
+}
+
 // WithHTBClass returns a new aggregate with an HTB class added (immutable)
 func (ag *TrafficControlAggregate) WithHTBClass(parent tc.Handle, classHandle tc.Handle, name string, rate tc.Bandwidth, ceil tc.Bandwidth) types.Result[*TrafficControlAggregate] {
 	// Business rule: Parent qdisc must exist

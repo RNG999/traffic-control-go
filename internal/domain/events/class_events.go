@@ -36,11 +36,12 @@ type HTBClassCreatedEvent struct {
 	Name       string
 	Rate       tc.Bandwidth
 	Ceil       tc.Bandwidth
+	Priority   int    // HTB priority (0-7, where 0 is highest)
 	Burst      uint32
 	Cburst     uint32
 }
 
-// NewHTBClassCreatedEvent creates a new HTBClassCreatedEvent
+// NewHTBClassCreatedEvent creates a new HTBClassCreatedEvent with basic parameters
 func NewHTBClassCreatedEvent(aggregateID string, version int, device tc.DeviceName, handle tc.Handle, parent tc.Handle, name string, rate tc.Bandwidth, ceil tc.Bandwidth) *HTBClassCreatedEvent {
 	return &HTBClassCreatedEvent{
 		BaseEvent:  NewBaseEvent(aggregateID, "HTBClassCreated", version),
@@ -50,6 +51,37 @@ func NewHTBClassCreatedEvent(aggregateID string, version int, device tc.DeviceNa
 		Name:       name,
 		Rate:       rate,
 		Ceil:       ceil,
+		Priority:   4, // Default normal priority
+		Burst:      0, // Will be calculated
+		Cburst:     0, // Will be calculated
+	}
+}
+
+// NewHTBClassCreatedEventWithAdvancedParameters creates a new HTBClassCreatedEvent with all parameters
+func NewHTBClassCreatedEventWithAdvancedParameters(
+	aggregateID string,
+	version int,
+	device tc.DeviceName,
+	handle tc.Handle,
+	parent tc.Handle,
+	name string,
+	rate tc.Bandwidth,
+	ceil tc.Bandwidth,
+	priority int,
+	burst uint32,
+	cburst uint32,
+) *HTBClassCreatedEvent {
+	return &HTBClassCreatedEvent{
+		BaseEvent:  NewBaseEvent(aggregateID, "HTBClassCreated", version),
+		DeviceName: device,
+		Handle:     handle,
+		Parent:     parent,
+		Name:       name,
+		Rate:       rate,
+		Ceil:       ceil,
+		Priority:   priority,
+		Burst:      burst,
+		Cburst:     cburst,
 	}
 }
 

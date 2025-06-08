@@ -215,6 +215,26 @@ func (s *TrafficControlService) CreateHTBClass(ctx context.Context, device strin
 	return nil
 }
 
+// CreateHTBClassWithAdvancedParameters creates a new HTB class with advanced parameters including priority
+func (s *TrafficControlService) CreateHTBClassWithAdvancedParameters(ctx context.Context, device string, parent string, classID string, name string, rate string, ceil string, priority uint8) error {
+	cmd := &models.CreateHTBClassCommand{
+		DeviceName:  device,
+		Parent:      parent,
+		ClassID:     classID,
+		Name:        name,
+		Rate:        rate,
+		Ceil:        ceil,
+		Priority:    int(priority),
+		UseDefaults: true, // Use sensible defaults for advanced parameters
+	}
+
+	if err := s.commandBus.ExecuteCommand(ctx, cmd); err != nil {
+		return fmt.Errorf("failed to create HTB class with advanced parameters: %w", err)
+	}
+
+	return nil
+}
+
 // CreateFilter creates a new filter
 func (s *TrafficControlService) CreateFilter(ctx context.Context, device string, parent string, priority uint16, protocol string, flowID string, match map[string]string) error {
 	cmd := &models.CreateFilterCommand{

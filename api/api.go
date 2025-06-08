@@ -446,8 +446,9 @@ func (controller *TrafficController) Apply() error {
 			logging.String("max_bandwidth", class.maxBandwidth.String()),
 		)
 
-		if err := controller.service.CreateHTBClass(ctx, controller.deviceName, parent, classID,
-			class.guaranteedBandwidth.String(), class.maxBandwidth.String()); err != nil {
+		// Use advanced HTB class creation to include priority and other parameters
+		if err := controller.service.CreateHTBClassWithAdvancedParameters(ctx, controller.deviceName, parent, classID, class.name,
+			class.guaranteedBandwidth.String(), class.maxBandwidth.String(), *class.priority); err != nil {
 			controller.logger.Error("Failed to create HTB class",
 				logging.Error(err),
 				logging.String("class_name", class.name),

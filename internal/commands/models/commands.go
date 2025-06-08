@@ -76,24 +76,24 @@ type CreateFilterCommand struct {
 
 // CreateAdvancedFilterCommand creates an advanced filter with enhanced capabilities
 type CreateAdvancedFilterCommand struct {
-	DeviceName    string
-	Parent        string
-	Priority      uint16
-	Handle        string
-	Protocol      string
-	FlowID        string
+	DeviceName string
+	Parent     string
+	Priority   uint16
+	Handle     string
+	Protocol   string
+	FlowID     string
 	// Enhanced filtering options
-	IPSourceRange      *IPRange            // Source IP range
-	IPDestRange        *IPRange            // Destination IP range
-	PortSourceRange    *PortRange          // Source port range
-	PortDestRange      *PortRange          // Destination port range
-	TransportProtocol  string              // TCP, UDP, ICMP
-	TOSValue           uint8               // Type of Service
-	DSCPValue          uint8               // DSCP marking
-	QoSPriority        uint8               // QoS priority (0-7)
-	RateLimit          string              // Rate limiting bandwidth
-	BurstLimit         uint32              // Burst limit in bytes
-	Action             string              // classify, drop, ratelimit, mark
+	IPSourceRange     *IPRange   // Source IP range
+	IPDestRange       *IPRange   // Destination IP range
+	PortSourceRange   *PortRange // Source port range
+	PortDestRange     *PortRange // Destination port range
+	TransportProtocol string     // TCP, UDP, ICMP
+	TOSValue          uint8      // Type of Service
+	DSCPValue         uint8      // DSCP marking
+	QoSPriority       uint8      // QoS priority (0-7)
+	RateLimit         string     // Rate limiting bandwidth
+	BurstLimit        uint32     // Burst limit in bytes
+	Action            string     // classify, drop, ratelimit, mark
 }
 
 // IPRange represents an IP address range

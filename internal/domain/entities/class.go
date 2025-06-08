@@ -85,11 +85,11 @@ type HTBClass struct {
 	ceil     tc.Bandwidth
 	burst    uint32
 	cburst   uint32
-	quantum  uint32  // Quantum for borrowing (bytes)
-	overhead uint32  // Packet overhead calculation (bytes)
-	mpu      uint32  // Minimum packet unit (bytes)  
-	mtu      uint32  // Maximum transmission unit (bytes)
-	prio     uint32  // Internal HTB priority (0-7)
+	quantum  uint32 // Quantum for borrowing (bytes)
+	overhead uint32 // Packet overhead calculation (bytes)
+	mpu      uint32 // Minimum packet unit (bytes)
+	mtu      uint32 // Maximum transmission unit (bytes)
+	prio     uint32 // Internal HTB priority (0-7)
 }
 
 // NewHTBClass creates a new HTB class
@@ -236,7 +236,14 @@ func (h *HTBClass) CalculateQuantum() uint32 {
 	}
 
 	bytesPerSecond := h.rate.BitsPerSecond() / 8
-	quantum := uint32(bytesPerSecond / HZ)
+	// Prevent integer overflow in conversion
+	quantumCalc := bytesPerSecond / HZ
+	var quantum uint32
+	if quantumCalc > 0xFFFFFFFF {
+		quantum = 0xFFFFFFFF
+	} else {
+		quantum = uint32(quantumCalc) // #nosec G115 - bounds checked above
+	}
 
 	// Ensure quantum is within reasonable bounds
 	if quantum < MinQuantum {
@@ -260,7 +267,14 @@ func (h *HTBClass) CalculateEnhancedBurst() uint32 {
 
 	// Calculate burst for timer resolution period
 	bytesPerSecond := h.rate.BitsPerSecond() / 8
-	burstBytes := uint32(bytesPerSecond * TimerResolutionMS / 1000)
+	// Prevent integer overflow in conversion
+	burstCalc := bytesPerSecond * TimerResolutionMS / 1000
+	var burstBytes uint32
+	if burstCalc > 0xFFFFFFFF {
+		burstBytes = 0xFFFFFFFF
+	} else {
+		burstBytes = uint32(burstCalc) // #nosec G115 - bounds checked above
+	}
 
 	// Add overhead consideration
 	if h.overhead > 0 {
@@ -269,12 +283,12 @@ func (h *HTBClass) CalculateEnhancedBurst() uint32 {
 		if h.mtu > 0 {
 			avgPacketSize = h.mtu
 		}
-		
+
 		packetsPerBurst := burstBytes / avgPacketSize
 		if packetsPerBurst == 0 {
 			packetsPerBurst = 1
 		}
-		
+
 		overheadTotal := packetsPerBurst * h.overhead
 		burstBytes += overheadTotal
 	}
@@ -289,10 +303,7 @@ func (h *HTBClass) CalculateEnhancedBurst() uint32 {
 		burstBytes = minBurst
 	}
 
-	// Cap at maximum value
-	if burstBytes > 0xFFFFFFFF {
-		return 0xFFFFFFFF
-	}
+	// burstBytes is already uint32, so no need to cap (would be caught at conversion)
 
 	return burstBytes
 }
@@ -308,12 +319,12 @@ func (h *HTBClass) CalculateEnhancedCburst() uint32 {
 	// Temporarily store original rate to calculate cburst with ceil
 	originalRate := h.rate
 	h.rate = bandwidth
-	
+
 	cburst := h.CalculateEnhancedBurst()
-	
+
 	// Restore original rate
 	h.rate = originalRate
-	
+
 	return cburst
 }
 

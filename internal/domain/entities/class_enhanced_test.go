@@ -95,46 +95,46 @@ func TestHTBClass_EnhancedParameters(t *testing.T) {
 
 func TestHTBClass_CalculateQuantum(t *testing.T) {
 	tests := []struct {
-		name           string
-		rate           string
-		expectedMin    uint32
-		expectedMax    uint32
-		description    string
+		name        string
+		rate        string
+		expectedMin uint32
+		expectedMax uint32
+		description string
 	}{
 		{
-			name:           "ZeroRate",
-			rate:           "1bps", // Use minimal valid rate instead of 0
-			expectedMin:    1000,
-			expectedMax:    1000,
-			description:    "Very low rate should return minimum quantum",
+			name:        "ZeroRate",
+			rate:        "1bps", // Use minimal valid rate instead of 0
+			expectedMin: 1000,
+			expectedMax: 1000,
+			description: "Very low rate should return minimum quantum",
 		},
 		{
-			name:           "LowRate_1Mbps",
-			rate:           "1Mbps",
-			expectedMin:    1000,
-			expectedMax:    1000,
-			description:    "Low rate should return minimum quantum",
+			name:        "LowRate_1Mbps",
+			rate:        "1Mbps",
+			expectedMin: 1000,
+			expectedMax: 1000,
+			description: "Low rate should return minimum quantum",
 		},
 		{
-			name:           "MediumRate_10Mbps",
-			rate:           "10Mbps",
-			expectedMin:    1000,
-			expectedMax:    2000,
-			description:    "Medium rate should calculate proportional quantum",
+			name:        "MediumRate_10Mbps",
+			rate:        "10Mbps",
+			expectedMin: 1000,
+			expectedMax: 2000,
+			description: "Medium rate should calculate proportional quantum",
 		},
 		{
-			name:           "HighRate_100Mbps",
-			rate:           "100Mbps",
-			expectedMin:    10000,
-			expectedMax:    15000,
-			description:    "High rate should calculate proportional quantum",
+			name:        "HighRate_100Mbps",
+			rate:        "100Mbps",
+			expectedMin: 10000,
+			expectedMax: 15000,
+			description: "High rate should calculate proportional quantum",
 		},
 		{
-			name:           "VeryHighRate_1Gbps",
-			rate:           "1Gbps",
-			expectedMin:    60000,
-			expectedMax:    60000,
-			description:    "Very high rate should be capped at maximum quantum",
+			name:        "VeryHighRate_1Gbps",
+			rate:        "1Gbps",
+			expectedMin: 60000,
+			expectedMax: 60000,
+			description: "Very high rate should be capped at maximum quantum",
 		},
 	}
 
@@ -147,13 +147,13 @@ func TestHTBClass_CalculateQuantum(t *testing.T) {
 
 			bandwidth, err := tc.NewBandwidth(tt.rate)
 			assert.NoError(t, err, "Failed to create bandwidth")
-			
+
 			class.SetRate(bandwidth)
 			quantum := class.CalculateQuantum()
 
-			assert.GreaterOrEqual(t, quantum, tt.expectedMin, 
+			assert.GreaterOrEqual(t, quantum, tt.expectedMin,
 				"Quantum should be >= expected minimum for %s", tt.description)
-			assert.LessOrEqual(t, quantum, tt.expectedMax, 
+			assert.LessOrEqual(t, quantum, tt.expectedMax,
 				"Quantum should be <= expected maximum for %s", tt.description)
 		})
 	}
@@ -169,7 +169,7 @@ func TestHTBClass_CalculateEnhancedBurst(t *testing.T) {
 		description string
 	}{
 		{
-			name:        "ZeroRate", 
+			name:        "ZeroRate",
 			rate:        "1bps", // Use minimal valid rate instead of 0
 			expectedMin: 1600,
 			description: "Very low rate should return default minimum burst",
@@ -195,7 +195,7 @@ func TestHTBClass_CalculateEnhancedBurst(t *testing.T) {
 		{
 			name:        "WithMTU",
 			rate:        "10Mbps",
-			mtu:         9000, // Jumbo frames
+			mtu:         9000,  // Jumbo frames
 			expectedMin: 18000, // At least 2 * MTU
 			description: "Should consider MTU for minimum burst",
 		},
@@ -217,7 +217,7 @@ func TestHTBClass_CalculateEnhancedBurst(t *testing.T) {
 
 			bandwidth, err := tc.NewBandwidth(tt.rate)
 			assert.NoError(t, err, "Failed to create bandwidth")
-			
+
 			class.SetRate(bandwidth)
 			if tt.mtu > 0 {
 				class.SetMTU(tt.mtu)
@@ -228,9 +228,9 @@ func TestHTBClass_CalculateEnhancedBurst(t *testing.T) {
 
 			burst := class.CalculateEnhancedBurst()
 
-			assert.GreaterOrEqual(t, burst, tt.expectedMin, 
+			assert.GreaterOrEqual(t, burst, tt.expectedMin,
 				"Enhanced burst should be >= expected minimum for %s", tt.description)
-			assert.Greater(t, burst, uint32(0), 
+			assert.Greater(t, burst, uint32(0),
 				"Enhanced burst should be positive for %s", tt.description)
 		})
 	}
@@ -303,7 +303,7 @@ func TestHTBClass_QuantumBounds(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			bandwidth, err := tc.NewBandwidth(tt.rate)
 			assert.NoError(t, err)
-			
+
 			class.SetRate(bandwidth)
 			quantum := class.CalculateQuantum()
 

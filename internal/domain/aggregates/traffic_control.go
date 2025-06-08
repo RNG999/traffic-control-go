@@ -363,10 +363,10 @@ func (ag *TrafficControlAggregate) AddHTBClass(parent tc.Handle, classHandle tc.
 
 // AddHTBClassWithAdvancedParameters adds an HTB class with enhanced parameters
 func (ag *TrafficControlAggregate) AddHTBClassWithAdvancedParameters(
-	parent tc.Handle, 
-	classHandle tc.Handle, 
-	name string, 
-	rate tc.Bandwidth, 
+	parent tc.Handle,
+	classHandle tc.Handle,
+	name string,
+	rate tc.Bandwidth,
 	ceil tc.Bandwidth,
 	priority entities.Priority,
 	quantum uint32,
@@ -571,7 +571,7 @@ func (ag *TrafficControlAggregate) ApplyEvent(event events.DomainEvent) {
 		class := entities.NewHTBClass(e.DeviceName, e.Handle, e.Parent, e.Name, e.Priority)
 		class.SetRate(e.Rate)
 		class.SetCeil(e.Ceil)
-		
+
 		// Set advanced parameters
 		if e.Quantum > 0 {
 			class.SetQuantum(e.Quantum)
@@ -588,12 +588,12 @@ func (ag *TrafficControlAggregate) ApplyEvent(event events.DomainEvent) {
 		if e.HTBPrio > 0 {
 			class.SetHTBPrio(e.HTBPrio)
 		}
-		
+
 		// Apply default parameters if requested
 		if e.UseDefaults {
 			class.ApplyDefaultParameters()
 		}
-		
+
 		ag.classes[e.Handle] = class.Class
 
 	case *events.FilterCreatedEvent:

@@ -73,13 +73,13 @@ type HTBClassCreatedEventWithAdvancedParameters struct {
 
 // NewHTBClassCreatedEventWithAdvancedParameters creates a new enhanced HTB class event
 func NewHTBClassCreatedEventWithAdvancedParameters(
-	aggregateID string, 
-	version int, 
-	device tc.DeviceName, 
-	handle tc.Handle, 
-	parent tc.Handle, 
-	name string, 
-	rate tc.Bandwidth, 
+	aggregateID string,
+	version int,
+	device tc.DeviceName,
+	handle tc.Handle,
+	parent tc.Handle,
+	name string,
+	rate tc.Bandwidth,
 	ceil tc.Bandwidth,
 	priority entities.Priority,
 	quantum uint32,

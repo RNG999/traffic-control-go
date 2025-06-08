@@ -120,13 +120,13 @@ func (h *CreateHTBClassHandler) HandleTyped(ctx context.Context, command *models
 	if command.Name != "" {
 		className = command.Name
 	}
-	
+
 	// Create HTB class with enhanced parameters
 	if err := aggregate.AddHTBClassWithAdvancedParameters(
-		parentHandle, 
-		classHandle, 
-		className, 
-		rate, 
+		parentHandle,
+		classHandle,
+		className,
+		rate,
 		ceil,
 		entities.Priority(command.Priority),
 		command.Quantum,

@@ -39,10 +39,10 @@ func TestAdvancedFilter_SetRateLimit(t *testing.T) {
 	handle := tc.NewHandle(1, 10)
 
 	filter := NewAdvancedFilter(device, parent, 100, handle)
-	
+
 	bandwidth, err := tc.NewBandwidth("10Mbps")
 	require.NoError(t, err)
-	
+
 	filter.SetRateLimit(bandwidth, 1500)
 
 	assert.NotNil(t, filter.RateLimit())
@@ -55,7 +55,7 @@ func TestAdvancedFilter_SetAction(t *testing.T) {
 	handle := tc.NewHandle(1, 10)
 
 	filter := NewAdvancedFilter(device, parent, 100, handle)
-	
+
 	tests := []FilterAction{
 		ActionClassify,
 		ActionDrop,
@@ -191,7 +191,7 @@ func TestFilter_AddPortRangeMatch(t *testing.T) {
 
 	// Add source port range
 	filter.AddPortRangeMatch(8000, 8080, true)
-	
+
 	// Add destination port range
 	filter.AddPortRangeMatch(80, 443, false)
 
@@ -266,7 +266,7 @@ func TestFilter_AddIPRangeMatch(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			err := filter.AddIPRangeMatch(tt.startIP, tt.endIP, tt.isSource)
-			
+
 			if tt.wantErr {
 				assert.Error(t, err)
 			} else {
@@ -342,7 +342,7 @@ func TestDSCPMatch_TOSCalculation(t *testing.T) {
 		t.Run(fmt.Sprintf("DSCP_%d", tt.dscp), func(t *testing.T) {
 			match := NewDSCPMatch(tt.dscp)
 			tosStr := match.String()
-			
+
 			assert.Contains(t, tosStr, tt.expected)
 			assert.Contains(t, tosStr, "0xfc") // DSCP mask
 		})
@@ -368,7 +368,7 @@ func TestAdvancedFilter_ComplexScenario(t *testing.T) {
 	// Add multiple match criteria
 	filter.AddProtocolMatch(TransportProtocolTCP)
 	filter.AddPortRangeMatch(8000, 8080, false) // Destination ports 8000-8080
-	filter.AddDSCPMatch(26) // AF31 (Assured Forwarding)
+	filter.AddDSCPMatch(26)                     // AF31 (Assured Forwarding)
 
 	err = filter.AddIPRangeMatch("192.168.1.0", "192.168.1.255", true)
 	require.NoError(t, err)

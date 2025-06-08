@@ -193,16 +193,16 @@ func (a *RealNetlinkAdapter) AddClass(ctx context.Context, classEntity interface
 		// Set HTB class parameters
 		nlClass.Rate = uint64(class.Rate().BitsPerSecond()) / 8 // Convert to bytes per second
 		nlClass.Ceil = uint64(class.Ceil().BitsPerSecond()) / 8
-		
+
 		// Set burst parameters - use enhanced calculation if available
 		if class.Burst() > 0 {
 			nlClass.Buffer = class.Burst()
 		} else {
 			nlClass.Buffer = class.CalculateEnhancedBurst()
 		}
-		
+
 		if class.Cburst() > 0 {
-			nlClass.Cbuffer = class.Cburst()  
+			nlClass.Cbuffer = class.Cburst()
 		} else {
 			nlClass.Cbuffer = class.CalculateEnhancedCburst()
 		}
@@ -216,7 +216,7 @@ func (a *RealNetlinkAdapter) AddClass(ctx context.Context, classEntity interface
 
 		// Note: Advanced parameters (Overhead, MPU, MTU) are not supported by the current netlink library version
 		// These are tracked in the domain model but not applied via netlink for now
-		
+
 		// Set HTB priority if specified and supported
 		if class.HTBPrio() > 0 {
 			nlClass.Prio = class.HTBPrio()
@@ -230,7 +230,7 @@ func (a *RealNetlinkAdapter) AddClass(ctx context.Context, classEntity interface
 			logging.String("quantum", fmt.Sprintf("%d", nlClass.Quantum)),
 			logging.String("prio", fmt.Sprintf("%d", nlClass.Prio)),
 		)
-		
+
 		// Log advanced parameters for debugging (domain model only)
 		if class.Overhead() > 0 || class.MPU() > 0 || class.MTU() > 0 {
 			a.logger.Debug("Advanced HTB parameters (domain model only)",

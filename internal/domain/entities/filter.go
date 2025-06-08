@@ -401,9 +401,8 @@ func (m *DSCPMatch) DSCP() uint8 {
 
 // FlowIDMatch represents a flow-based match using hash tables
 type FlowIDMatch struct {
-	keys   []string
-	mask   uint32
-	hashID uint32
+	keys []string
+	mask uint32
 }
 
 // NewFlowIDMatch creates a flow-based match
@@ -437,20 +436,20 @@ func (m *FlowIDMatch) Mask() uint32 {
 // AdvancedFilter represents an enhanced filter with complex matching capabilities
 type AdvancedFilter struct {
 	*Filter
-	priority   uint8           // QoS priority (0-7)
-	rateLimit  *tc.Bandwidth   // Rate limiting for matched traffic
-	burstLimit uint32          // Burst limit in bytes
-	action     FilterAction    // Action to take on match
+	priority   uint8         // QoS priority (0-7)
+	rateLimit  *tc.Bandwidth // Rate limiting for matched traffic
+	burstLimit uint32        // Burst limit in bytes
+	action     FilterAction  // Action to take on match
 }
 
 // FilterAction represents the action to take when filter matches
 type FilterAction int
 
 const (
-	ActionClassify FilterAction = iota // Classify to specific class
-	ActionDrop                         // Drop the packet
-	ActionRateLimit                    // Apply rate limiting
-	ActionMark                         // Mark the packet
+	ActionClassify  FilterAction = iota // Classify to specific class
+	ActionDrop                          // Drop the packet
+	ActionRateLimit                     // Apply rate limiting
+	ActionMark                          // Mark the packet
 )
 
 // NewAdvancedFilter creates a new advanced filter
@@ -501,7 +500,7 @@ func (f *AdvancedFilter) Action() FilterAction {
 func (f *Filter) AddIPRangeMatch(startIP, endIP string, isSource bool) error {
 	startIPNet := net.ParseIP(startIP)
 	endIPNet := net.ParseIP(endIP)
-	
+
 	if startIPNet == nil || endIPNet == nil {
 		return fmt.Errorf("invalid IP addresses: %s - %s", startIP, endIP)
 	}
@@ -558,7 +557,7 @@ func (f *Filter) AddDSCPMatch(dscp uint8) {
 func (f *Filter) ValidateMatches() error {
 	protocolCount := 0
 	ipCount := 0
-	
+
 	for _, match := range f.matches {
 		switch match.Type() {
 		case MatchTypeProtocol:

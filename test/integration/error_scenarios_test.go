@@ -18,6 +18,7 @@ import (
 )
 
 // TestAdvancedErrorScenarios tests comprehensive error handling scenarios
+// NOTE: All errors in this test are EXPECTED and intentional - they validate proper error handling
 func TestAdvancedErrorScenarios(t *testing.T) {
 	eventStore := eventstore.NewMemoryEventStoreWithContext()
 	mockAdapter := netlink.NewMockAdapter()
@@ -26,6 +27,7 @@ func TestAdvancedErrorScenarios(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("Invalid Configurations", func(t *testing.T) {
+		// EXPECTED: These should fail with validation errors
 		// Test invalid bandwidth units
 		err := service.CreateHTBQdisc(ctx, "test-eth0", "1:0", "1:999")
 		require.NoError(t, err, "QDisc creation should succeed")
@@ -52,6 +54,7 @@ func TestAdvancedErrorScenarios(t *testing.T) {
 	})
 
 	t.Run("Handle Conflicts", func(t *testing.T) {
+		// EXPECTED: These should fail with handle conflict errors
 		deviceName := "conflict-eth0"
 
 		// Create initial qdisc
@@ -73,6 +76,7 @@ func TestAdvancedErrorScenarios(t *testing.T) {
 	})
 
 	t.Run("Invalid Parent-Child Relationships", func(t *testing.T) {
+		// EXPECTED: These should fail with relationship validation errors
 		deviceName := "parent-eth0"
 
 		// Try to create class without parent qdisc
@@ -93,6 +97,7 @@ func TestAdvancedErrorScenarios(t *testing.T) {
 	})
 
 	t.Run("Resource Limits", func(t *testing.T) {
+		// EXPECTED: These should fail with resource limit errors
 		deviceName := "limits-eth0"
 
 		// Create qdisc
@@ -113,6 +118,7 @@ func TestAdvancedErrorScenarios(t *testing.T) {
 }
 
 // TestFilterErrorScenarios tests filter-specific error scenarios
+// NOTE: Errors in this test are EXPECTED and validate filter error handling
 func TestFilterErrorScenarios(t *testing.T) {
 	eventStore := eventstore.NewMemoryEventStoreWithContext()
 	mockAdapter := netlink.NewMockAdapter()
@@ -130,6 +136,7 @@ func TestFilterErrorScenarios(t *testing.T) {
 	require.NoError(t, err, "Class creation should succeed")
 
 	t.Run("Invalid Filter Configurations", func(t *testing.T) {
+		// EXPECTED: These should fail with filter validation errors
 		// Test filter with non-existent parent
 		match := map[string]string{"dst_port": "80"}
 		err := service.CreateFilter(ctx, deviceName, "2:0", 1, "ip", "1:10", match)

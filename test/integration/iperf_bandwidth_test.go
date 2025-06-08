@@ -21,6 +21,7 @@ import (
 )
 
 // TestTrafficControlWithIperf3 tests actual bandwidth limiting using iperf3
+// NOTE: This test should show successful bandwidth limiting - timeouts may occur due to environment
 func TestTrafficControlWithIperf3(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping iperf3 test in short mode")

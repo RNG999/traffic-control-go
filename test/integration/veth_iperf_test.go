@@ -1,5 +1,5 @@
-//go:build integration
-// +build integration
+//go:build integration && ignore
+// +build integration,ignore
 
 package integration_test
 

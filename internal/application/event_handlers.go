@@ -3,6 +3,8 @@ package application
 import (
 	"context"
 	"fmt"
+	"strconv"
+	"strings"
 
 	"github.com/rng999/traffic-control-go/internal/domain/entities"
 	"github.com/rng999/traffic-control-go/internal/domain/events"
@@ -144,14 +146,123 @@ func (s *TrafficControlService) handleFilterCreated(ctx context.Context, event i
 
 	// Add matches from event data
 	for _, matchData := range e.Matches {
-		// TODO: Convert match data to proper match objects
-		// For now, just log them
 		s.logger.Debug("Filter match",
 			logging.Int("type", int(matchData.Type)),
 			logging.String("value", matchData.Value),
 		)
+		
+		// Convert match data back to proper match objects
+		match, err := convertMatchData(matchData)
+		if err != nil {
+			s.logger.Error("Failed to convert match data",
+				logging.Error(err),
+				logging.Int("type", int(matchData.Type)),
+				logging.String("value", matchData.Value),
+			)
+			continue
+		}
+		
+		s.logger.Debug("Successfully converted and added match",
+			logging.Int("type", int(matchData.Type)),
+			logging.String("value", matchData.Value),
+			logging.String("match_string", match.String()),
+		)
+		
+		filter.AddMatch(match)
 	}
 
 	s.logger.Info("Adding filter via netlink adapter")
 	return s.netlinkAdapter.AddFilter(ctx, filter)
+}
+
+// convertMatchData converts event match data back to entities.Match objects
+func convertMatchData(matchData events.MatchData) (entities.Match, error) {
+	switch matchData.Type {
+	case entities.MatchTypeIPSource:
+		return entities.NewIPSourceMatch(matchData.Value)
+	case entities.MatchTypeIPDestination:
+		return entities.NewIPDestinationMatch(matchData.Value)
+	case entities.MatchTypePortSource:
+		// Parse port number from string representation
+		port, err := parsePortFromString(matchData.Value)
+		if err != nil {
+			return nil, fmt.Errorf("invalid source port match value: %w", err)
+		}
+		return entities.NewPortSourceMatch(port), nil
+	case entities.MatchTypePortDestination:
+		// Parse port number from string representation
+		port, err := parsePortFromString(matchData.Value)
+		if err != nil {
+			return nil, fmt.Errorf("invalid destination port match value: %w", err)
+		}
+		return entities.NewPortDestinationMatch(port), nil
+	case entities.MatchTypeProtocol:
+		// Parse protocol from string representation
+		protocol, err := parseProtocolFromString(matchData.Value)
+		if err != nil {
+			return nil, fmt.Errorf("invalid protocol match value: %w", err)
+		}
+		return entities.NewProtocolMatch(protocol), nil
+	case entities.MatchTypeMark:
+		// Parse mark value from string representation
+		mark, err := parseMarkFromString(matchData.Value)
+		if err != nil {
+			return nil, fmt.Errorf("invalid mark match value: %w", err)
+		}
+		return entities.NewMarkMatch(mark), nil
+	default:
+		return nil, fmt.Errorf("unsupported match type: %v", matchData.Type)
+	}
+}
+
+// parsePortFromString parses port number from the string representation
+// Expected format: "ip dport 80 0xffff" or "ip sport 80 0xffff"
+func parsePortFromString(value string) (uint16, error) {
+	// Split the string by spaces: ["ip", "dport/sport", "80", "0xffff"]
+	parts := strings.Fields(value)
+	if len(parts) < 3 {
+		return 0, fmt.Errorf("invalid port match format: %s", value)
+	}
+	
+	// Parse the port number (third part)
+	port, err := strconv.ParseUint(parts[2], 10, 16)
+	if err != nil {
+		return 0, fmt.Errorf("invalid port number: %s", parts[2])
+	}
+	
+	return uint16(port), nil
+}
+
+// parseProtocolFromString parses protocol from string representation
+// Expected format: "ip protocol 6 0xff"
+func parseProtocolFromString(value string) (entities.TransportProtocol, error) {
+	parts := strings.Fields(value)
+	if len(parts) < 3 {
+		return 0, fmt.Errorf("invalid protocol match format: %s", value)
+	}
+	
+	// Parse the protocol number (third part)
+	protocol, err := strconv.ParseUint(parts[2], 10, 8)
+	if err != nil {
+		return 0, fmt.Errorf("invalid protocol number: %s", parts[2])
+	}
+	
+	return entities.TransportProtocol(protocol), nil
+}
+
+// parseMarkFromString parses mark value from string representation
+// Expected format: "mark 0x123 0xffffffff"
+func parseMarkFromString(value string) (uint32, error) {
+	parts := strings.Fields(value)
+	if len(parts) < 2 {
+		return 0, fmt.Errorf("invalid mark match format: %s", value)
+	}
+	
+	// Parse the mark value (second part)
+	mark, err := strconv.ParseUint(parts[1], 0, 32) // 0 base allows 0x prefix
+	if err != nil {
+		return 0, fmt.Errorf("invalid mark value: %s", parts[1])
+	}
+	
+	return uint32(mark), nil
 }

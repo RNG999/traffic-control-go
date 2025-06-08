@@ -307,7 +307,7 @@ func (a *RealNetlinkAdapter) AddFilter(ctx context.Context, filterEntity *entiti
 		return fmt.Errorf("failed to find device %s: %w", filterEntity.ID().Device(), err)
 	}
 
-	// Create simple u32 filter with basic match-all configuration
+	// Create u32 filter with match conditions
 	filter := &netlink.U32{
 		FilterAttrs: netlink.FilterAttrs{
 			LinkIndex: link.Attrs().Index,
@@ -316,6 +316,11 @@ func (a *RealNetlinkAdapter) AddFilter(ctx context.Context, filterEntity *entiti
 			Protocol:  syscall.ETH_P_IP,
 		},
 		ClassId: netlink.MakeHandle(filterEntity.FlowID().Major(), filterEntity.FlowID().Minor()),
+	}
+
+	// Configure match conditions based on filter matches
+	if err := a.configureU32Matches(filter, filterEntity.Matches()); err != nil {
+		return fmt.Errorf("failed to configure filter matches: %w", err)
 	}
 
 	a.logger.Debug("Filter configuration",
@@ -420,4 +425,98 @@ func convertProtocolBack(p uint16) entities.Protocol {
 	default:
 		return entities.ProtocolIP
 	}
+}
+
+// configureU32Matches configures U32 filter match conditions
+func (a *RealNetlinkAdapter) configureU32Matches(filter *netlink.U32, matches []entities.Match) error {
+	if len(matches) == 0 {
+		// No match conditions - create a match-all filter
+		return nil
+	}
+
+	// For now, we'll implement port matching which is the most common case
+	// U32 filters use selectors to match fields in the packet
+	for _, match := range matches {
+		switch match.Type() {
+		case entities.MatchTypePortDestination:
+			if portMatch, ok := match.(*entities.PortMatch); ok {
+				// For destination port matching in TCP/UDP:
+				// The port is at offset 2 in the TCP/UDP header
+				// TCP/UDP header starts at IP header length (variable)
+				// For simplicity, assume standard 20-byte IP header (offset 20)
+				// Destination port is at bytes 22-23 (offset 22)
+				
+				port := portMatch.Port()
+				
+				// Create U32 selector for destination port
+				// This matches the destination port field in TCP/UDP header
+				sel := &netlink.TcU32Sel{
+					Flags: 0,
+					Offshift: 0,
+					Nkeys: 1,
+					Offmask: 0,
+					Off: 0,
+					Offoff: 0,
+					Hoff: 0,
+					Hmask: 0,
+				}
+				
+				// Configure the key to match destination port
+				// Key matches 2 bytes at offset 22 (destination port in TCP/UDP)
+				key := netlink.TcU32Key{
+					Mask: 0x0000ffff,  // Match 2 bytes (port) in lower 16 bits
+					Val:  uint32(port), // Port value
+					Off:  22, // Offset 22 for destination port in TCP/UDP
+					Offmask: 0,
+				}
+				
+				sel.Keys = []netlink.TcU32Key{key}
+				filter.Sel = sel
+				
+				a.logger.Debug("Configured destination port match",
+					logging.Int("port", int(port)),
+					logging.String("mask", fmt.Sprintf("0x%08x", key.Mask)),
+					logging.String("val", fmt.Sprintf("0x%08x", key.Val)),
+				)
+			}
+		case entities.MatchTypePortSource:
+			if portMatch, ok := match.(*entities.PortMatch); ok {
+				// Source port is at offset 20 in TCP/UDP header (after IP header)
+				port := portMatch.Port()
+				
+				sel := &netlink.TcU32Sel{
+					Flags: 0,
+					Offshift: 0,
+					Nkeys: 1,
+					Offmask: 0,
+					Off: 0,
+					Offoff: 0,
+					Hoff: 0,
+					Hmask: 0,
+				}
+				
+				key := netlink.TcU32Key{
+					Mask: 0xffff0000,  // Match 2 bytes (port) at high bits
+					Val:  uint32(port) << 16, // Port value shifted for high bits
+					Off:  20, // Offset 20 for source port in TCP/UDP
+					Offmask: 0,
+				}
+				
+				sel.Keys = []netlink.TcU32Key{key}
+				filter.Sel = sel
+				
+				a.logger.Debug("Configured source port match",
+					logging.Int("port", int(port)),
+				)
+			}
+		default:
+			// For now, skip other match types (IP addresses, etc.)
+			// They can be implemented later as needed
+			a.logger.Debug("Skipping unsupported match type",
+				logging.String("type", fmt.Sprintf("%v", match.Type())),
+			)
+		}
+	}
+	
+	return nil
 }

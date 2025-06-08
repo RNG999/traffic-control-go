@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"fmt"
+	"strconv"
 
 	"github.com/rng999/traffic-control-go/internal/commands/models"
 	"github.com/rng999/traffic-control-go/internal/domain/aggregates"
@@ -172,14 +173,29 @@ func (h *CreateFilterHandler) HandleTyped(ctx context.Context, command *models.C
 	// Create a handle for the filter (using priority as a simple approach)
 	filterHandle := tc.NewHandle(0x800, uint16(command.Priority))
 
-	// Convert map matches to entities.Match - this is a simplified conversion
-	// In a production system, you'd want more sophisticated match conversion
+	// Convert map matches to entities.Match
 	matches := make([]entities.Match, 0, len(command.Match))
 	for key, value := range command.Match {
-		// This is a simplified approach - in reality you'd have proper match types
-		_ = key   // Use key in real implementation
-		_ = value // Use value in real implementation
-		// For now, skip match conversion to get the test passing
+		switch key {
+		case "src_ip":
+			if match, err := entities.NewIPSourceMatch(value); err == nil {
+				matches = append(matches, match)
+			}
+		case "dst_ip":
+			if match, err := entities.NewIPDestinationMatch(value); err == nil {
+				matches = append(matches, match)
+			}
+		case "src_port":
+			if port, err := strconv.ParseUint(value, 10, 16); err == nil {
+				match := entities.NewPortSourceMatch(uint16(port))
+				matches = append(matches, match)
+			}
+		case "dst_port":
+			if port, err := strconv.ParseUint(value, 10, 16); err == nil {
+				match := entities.NewPortDestinationMatch(uint16(port))
+				matches = append(matches, match)
+			}
+		}
 	}
 
 	// Execute business logic

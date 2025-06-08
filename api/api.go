@@ -435,7 +435,7 @@ func (controller *TrafficController) Apply() error {
 	}
 
 	// Create classes
-	for _, class := range controller.classes {
+	for i, class := range controller.classes {
 		classID := fmt.Sprintf("1:%d", int(*class.priority)+10) // Use priority to determine handle (1:10-1:17)
 		parent := "1:0"                                         // Parent is the root qdisc
 
@@ -474,11 +474,13 @@ func (controller *TrafficController) Apply() error {
 		} else {
 			// Create explicit filters
 			for j, filter := range class.filters {
-				if j > 65435 { // Prevent overflow when adding 100 (65535 - 100)
-					return fmt.Errorf("too many filters: would overflow uint16")
+				// Use different priority ranges for each class to avoid conflicts
+				basePriority := uint16(100 + i*10) // Class 0: 100-109, Class 1: 110-119, etc.
+				if j > 9 || basePriority > 65525 { // Prevent overflow
+					return fmt.Errorf("too many filters or classes: would overflow uint16")
 				}
 				// #nosec G115 -- overflow check performed above
-				priority := uint16(100) + uint16(j) // Start filter priorities at 100
+				priority := basePriority + uint16(j)
 				protocol := "ip"
 				flowID := classID
 

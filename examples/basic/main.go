@@ -40,16 +40,14 @@ func testClassicAPI() {
 		WithGuaranteedBandwidth("300Mbps").
 		WithSoftLimitBandwidth("500Mbps").
 		WithPriority(4).
-		ForPort(80, 443).
-		Done()
+		ForPort(80, 443)
 
 	controller.
 		CreateTrafficClass("Database").
 		WithGuaranteedBandwidth("200Mbps").
 		WithSoftLimitBandwidth("400Mbps").
 		WithPriority(2).
-		ForPort(3306).
-		Done()
+		ForPort(3306)
 
 	err := controller.Apply()
 
@@ -74,16 +72,14 @@ func testImprovedAPI() {
 		WithGuaranteedBandwidth("300Mbps").
 		WithSoftLimitBandwidth("500Mbps").
 		WithPriority(4).
-		ForPort(80, 443, 8080).
-		Done()
+		ForPort(80, 443, 8080)
 
 	tc.CreateTrafficClass("Database").
 		WithGuaranteedBandwidth("200Mbps").
 		WithSoftLimitBandwidth("400Mbps").
 		WithPriority(2).
 		ForPort(3306, 5432).
-		ForDestinationIPs("192.168.1.10", "192.168.1.11").
-		Done()
+		ForDestinationIPs("192.168.1.10", "192.168.1.11")
 
 	err := tc.Apply()
 	if err != nil {

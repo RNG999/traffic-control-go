@@ -475,10 +475,13 @@ func (controller *TrafficController) Apply() error {
 			// Create explicit filters
 			for j, filter := range class.filters {
 				// Use different priority ranges for each class to avoid conflicts
-				basePriority := uint16(100 + i*10) // Class 0: 100-109, Class 1: 110-119, etc.
-				if j > 9 || basePriority > 65525 { // Prevent overflow
+				// Check for potential overflow before conversion
+				baseValue := 100 + i*10
+				if baseValue > 65525 || j > 9 { // Prevent overflow
 					return fmt.Errorf("too many filters or classes: would overflow uint16")
 				}
+				// #nosec G115 -- overflow check performed above
+				basePriority := uint16(baseValue) // Class 0: 100-109, Class 1: 110-119, etc.
 				// #nosec G115 -- overflow check performed above
 				priority := basePriority + uint16(j)
 				protocol := "ip"

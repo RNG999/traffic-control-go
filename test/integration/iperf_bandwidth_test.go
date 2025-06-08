@@ -268,21 +268,21 @@ func TestMultipleClassesConcurrent(t *testing.T) {
 
 	time.Sleep(2 * time.Second)
 
-	// Apply traffic control with two classes (smaller values for CI compatibility)
+	// Apply traffic control with two classes
 	tcController := api.NetworkInterface(device)
-	tcController.WithHardLimitBandwidth("20mbit")
+	tcController.WithHardLimitBandwidth("100mbit")
 
 	// High priority class - more bandwidth
 	tcController.CreateTrafficClass("high-priority").
-		WithGuaranteedBandwidth("12mbit").
-		WithSoftLimitBandwidth("15mbit").
+		WithGuaranteedBandwidth("60mbit").
+		WithSoftLimitBandwidth("80mbit").
 		WithPriority(1).
 		ForPort(5201)
 
 	// Low priority class - less bandwidth
 	tcController.CreateTrafficClass("low-priority").
-		WithGuaranteedBandwidth("4mbit").
-		WithSoftLimitBandwidth("8mbit").
+		WithGuaranteedBandwidth("20mbit").
+		WithSoftLimitBandwidth("40mbit").
 		WithPriority(6).
 		ForPort(5202)
 
@@ -334,13 +334,13 @@ func TestMultipleClassesConcurrent(t *testing.T) {
 	require.Greater(t, highBandwidth, lowBandwidth*1.5,
 		"High priority should get at least 1.5x more bandwidth than low priority")
 
-	// High priority should be close to its guaranteed bandwidth (12mbit = 12 Mbps)
-	require.Greater(t, highBandwidth, 8.0, "High priority bandwidth too low")
-	require.Less(t, highBandwidth, 20.0, "High priority bandwidth too high")
+	// High priority should be close to its guaranteed bandwidth (60mbit = 60 Mbps)
+	require.Greater(t, highBandwidth, 40.0, "High priority bandwidth too low")
+	require.Less(t, highBandwidth, 100.0, "High priority bandwidth too high")
 
-	// Low priority should be limited (4mbit = 4 Mbps) 
-	require.Greater(t, lowBandwidth, 2.0, "Low priority bandwidth too low")
-	require.Less(t, lowBandwidth, 10.0, "Low priority bandwidth too high")
+	// Low priority should be limited (20mbit = 20 Mbps) 
+	require.Greater(t, lowBandwidth, 10.0, "Low priority bandwidth too low")
+	require.Less(t, lowBandwidth, 50.0, "Low priority bandwidth too high")
 }
 
 // TestDynamicBandwidthChange tests changing bandwidth limits during active traffic

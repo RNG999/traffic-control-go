@@ -139,6 +139,20 @@ func TestAPIWithIperf3BandwidthLimiting(t *testing.T) {
 		err := controller.Apply()
 		require.NoError(t, err, "Failed to apply traffic control")
 		
+		// Debug: Show TC configuration
+		if os.Getenv("CI") == "true" {
+			t.Log("=== DEBUG: TC Configuration ===")
+			if output, err := exec.Command("tc", "qdisc", "show", "dev", "bw-test").CombinedOutput(); err == nil {
+				t.Logf("TC Qdisc: %s", string(output))
+			}
+			if output, err := exec.Command("tc", "class", "show", "dev", "bw-test").CombinedOutput(); err == nil {
+				t.Logf("TC Class: %s", string(output))
+			}
+			if output, err := exec.Command("tc", "filter", "show", "dev", "bw-test").CombinedOutput(); err == nil {
+				t.Logf("TC Filter: %s", string(output))
+			}
+		}
+		
 		// Test with traffic control
 		ctx2, cancel2 := context.WithCancel(context.Background())
 		defer cancel2()

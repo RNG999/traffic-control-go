@@ -1,0 +1,129 @@
+name: Performance Issue
+description: Report performance problems or suggest performance improvements
+title: "[Performance]: "
+labels: ["performance"]
+assignees: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Help us improve performance by reporting issues or suggesting optimizations!
+  - type: dropdown
+    id: performance-type
+    attributes:
+      label: Performance Issue Type
+      description: What type of performance issue is this?
+      options:
+        - Slow API Response
+        - High Memory Usage
+        - High CPU Usage
+        - Network Performance
+        - Startup Performance
+        - Benchmark Regression
+        - Scalability Issue
+        - Performance Optimization Suggestion
+    validations:
+      required: true
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severity
+      description: How severe is this performance issue?
+      options:
+        - Critical - System unusable
+        - High - Significant impact on usability
+        - Medium - Noticeable but workable
+        - Low - Minor performance concern
+    validations:
+      required: true
+  - type: textarea
+    id: performance-description
+    attributes:
+      label: Performance Issue Description
+      description: Describe the performance problem in detail
+      placeholder: |
+        What operation is slow?
+        How long does it take vs. expected time?
+        When did you first notice this issue?
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction-steps
+    attributes:
+      label: Steps to Reproduce
+      description: Provide steps to reproduce the performance issue
+      placeholder: |
+        1. Initialize traffic control with...
+        2. Perform operation...
+        3. Measure time/resources...
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment Details
+      description: Provide details about your environment
+      placeholder: |
+        OS: Ubuntu 22.04
+        Go version: 1.21
+        Hardware: CPU, RAM, etc.
+        Network configuration:
+        Load conditions:
+    validations:
+      required: true
+  - type: textarea
+    id: metrics
+    attributes:
+      label: Performance Metrics
+      description: Provide any performance measurements you have
+      placeholder: |
+        Response time: 5s (expected: <1s)
+        Memory usage: 512MB (expected: <100MB)
+        CPU usage: 80% (expected: <20%)
+        Benchmark results:
+    validations:
+      required: false
+  - type: textarea
+    id: profiling-data
+    attributes:
+      label: Profiling Data
+      description: Include any profiling data, benchmarks, or monitoring output
+      render: shell
+    validations:
+      required: false
+  - type: textarea
+    id: expected-performance
+    attributes:
+      label: Expected Performance
+      description: What performance did you expect?
+    validations:
+      required: true
+  - type: textarea
+    id: suggested-solution
+    attributes:
+      label: Suggested Solution
+      description: If you have ideas for improving performance, please share them
+    validations:
+      required: false
+  - type: checkboxes
+    id: impact-areas
+    attributes:
+      label: Impact Areas
+      description: Which areas are affected by this performance issue?
+      options:
+        - label: API Operations
+        - label: Traffic Control Configuration
+        - label: Statistics Collection
+        - label: Event Processing
+        - label: Memory Usage
+        - label: Startup Time
+        - label: Concurrent Operations
+        - label: Large Configurations
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Code of Conduct
+      description: By submitting this issue, you agree to follow our Code of Conduct
+      options:
+        - label: I agree to follow this project's Code of Conduct
+          required: true

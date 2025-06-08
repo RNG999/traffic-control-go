@@ -1,0 +1,133 @@
+name: Change Request
+description: Request a change to project scope, schedule, or resources
+title: "[Change Request]: "
+labels: ["change-request"]
+assignees: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this template to submit a formal change request for project scope, schedule, or resources.
+        Please refer to our [Change Management Process](../../docs/change-management-process.md) for details.
+  - type: input
+    id: requested-by
+    attributes:
+      label: Requested By
+      description: Your name or organization
+      placeholder: John Doe / Acme Corp
+    validations:
+      required: true
+  - type: dropdown
+    id: change-type
+    attributes:
+      label: Type of Change
+      description: What type of change is this?
+      options:
+        - Scope Change
+        - Schedule Change
+        - Resource Change
+        - Technical Change
+        - Process Change
+    validations:
+      required: true
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      description: How urgent is this change?
+      options:
+        - Critical - Immediate action required
+        - High - Should be addressed soon
+        - Medium - Can be planned for future
+        - Low - Nice to have improvement
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: Change Description
+      description: Detailed description of the proposed change
+      placeholder: Describe what you want to change and why...
+    validations:
+      required: true
+  - type: textarea
+    id: justification
+    attributes:
+      label: Justification/Business Case
+      description: Why is this change necessary? What problem does it solve?
+    validations:
+      required: true
+  - type: checkboxes
+    id: scope-impact
+    attributes:
+      label: Scope Impact
+      description: Check all that apply
+      options:
+        - label: Affects core functionality
+        - label: Affects API design
+        - label: Affects documentation
+        - label: Affects testing strategy
+  - type: checkboxes
+    id: schedule-impact
+    attributes:
+      label: Schedule Impact
+      description: Check one that applies
+      options:
+        - label: No schedule impact
+        - label: Minor delay (< 1 week)
+        - label: Moderate delay (1-4 weeks)
+        - label: Major delay (> 4 weeks)
+  - type: checkboxes
+    id: quality-impact
+    attributes:
+      label: Quality Impact
+      description: Check one that applies
+      options:
+        - label: Improves quality
+        - label: No quality impact
+        - label: Potential quality risk
+  - type: checkboxes
+    id: resource-impact
+    attributes:
+      label: Resource Impact
+      description: Check all that apply
+      options:
+        - label: No additional resources needed
+        - label: Additional development time required
+        - label: External expertise needed
+  - type: textarea
+    id: stakeholders
+    attributes:
+      label: Affected Stakeholders
+      description: List individuals, teams, or groups affected by this change
+    validations:
+      required: true
+  - type: textarea
+    id: timeline
+    attributes:
+      label: Proposed Implementation Timeline
+      description: When should this change be implemented?
+    validations:
+      required: false
+  - type: textarea
+    id: dependencies
+    attributes:
+      label: Dependencies
+      description: Any dependencies on other changes or external factors
+    validations:
+      required: false
+  - type: textarea
+    id: risks
+    attributes:
+      label: Risks and Mitigation
+      description: Potential risks and how they will be mitigated
+    validations:
+      required: false
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Code of Conduct
+      description: By submitting this issue, you agree to follow our Code of Conduct
+      options:
+        - label: I agree to follow this project's Code of Conduct
+          required: true

@@ -1,0 +1,106 @@
+name: Documentation
+description: Request documentation improvements or report documentation issues
+title: "[Docs]: "
+labels: ["documentation"]
+assignees: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping improve our documentation!
+  - type: dropdown
+    id: doc-type
+    attributes:
+      label: Documentation Type
+      description: What type of documentation issue is this?
+      options:
+        - Missing Documentation
+        - Incorrect Information
+        - Unclear/Confusing Content
+        - Outdated Information
+        - New Documentation Request
+        - Documentation Bug
+    validations:
+      required: true
+  - type: dropdown
+    id: doc-section
+    attributes:
+      label: Documentation Section
+      description: Which section of documentation is affected?
+      multiple: true
+      options:
+        - README
+        - API Documentation
+        - Examples
+        - Getting Started Guide
+        - Best Practices
+        - FAQ
+        - Troubleshooting
+        - Architecture Documentation
+        - Contributing Guidelines
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: page-url
+    attributes:
+      label: Page/File Location
+      description: Which specific page or file is affected?
+      placeholder: docs/api-usage-guide.md or link to specific page
+    validations:
+      required: false
+  - type: textarea
+    id: issue-description
+    attributes:
+      label: Issue Description
+      description: Describe the documentation issue in detail
+      placeholder: |
+        What is wrong or missing?
+        What did you expect to find?
+        How can it be improved?
+    validations:
+      required: true
+  - type: textarea
+    id: current-content
+    attributes:
+      label: Current Content (if applicable)
+      description: Copy the current content that needs to be changed
+      render: markdown
+    validations:
+      required: false
+  - type: textarea
+    id: suggested-content
+    attributes:
+      label: Suggested Content
+      description: Provide suggested improvements or new content
+      render: markdown
+    validations:
+      required: false
+  - type: dropdown
+    id: user-type
+    attributes:
+      label: User Type
+      description: What type of user are you?
+      options:
+        - New User/Beginner
+        - Experienced User
+        - Developer/Contributor
+        - Documentation Writer
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional Context
+      description: Add any other context about the documentation issue
+    validations:
+      required: false
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Code of Conduct
+      description: By submitting this issue, you agree to follow our Code of Conduct
+      options:
+        - label: I agree to follow this project's Code of Conduct
+          required: true

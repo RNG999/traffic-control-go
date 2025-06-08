@@ -81,10 +81,15 @@ func (c *Class) SetPriority(p Priority) {
 // HTBClass represents an HTB-specific traffic class
 type HTBClass struct {
 	*Class
-	rate   tc.Bandwidth
-	ceil   tc.Bandwidth
-	burst  uint32
-	cburst uint32
+	rate     tc.Bandwidth
+	ceil     tc.Bandwidth
+	burst    uint32
+	cburst   uint32
+	quantum  uint32  // Quantum for borrowing (bytes)
+	overhead uint32  // Packet overhead calculation (bytes)
+	mpu      uint32  // Minimum packet unit (bytes)  
+	mtu      uint32  // Maximum transmission unit (bytes)
+	prio     uint32  // Internal HTB priority (0-7)
 }
 
 // NewHTBClass creates a new HTB class
@@ -163,4 +168,183 @@ func (h *HTBClass) CalculateCburst() uint32 {
 		return 0xFFFFFFFF // Cap at maximum uint32 value
 	}
 	return uint32(cburstValue)
+}
+
+// SetQuantum sets the quantum for borrowing
+func (h *HTBClass) SetQuantum(quantum uint32) {
+	h.quantum = quantum
+}
+
+// Quantum returns the quantum for borrowing
+func (h *HTBClass) Quantum() uint32 {
+	return h.quantum
+}
+
+// SetOverhead sets the packet overhead
+func (h *HTBClass) SetOverhead(overhead uint32) {
+	h.overhead = overhead
+}
+
+// Overhead returns the packet overhead
+func (h *HTBClass) Overhead() uint32 {
+	return h.overhead
+}
+
+// SetMPU sets the minimum packet unit
+func (h *HTBClass) SetMPU(mpu uint32) {
+	h.mpu = mpu
+}
+
+// MPU returns the minimum packet unit
+func (h *HTBClass) MPU() uint32 {
+	return h.mpu
+}
+
+// SetMTU sets the maximum transmission unit
+func (h *HTBClass) SetMTU(mtu uint32) {
+	h.mtu = mtu
+}
+
+// MTU returns the maximum transmission unit
+func (h *HTBClass) MTU() uint32 {
+	return h.mtu
+}
+
+// SetHTBPrio sets the internal HTB priority
+func (h *HTBClass) SetHTBPrio(prio uint32) {
+	h.prio = prio
+}
+
+// HTBPrio returns the internal HTB priority
+func (h *HTBClass) HTBPrio() uint32 {
+	return h.prio
+}
+
+// CalculateQuantum calculates appropriate quantum based on rate
+func (h *HTBClass) CalculateQuantum() uint32 {
+	// Quantum calculation: rate_bps / 8 / HZ
+	// Standard Linux HZ is typically 1000, so quantum = rate_bytes_per_second / 1000
+	// Minimum quantum is typically 1000 bytes, maximum is 60000 bytes
+	const (
+		MinQuantum = 1000  // Minimum quantum (1KB)
+		MaxQuantum = 60000 // Maximum quantum (60KB)
+		HZ         = 1000  // Linux timer frequency
+	)
+
+	if h.rate.BitsPerSecond() == 0 {
+		return MinQuantum
+	}
+
+	bytesPerSecond := h.rate.BitsPerSecond() / 8
+	quantum := uint32(bytesPerSecond / HZ)
+
+	// Ensure quantum is within reasonable bounds
+	if quantum < MinQuantum {
+		return MinQuantum
+	}
+	if quantum > MaxQuantum {
+		return MaxQuantum
+	}
+
+	return quantum
+}
+
+// CalculateEnhancedBurst calculates burst with MTU and overhead considerations
+func (h *HTBClass) CalculateEnhancedBurst() uint32 {
+	// Enhanced burst calculation considering MTU, overhead, and timer resolution
+	const TimerResolutionMS = 64 // Linux timer resolution in milliseconds
+
+	if h.rate.BitsPerSecond() == 0 {
+		return 1600 // Default minimum burst
+	}
+
+	// Calculate burst for timer resolution period
+	bytesPerSecond := h.rate.BitsPerSecond() / 8
+	burstBytes := uint32(bytesPerSecond * TimerResolutionMS / 1000)
+
+	// Add overhead consideration
+	if h.overhead > 0 {
+		// Assume average packet size for overhead calculation
+		avgPacketSize := uint32(1500) // Standard Ethernet MTU
+		if h.mtu > 0 {
+			avgPacketSize = h.mtu
+		}
+		
+		packetsPerBurst := burstBytes / avgPacketSize
+		if packetsPerBurst == 0 {
+			packetsPerBurst = 1
+		}
+		
+		overheadTotal := packetsPerBurst * h.overhead
+		burstBytes += overheadTotal
+	}
+
+	// Ensure minimum burst considering MTU
+	minBurst := uint32(1600) // Default minimum
+	if h.mtu > 0 {
+		minBurst = h.mtu * 2 // At least 2 MTU-sized packets
+	}
+
+	if burstBytes < minBurst {
+		burstBytes = minBurst
+	}
+
+	// Cap at maximum value
+	if burstBytes > 0xFFFFFFFF {
+		return 0xFFFFFFFF
+	}
+
+	return burstBytes
+}
+
+// CalculateEnhancedCburst calculates cburst with advanced parameters
+func (h *HTBClass) CalculateEnhancedCburst() uint32 {
+	// Use ceil if set, otherwise use rate
+	bandwidth := h.ceil
+	if bandwidth.BitsPerSecond() == 0 {
+		bandwidth = h.rate
+	}
+
+	// Temporarily store original rate to calculate cburst with ceil
+	originalRate := h.rate
+	h.rate = bandwidth
+	
+	cburst := h.CalculateEnhancedBurst()
+	
+	// Restore original rate
+	h.rate = originalRate
+	
+	return cburst
+}
+
+// ApplyDefaultParameters applies sensible defaults for HTB parameters
+func (h *HTBClass) ApplyDefaultParameters() {
+	// Set quantum if not already set
+	if h.quantum == 0 {
+		h.quantum = h.CalculateQuantum()
+	}
+
+	// Set default MTU if not set
+	if h.mtu == 0 {
+		h.mtu = 1500 // Standard Ethernet MTU
+	}
+
+	// Set default MPU if not set
+	if h.mpu == 0 {
+		h.mpu = 64 // Minimum Ethernet frame payload
+	}
+
+	// Set default overhead if not set
+	if h.overhead == 0 {
+		h.overhead = 4 // Basic Ethernet overhead estimate
+	}
+
+	// Calculate burst and cburst using enhanced algorithms
+	if h.burst == 0 {
+		h.burst = h.CalculateEnhancedBurst()
+	}
+
+	if h.cburst == 0 {
+		h.cburst = h.CalculateEnhancedCburst()
+	}
 }

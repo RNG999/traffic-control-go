@@ -361,7 +361,7 @@ func (ag *TrafficControlAggregate) AddHTBClass(parent tc.Handle, classHandle tc.
 	return nil
 }
 
-// AddHTBClassWithAdvancedParameters adds an HTB class with enhanced parameters
+// AddHTBClassWithAdvancedParameters adds an HTB class with comprehensive parameters (WP2 + enhanced)
 func (ag *TrafficControlAggregate) AddHTBClassWithAdvancedParameters(
 	parent tc.Handle,
 	classHandle tc.Handle,
@@ -369,6 +369,10 @@ func (ag *TrafficControlAggregate) AddHTBClassWithAdvancedParameters(
 	rate tc.Bandwidth,
 	ceil tc.Bandwidth,
 	priority entities.Priority,
+	// WP2 parameters
+	burst uint32,
+	cburst uint32,
+	// Enhanced parameters from main
 	quantum uint32,
 	overhead uint32,
 	mpu uint32,
@@ -400,7 +404,12 @@ func (ag *TrafficControlAggregate) AddHTBClassWithAdvancedParameters(
 		return fmt.Errorf("ceil (%s) cannot be less than rate (%s)", ceil, rate)
 	}
 
-	// Create and apply event with enhanced parameters
+	// Business rule: Priority must be in valid range (0-7)
+	if priority < 0 || priority > 7 {
+		return fmt.Errorf("HTB priority must be between 0-7, got %d", priority)
+	}
+
+	// Create and apply event with comprehensive parameters (WP2 + enhanced)
 	event := events.NewHTBClassCreatedEventWithAdvancedParameters(
 		ag.id,
 		ag.version+1,
@@ -411,6 +420,10 @@ func (ag *TrafficControlAggregate) AddHTBClassWithAdvancedParameters(
 		rate,
 		ceil,
 		priority,
+		// WP2 parameters
+		burst,
+		cburst,
+		// Enhanced parameters from main
 		quantum,
 		overhead,
 		mpu,

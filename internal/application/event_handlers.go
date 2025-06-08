@@ -114,7 +114,7 @@ func (s *TrafficControlService) handleClassCreated(ctx context.Context, event in
 		return s.netlinkAdapter.AddClass(ctx, class)
 
 	case *events.HTBClassCreatedEventWithAdvancedParameters:
-		s.logger.Info("Applying HTB class with advanced parameters to netlink",
+		s.logger.Info("Applying HTB class with comprehensive parameters to netlink",
 			logging.String("device", e.DeviceName.String()),
 			logging.String("parent", e.Parent.String()),
 			logging.String("handle", e.Handle.String()),
@@ -136,7 +136,15 @@ func (s *TrafficControlService) handleClassCreated(ctx context.Context, event in
 			class.SetCeil(e.Ceil)
 		}
 
-		// Set advanced parameters from event
+		// Set WP2 parameters from event
+		if e.Burst > 0 {
+			class.SetBurst(e.Burst)
+		}
+		if e.Cburst > 0 {
+			class.SetCburst(e.Cburst)
+		}
+
+		// Set enhanced parameters from event
 		if e.Quantum > 0 {
 			class.SetQuantum(e.Quantum)
 		}

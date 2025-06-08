@@ -115,20 +115,30 @@ func (h *CreateHTBClassHandler) HandleTyped(ctx context.Context, command *models
 		return fmt.Errorf("invalid ceil: %w", err)
 	}
 
-	// Execute business logic with enhanced parameters
-	className := command.ClassID
-	if command.Name != "" {
-		className = command.Name
+	// Execute business logic with comprehensive parameters (WP2 + enhanced)
+	className := command.Name
+	if className == "" {
+		className = command.ClassID
 	}
 
-	// Create HTB class with enhanced parameters
+	// Convert priority to entities.Priority type
+	priority := entities.Priority(command.Priority)
+	if command.Priority < 0 || command.Priority > 7 {
+		priority = entities.Priority(4) // Default to normal priority
+	}
+
+	// Create HTB class with comprehensive parameters
 	if err := aggregate.AddHTBClassWithAdvancedParameters(
 		parentHandle,
 		classHandle,
 		className,
 		rate,
 		ceil,
-		entities.Priority(command.Priority),
+		priority,
+		// WP2 parameters
+		command.Burst,
+		command.Cburst,
+		// Enhanced parameters from main
 		command.Quantum,
 		command.Overhead,
 		command.MPU,

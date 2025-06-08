@@ -51,11 +51,14 @@ type CreateHTBClassCommand struct {
 	DeviceName string
 	Parent     string
 	ClassID    string
+	Name       string // Human-readable name for the class
 	Rate       string
 	Ceil       string
-	Priority   int    // 0-7, 0 is highest
-	Name       string // Human-readable name
-	// Enhanced HTB parameters
+	Priority   int    // HTB priority (0-7, where 0 is highest)
+	// WP2 parameters
+	Burst      uint32 // Burst size in bytes (0 = auto-calculate)
+	Cburst     uint32 // Ceil burst size in bytes (0 = auto-calculate)
+	// Enhanced HTB parameters from main
 	Quantum     uint32 // Quantum for borrowing (bytes)
 	Overhead    uint32 // Packet overhead (bytes)
 	MPU         uint32 // Minimum packet unit (bytes)

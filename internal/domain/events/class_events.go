@@ -36,11 +36,12 @@ type HTBClassCreatedEvent struct {
 	Name       string
 	Rate       tc.Bandwidth
 	Ceil       tc.Bandwidth
+	Priority   int    // HTB priority (0-7, where 0 is highest)
 	Burst      uint32
 	Cburst     uint32
 }
 
-// NewHTBClassCreatedEvent creates a new HTBClassCreatedEvent
+// NewHTBClassCreatedEvent creates a new HTBClassCreatedEvent with basic parameters
 func NewHTBClassCreatedEvent(aggregateID string, version int, device tc.DeviceName, handle tc.Handle, parent tc.Handle, name string, rate tc.Bandwidth, ceil tc.Bandwidth) *HTBClassCreatedEvent {
 	return &HTBClassCreatedEvent{
 		BaseEvent:  NewBaseEvent(aggregateID, "HTBClassCreated", version),
@@ -50,10 +51,14 @@ func NewHTBClassCreatedEvent(aggregateID string, version int, device tc.DeviceNa
 		Name:       name,
 		Rate:       rate,
 		Ceil:       ceil,
+		Priority:   4, // Default normal priority
+		Burst:      0, // Will be calculated
+		Cburst:     0, // Will be calculated
 	}
 }
 
-// HTBClassCreatedEventWithAdvancedParameters is emitted when an HTB class with enhanced parameters is created
+
+// HTBClassCreatedEventWithAdvancedParameters is emitted when an HTB class with comprehensive parameters is created
 type HTBClassCreatedEventWithAdvancedParameters struct {
 	BaseEvent
 	DeviceName  tc.DeviceName
@@ -63,6 +68,10 @@ type HTBClassCreatedEventWithAdvancedParameters struct {
 	Rate        tc.Bandwidth
 	Ceil        tc.Bandwidth
 	Priority    entities.Priority
+	// WP2 parameters
+	Burst       uint32
+	Cburst      uint32
+	// Enhanced parameters from main
 	Quantum     uint32
 	Overhead    uint32
 	MPU         uint32
@@ -71,7 +80,7 @@ type HTBClassCreatedEventWithAdvancedParameters struct {
 	UseDefaults bool
 }
 
-// NewHTBClassCreatedEventWithAdvancedParameters creates a new enhanced HTB class event
+// NewHTBClassCreatedEventWithAdvancedParameters creates a new comprehensive HTB class event
 func NewHTBClassCreatedEventWithAdvancedParameters(
 	aggregateID string,
 	version int,
@@ -82,6 +91,10 @@ func NewHTBClassCreatedEventWithAdvancedParameters(
 	rate tc.Bandwidth,
 	ceil tc.Bandwidth,
 	priority entities.Priority,
+	// WP2 parameters
+	burst uint32,
+	cburst uint32,
+	// Enhanced parameters from main
 	quantum uint32,
 	overhead uint32,
 	mpu uint32,
@@ -98,6 +111,8 @@ func NewHTBClassCreatedEventWithAdvancedParameters(
 		Rate:        rate,
 		Ceil:        ceil,
 		Priority:    priority,
+		Burst:       burst,
+		Cburst:      cburst,
 		Quantum:     quantum,
 		Overhead:    overhead,
 		MPU:         mpu,

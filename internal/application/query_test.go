@@ -7,11 +7,11 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/rng999/traffic-control-go/pkg/tc"
 	"github.com/rng999/traffic-control-go/internal/infrastructure/eventstore"
 	"github.com/rng999/traffic-control-go/internal/infrastructure/netlink"
 	"github.com/rng999/traffic-control-go/internal/queries/models"
 	"github.com/rng999/traffic-control-go/pkg/logging"
+	"github.com/rng999/traffic-control-go/pkg/tc"
 )
 
 // TestQueryHandlerRegistration tests that query handlers are properly registered

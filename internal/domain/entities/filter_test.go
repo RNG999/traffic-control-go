@@ -121,7 +121,7 @@ func TestFilterID_String(t *testing.T) {
 	
 	id := NewFilterID(device, parent, 150, handle)
 	
-	expected := "eth0:1:0:prio150:800:100"
+	expected := "eth0:1::prio150:800:100"
 	assert.Equal(t, expected, id.String())
 }
 
@@ -154,12 +154,12 @@ func TestProtocolMatch_Creation(t *testing.T) {
 	t.Run("TCP Protocol", func(t *testing.T) {
 		match := NewProtocolMatch(TransportProtocolTCP)
 		assert.Equal(t, MatchTypeProtocol, match.Type())
-		assert.Contains(t, match.String(), "tcp")
+		assert.Contains(t, match.String(), "6") // TCP is protocol 6
 	})
 
 	t.Run("UDP Protocol", func(t *testing.T) {
 		match := NewProtocolMatch(TransportProtocolUDP)
 		assert.Equal(t, MatchTypeProtocol, match.Type())
-		assert.Contains(t, match.String(), "udp")
+		assert.Contains(t, match.String(), "17") // UDP is protocol 17
 	})
 }

@@ -166,10 +166,10 @@ func TestU32FilterConstruction(t *testing.T) {
 			ClassId: netlink.MakeHandle(1, 20),
 		}
 
-		assert.Equal(t, 2, filter.FilterAttrs.LinkIndex)
-		assert.Equal(t, uint32(0x10000), filter.FilterAttrs.Parent) // 1:0
-		assert.Equal(t, uint16(150), filter.FilterAttrs.Priority)
-		assert.Equal(t, uint16(0x0800), filter.FilterAttrs.Protocol)
+		assert.Equal(t, 2, filter.LinkIndex)
+		assert.Equal(t, uint32(0x10000), filter.Parent) // 1:0
+		assert.Equal(t, uint16(150), filter.Priority)
+		assert.Equal(t, uint16(0x0800), filter.Protocol)
 		assert.Equal(t, uint32(0x10014), filter.ClassId) // 1:20
 	})
 }

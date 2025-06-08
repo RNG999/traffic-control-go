@@ -497,6 +497,8 @@ func (s *TrafficControlService) publishEvent(ctx context.Context, event interfac
 		eventType = "ClassCreated"
 	case *events.HTBClassCreatedEvent:
 		eventType = "HTBClassCreated"
+	case *events.HTBClassCreatedEventWithAdvancedParameters:
+		eventType = "HTBClassCreated"
 	case *events.FilterCreatedEvent:
 		eventType = "FilterCreated"
 	default:

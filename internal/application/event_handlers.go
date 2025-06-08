@@ -113,6 +113,69 @@ func (s *TrafficControlService) handleClassCreated(ctx context.Context, event in
 
 		return s.netlinkAdapter.AddClass(ctx, class)
 
+	case *events.HTBClassCreatedEventWithAdvancedParameters:
+		s.logger.Info("Applying HTB class with comprehensive parameters to netlink",
+			logging.String("device", e.DeviceName.String()),
+			logging.String("parent", e.Parent.String()),
+			logging.String("handle", e.Handle.String()),
+			logging.String("rate", e.Rate.String()),
+			logging.String("ceil", e.Ceil.String()),
+			logging.Int("priority", int(e.Priority)),
+		)
+
+		// Create HTB class with proper priority from event
+		class := entities.NewHTBClass(e.DeviceName, e.Handle, e.Parent, e.Name, e.Priority)
+
+		// Set rate and ceil bandwidth
+		class.SetRate(e.Rate)
+
+		// If ceil is 0 or not set, default to rate (HTB requirement)
+		if e.Ceil.BitsPerSecond() == 0 {
+			class.SetCeil(e.Rate)
+		} else {
+			class.SetCeil(e.Ceil)
+		}
+
+		// Set WP2 parameters from event
+		if e.Burst > 0 {
+			class.SetBurst(e.Burst)
+		}
+		if e.Cburst > 0 {
+			class.SetCburst(e.Cburst)
+		}
+
+		// Set enhanced parameters from event
+		if e.Quantum > 0 {
+			class.SetQuantum(e.Quantum)
+		}
+		if e.Overhead > 0 {
+			class.SetOverhead(e.Overhead)
+		}
+		if e.MPU > 0 {
+			class.SetMPU(e.MPU)
+		}
+		if e.MTU > 0 {
+			class.SetMTU(e.MTU)
+		}
+		if e.HTBPrio > 0 {
+			class.SetHTBPrio(e.HTBPrio)
+		}
+
+		// Apply default parameters if requested
+		if e.UseDefaults {
+			class.ApplyDefaultParameters()
+		}
+
+		// Calculate burst and cburst using enhanced calculation if not already set
+		if class.Burst() == 0 {
+			class.SetBurst(class.CalculateEnhancedBurst())
+		}
+		if class.Cburst() == 0 {
+			class.SetCburst(class.CalculateEnhancedCburst())
+		}
+
+		return s.netlinkAdapter.AddClass(ctx, class)
+
 	default:
 		// Not a class event we handle
 		return nil

@@ -361,16 +361,24 @@ func (ag *TrafficControlAggregate) AddHTBClass(parent tc.Handle, classHandle tc.
 	return nil
 }
 
-// AddHTBClassWithAdvancedParameters adds an HTB class with advanced parameters including priority and burst settings
+// AddHTBClassWithAdvancedParameters adds an HTB class with comprehensive parameters (WP2 + enhanced)
 func (ag *TrafficControlAggregate) AddHTBClassWithAdvancedParameters(
 	parent tc.Handle,
-	classHandle tc.Handle, 
+	classHandle tc.Handle,
 	name string,
 	rate tc.Bandwidth,
 	ceil tc.Bandwidth,
 	priority entities.Priority,
+	// WP2 parameters
 	burst uint32,
 	cburst uint32,
+	// Enhanced parameters from main
+	quantum uint32,
+	overhead uint32,
+	mpu uint32,
+	mtu uint32,
+	htbPrio uint32,
+	useDefaults bool,
 ) error {
 	// Business rule: Parent qdisc must exist
 	parentQdisc, parentExists := ag.qdiscs[parent]
@@ -401,7 +409,7 @@ func (ag *TrafficControlAggregate) AddHTBClassWithAdvancedParameters(
 		return fmt.Errorf("HTB priority must be between 0-7, got %d", priority)
 	}
 
-	// Create and apply event with advanced parameters
+	// Create and apply event with comprehensive parameters (WP2 + enhanced)
 	event := events.NewHTBClassCreatedEventWithAdvancedParameters(
 		ag.id,
 		ag.version+1,
@@ -411,9 +419,17 @@ func (ag *TrafficControlAggregate) AddHTBClassWithAdvancedParameters(
 		name,
 		rate,
 		ceil,
-		int(priority),
+		priority,
+		// WP2 parameters
 		burst,
 		cburst,
+		// Enhanced parameters from main
+		quantum,
+		overhead,
+		mpu,
+		mtu,
+		htbPrio,
+		useDefaults,
 	)
 
 	ag.ApplyEvent(event)
@@ -561,6 +577,36 @@ func (ag *TrafficControlAggregate) ApplyEvent(event events.DomainEvent) {
 		class := entities.NewHTBClass(e.DeviceName, e.Handle, e.Parent, e.Name, entities.Priority(4))
 		class.SetRate(e.Rate)
 		class.SetCeil(e.Ceil)
+		ag.classes[e.Handle] = class.Class
+
+	case *events.HTBClassCreatedEventWithAdvancedParameters:
+		// Create HTB class with advanced parameters
+		class := entities.NewHTBClass(e.DeviceName, e.Handle, e.Parent, e.Name, e.Priority)
+		class.SetRate(e.Rate)
+		class.SetCeil(e.Ceil)
+
+		// Set advanced parameters
+		if e.Quantum > 0 {
+			class.SetQuantum(e.Quantum)
+		}
+		if e.Overhead > 0 {
+			class.SetOverhead(e.Overhead)
+		}
+		if e.MPU > 0 {
+			class.SetMPU(e.MPU)
+		}
+		if e.MTU > 0 {
+			class.SetMTU(e.MTU)
+		}
+		if e.HTBPrio > 0 {
+			class.SetHTBPrio(e.HTBPrio)
+		}
+
+		// Apply default parameters if requested
+		if e.UseDefaults {
+			class.ApplyDefaultParameters()
+		}
+
 		ag.classes[e.Handle] = class.Class
 
 	case *events.FilterCreatedEvent:

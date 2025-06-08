@@ -115,8 +115,7 @@ func (h *CreateHTBClassHandler) HandleTyped(ctx context.Context, command *models
 		return fmt.Errorf("invalid ceil: %w", err)
 	}
 
-	// Execute business logic
-	// Use provided name or fall back to ClassID
+	// Execute business logic with comprehensive parameters (WP2 + enhanced)
 	className := command.Name
 	if className == "" {
 		className = command.ClassID
@@ -128,24 +127,25 @@ func (h *CreateHTBClassHandler) HandleTyped(ctx context.Context, command *models
 		priority = entities.Priority(4) // Default to normal priority
 	}
 
-	// Calculate burst values if not provided
-	burst := command.Burst
-	cburst := command.Cburst
-	if command.UseDefaults {
-		// Create temporary HTB class to calculate burst values
-		tempClass := entities.NewHTBClass(device, classHandle, parentHandle, className, priority)
-		tempClass.SetRate(rate)
-		tempClass.SetCeil(ceil)
-		if burst == 0 {
-			burst = tempClass.CalculateBurst()
-		}
-		if cburst == 0 {
-			cburst = tempClass.CalculateCburst()
-		}
-	}
-
+	// Create HTB class with comprehensive parameters
 	if err := aggregate.AddHTBClassWithAdvancedParameters(
-		parentHandle, classHandle, className, rate, ceil, priority, burst, cburst); err != nil {
+		parentHandle,
+		classHandle,
+		className,
+		rate,
+		ceil,
+		priority,
+		// WP2 parameters
+		command.Burst,
+		command.Cburst,
+		// Enhanced parameters from main
+		command.Quantum,
+		command.Overhead,
+		command.MPU,
+		command.MTU,
+		command.HTBPrio,
+		command.UseDefaults,
+	); err != nil {
 		return err
 	}
 

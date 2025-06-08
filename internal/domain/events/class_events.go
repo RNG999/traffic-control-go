@@ -85,6 +85,70 @@ func NewHTBClassCreatedEventWithAdvancedParameters(
 	}
 }
 
+// HTBClassCreatedEventWithAdvancedParameters is emitted when an HTB class with comprehensive parameters is created
+type HTBClassCreatedEventWithAdvancedParameters struct {
+	BaseEvent
+	DeviceName  tc.DeviceName
+	Handle      tc.Handle
+	Parent      tc.Handle
+	Name        string
+	Rate        tc.Bandwidth
+	Ceil        tc.Bandwidth
+	Priority    entities.Priority
+	// WP2 parameters
+	Burst       uint32
+	Cburst      uint32
+	// Enhanced parameters from main
+	Quantum     uint32
+	Overhead    uint32
+	MPU         uint32
+	MTU         uint32
+	HTBPrio     uint32
+	UseDefaults bool
+}
+
+// NewHTBClassCreatedEventWithAdvancedParameters creates a new comprehensive HTB class event
+func NewHTBClassCreatedEventWithAdvancedParameters(
+	aggregateID string,
+	version int,
+	device tc.DeviceName,
+	handle tc.Handle,
+	parent tc.Handle,
+	name string,
+	rate tc.Bandwidth,
+	ceil tc.Bandwidth,
+	priority entities.Priority,
+	// WP2 parameters
+	burst uint32,
+	cburst uint32,
+	// Enhanced parameters from main
+	quantum uint32,
+	overhead uint32,
+	mpu uint32,
+	mtu uint32,
+	htbPrio uint32,
+	useDefaults bool,
+) *HTBClassCreatedEventWithAdvancedParameters {
+	return &HTBClassCreatedEventWithAdvancedParameters{
+		BaseEvent:   NewBaseEvent(aggregateID, "HTBClassCreatedWithAdvancedParameters", version),
+		DeviceName:  device,
+		Handle:      handle,
+		Parent:      parent,
+		Name:        name,
+		Rate:        rate,
+		Ceil:        ceil,
+		Priority:    priority,
+		Burst:       burst,
+		Cburst:      cburst,
+		Quantum:     quantum,
+		Overhead:    overhead,
+		MPU:         mpu,
+		MTU:         mtu,
+		HTBPrio:     htbPrio,
+		UseDefaults: useDefaults,
+	}
+}
+
 // ClassDeletedEvent is emitted when a class is deleted
 type ClassDeletedEvent struct {
 	BaseEvent

@@ -25,6 +25,19 @@ This library provides an intuitive API for managing Linux Traffic Control, makin
 - **Well-Tested**: 44% API coverage, 43% application coverage with extensive tests
 - **Production Ready**: Battle-tested API for enterprise applications
 
+## Project Scope
+
+**In Scope (v1.0):**
+- Linux Traffic Control API with HTB qdisc support
+- CQRS/Event Sourcing architecture for configuration history
+- Real-time statistics and performance monitoring
+- Configuration file support (JSON/YAML)
+
+**Out of Scope:**
+- GUI interfaces (API-first design)
+- Windows/macOS support (Linux-specific)
+- Non-HTB qdiscs in initial release
+
 ## Quick Start
 
 ```go

@@ -31,38 +31,6 @@ type IperfResult struct {
 	} `json:"end"`
 }
 
-// setupIperfVethPair creates a veth pair with IP addresses for iperf testing
-func setupIperfVethPair(t *testing.T, vethName string) (string, func()) {
-	t.Helper()
-	
-	// Check if running as root first
-	if os.Geteuid() != 0 {
-		t.Skip("Test requires root privileges for veth pair creation")
-		return "", func() {}
-	}
-	
-	peerName := vethName + "-peer"
-	
-	// Create veth pair
-	cmd := exec.Command("ip", "link", "add", vethName, "type", "veth", "peer", "name", peerName)
-	if output, err := cmd.CombinedOutput(); err != nil {
-		t.Skipf("Failed to create veth pair: %v, output: %s", err, string(output))
-		return "", func() {}
-	}
-	
-	// Bring up both interfaces
-	exec.Command("ip", "link", "set", vethName, "up").Run()
-	exec.Command("ip", "link", "set", peerName, "up").Run()
-	
-	// Assign IP addresses
-	exec.Command("ip", "addr", "add", "10.0.1.1/24", "dev", vethName).Run()
-	exec.Command("ip", "addr", "add", "10.0.1.2/24", "dev", peerName).Run()
-	
-	// Return cleanup function
-	return peerName, func() {
-		exec.Command("ip", "link", "delete", vethName).Run()
-	}
-}
 
 // runIperf3Client runs iperf3 client and returns bandwidth in bits per second
 func runIperf3Client(t *testing.T, serverIP string, duration int) float64 {

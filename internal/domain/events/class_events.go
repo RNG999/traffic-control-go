@@ -57,33 +57,6 @@ func NewHTBClassCreatedEvent(aggregateID string, version int, device tc.DeviceNa
 	}
 }
 
-// NewHTBClassCreatedEventWithAdvancedParameters creates a new HTBClassCreatedEvent with all parameters
-func NewHTBClassCreatedEventWithAdvancedParameters(
-	aggregateID string,
-	version int,
-	device tc.DeviceName,
-	handle tc.Handle,
-	parent tc.Handle,
-	name string,
-	rate tc.Bandwidth,
-	ceil tc.Bandwidth,
-	priority int,
-	burst uint32,
-	cburst uint32,
-) *HTBClassCreatedEvent {
-	return &HTBClassCreatedEvent{
-		BaseEvent:  NewBaseEvent(aggregateID, "HTBClassCreated", version),
-		DeviceName: device,
-		Handle:     handle,
-		Parent:     parent,
-		Name:       name,
-		Rate:       rate,
-		Ceil:       ceil,
-		Priority:   priority,
-		Burst:      burst,
-		Cburst:     cburst,
-	}
-}
 
 // HTBClassCreatedEventWithAdvancedParameters is emitted when an HTB class with comprehensive parameters is created
 type HTBClassCreatedEventWithAdvancedParameters struct {

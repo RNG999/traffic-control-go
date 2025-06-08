@@ -31,7 +31,7 @@ func main() {
 	// Create traffic controller for ethernet interface
 	device := "eth0"
 	controller := api.NetworkInterface(device)
-	
+
 	// Set interface bandwidth limit
 	controller.WithHardLimitBandwidth("1gbps")
 
@@ -62,7 +62,7 @@ func main() {
 	if err != nil {
 		logger.Error("Failed to get statistics", logging.Error(err))
 	} else {
-		logger.Info("Current statistics", 
+		logger.Info("Current statistics",
 			logging.String("device", stats.DeviceName),
 			logging.Int("total_classes", len(stats.ClassStats)))
 	}

@@ -278,7 +278,6 @@ func (s *StatisticsQueryService) GetRealtimeStatistics(ctx context.Context, devi
 	return stats, nil
 }
 
-
 // GetDeviceStatisticsHandler handles queries for device statistics
 type GetDeviceStatisticsHandler struct {
 	statisticsService *StatisticsQueryService

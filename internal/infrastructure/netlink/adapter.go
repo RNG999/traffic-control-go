@@ -193,15 +193,52 @@ func (a *RealNetlinkAdapter) AddClass(ctx context.Context, classEntity interface
 		// Set HTB class parameters
 		nlClass.Rate = uint64(class.Rate().BitsPerSecond()) / 8 // Convert to bytes per second
 		nlClass.Ceil = uint64(class.Ceil().BitsPerSecond()) / 8
-		nlClass.Buffer = class.Burst()
-		nlClass.Cbuffer = class.Cburst()
+
+		// Set burst parameters - use enhanced calculation if available
+		if class.Burst() > 0 {
+			nlClass.Buffer = class.Burst()
+		} else {
+			nlClass.Buffer = class.CalculateEnhancedBurst()
+		}
+
+		if class.Cburst() > 0 {
+			nlClass.Cbuffer = class.Cburst()
+		} else {
+			nlClass.Cbuffer = class.CalculateEnhancedCburst()
+		}
+
+		// Set enhanced HTB parameters if available
+		if class.Quantum() > 0 {
+			nlClass.Quantum = class.Quantum()
+		} else {
+			nlClass.Quantum = class.CalculateQuantum()
+		}
+
+		// Note: Advanced parameters (Overhead, MPU, MTU) are not supported by the current netlink library version
+		// These are tracked in the domain model but not applied via netlink for now
+
+		// Set HTB priority if specified and supported
+		if class.HTBPrio() > 0 {
+			nlClass.Prio = class.HTBPrio()
+		}
 
 		a.logger.Debug("HTB class parameters",
 			logging.String("rate", fmt.Sprintf("%d", nlClass.Rate)),
 			logging.String("ceil", fmt.Sprintf("%d", nlClass.Ceil)),
 			logging.String("buffer", fmt.Sprintf("%d", nlClass.Buffer)),
 			logging.String("cbuffer", fmt.Sprintf("%d", nlClass.Cbuffer)),
+			logging.String("quantum", fmt.Sprintf("%d", nlClass.Quantum)),
+			logging.String("prio", fmt.Sprintf("%d", nlClass.Prio)),
 		)
+
+		// Log advanced parameters for debugging (domain model only)
+		if class.Overhead() > 0 || class.MPU() > 0 || class.MTU() > 0 {
+			a.logger.Debug("Advanced HTB parameters (domain model only)",
+				logging.String("overhead", fmt.Sprintf("%d", class.Overhead())),
+				logging.String("mpu", fmt.Sprintf("%d", class.MPU())),
+				logging.String("mtu", fmt.Sprintf("%d", class.MTU())),
+			)
+		}
 
 		if err := netlink.ClassAdd(nlClass); err != nil {
 			return fmt.Errorf("failed to add HTB class: %w", err)

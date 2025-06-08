@@ -53,6 +53,15 @@ type CreateHTBClassCommand struct {
 	ClassID    string
 	Rate       string
 	Ceil       string
+	Priority   int    // 0-7, 0 is highest
+	Name       string // Human-readable name
+	// Enhanced HTB parameters
+	Quantum     uint32 // Quantum for borrowing (bytes)
+	Overhead    uint32 // Packet overhead (bytes)
+	MPU         uint32 // Minimum packet unit (bytes)
+	MTU         uint32 // Maximum transmission unit (bytes)
+	HTBPrio     uint32 // Internal HTB priority (0-7)
+	UseDefaults bool   // Apply default parameters automatically
 }
 
 // CreateFilterCommand creates a filter
@@ -63,6 +72,41 @@ type CreateFilterCommand struct {
 	Protocol   string
 	FlowID     string
 	Match      map[string]string
+}
+
+// CreateAdvancedFilterCommand creates an advanced filter with enhanced capabilities
+type CreateAdvancedFilterCommand struct {
+	DeviceName string
+	Parent     string
+	Priority   uint16
+	Handle     string
+	Protocol   string
+	FlowID     string
+	// Enhanced filtering options
+	IPSourceRange     *IPRange   // Source IP range
+	IPDestRange       *IPRange   // Destination IP range
+	PortSourceRange   *PortRange // Source port range
+	PortDestRange     *PortRange // Destination port range
+	TransportProtocol string     // TCP, UDP, ICMP
+	TOSValue          uint8      // Type of Service
+	DSCPValue         uint8      // DSCP marking
+	QoSPriority       uint8      // QoS priority (0-7)
+	RateLimit         string     // Rate limiting bandwidth
+	BurstLimit        uint32     // Burst limit in bytes
+	Action            string     // classify, drop, ratelimit, mark
+}
+
+// IPRange represents an IP address range
+type IPRange struct {
+	StartIP string
+	EndIP   string
+	CIDR    string // Alternative to range
+}
+
+// PortRange represents a port range
+type PortRange struct {
+	StartPort uint16
+	EndPort   uint16
 }
 
 // DeleteQdiscCommand deletes a qdisc

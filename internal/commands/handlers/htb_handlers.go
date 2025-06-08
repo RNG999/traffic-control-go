@@ -115,10 +115,27 @@ func (h *CreateHTBClassHandler) HandleTyped(ctx context.Context, command *models
 		return fmt.Errorf("invalid ceil: %w", err)
 	}
 
-	// Execute business logic
-	// Use ClassID as the name for now - in a real implementation you might want a separate name field
+	// Execute business logic with enhanced parameters
 	className := command.ClassID
-	if err := aggregate.AddHTBClass(parentHandle, classHandle, className, rate, ceil); err != nil {
+	if command.Name != "" {
+		className = command.Name
+	}
+
+	// Create HTB class with enhanced parameters
+	if err := aggregate.AddHTBClassWithAdvancedParameters(
+		parentHandle,
+		classHandle,
+		className,
+		rate,
+		ceil,
+		entities.Priority(command.Priority),
+		command.Quantum,
+		command.Overhead,
+		command.MPU,
+		command.MTU,
+		command.HTBPrio,
+		command.UseDefaults,
+	); err != nil {
 		return err
 	}
 

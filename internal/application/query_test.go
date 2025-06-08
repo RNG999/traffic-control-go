@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/rng999/traffic-control-go/internal/domain/valueobjects"
+	"github.com/rng999/traffic-control-go/pkg/tc"
 	"github.com/rng999/traffic-control-go/internal/infrastructure/eventstore"
 	"github.com/rng999/traffic-control-go/internal/infrastructure/netlink"
 	"github.com/rng999/traffic-control-go/internal/queries/models"
@@ -27,10 +27,10 @@ func TestQueryHandlerRegistration(t *testing.T) {
 	t.Run("Query Bus Has Registered Handlers", func(t *testing.T) {
 		// Check that query bus was initialized and has handlers
 		assert.NotNil(t, service.queryBus, "Query bus should be initialized")
-		
+
 		// Query bus should have handlers registered
 		assert.Contains(t, service.queryBus.handlers, "GetQdisc", "GetQdisc handler should be registered")
-		assert.Contains(t, service.queryBus.handlers, "GetClass", "GetClass handler should be registered") 
+		assert.Contains(t, service.queryBus.handlers, "GetClass", "GetClass handler should be registered")
 		assert.Contains(t, service.queryBus.handlers, "GetFilter", "GetFilter handler should be registered")
 		assert.Contains(t, service.queryBus.handlers, "GetConfiguration", "GetConfiguration handler should be registered")
 		assert.Contains(t, service.queryBus.handlers, "GetDeviceStatistics", "GetDeviceStatistics handler should be registered")
@@ -41,17 +41,17 @@ func TestQueryHandlerRegistration(t *testing.T) {
 		deviceName := "test-eth0"
 
 		// Create a device value object
-		device, err := valueobjects.NewDevice(deviceName)
+		device, err := tc.NewDevice(deviceName)
 		require.NoError(t, err, "Device name should be valid")
 
 		// Test GetConfiguration query - should not error even with no data
 		query := models.NewGetTrafficControlConfigQuery(device)
 		result, err := service.queryBus.Execute(ctx, "GetConfiguration", query)
-		
+
 		// Should execute without error (may return empty result)
 		assert.NoError(t, err, "GetConfiguration query should execute without error")
 		assert.NotNil(t, result, "GetConfiguration should return a result")
-		
+
 		// Result should be the correct type
 		_, ok := result.(models.TrafficControlConfigView)
 		assert.True(t, ok, "Result should be TrafficControlConfigView type")
@@ -81,7 +81,7 @@ func TestQueryFunctionality(t *testing.T) {
 		assert.NoError(t, err, "GetConfiguration should work after creating qdisc")
 		assert.NotNil(t, config, "Configuration should not be nil")
 		assert.Equal(t, deviceName, config.DeviceName, "Device name should match")
-		
+
 		// Should have at least one qdisc
 		assert.GreaterOrEqual(t, len(config.Qdiscs), 1, "Should have at least one qdisc")
 	})
@@ -91,7 +91,7 @@ func TestQueryFunctionality(t *testing.T) {
 
 		// Test device statistics query (should work even with no configuration)
 		stats, err := service.GetDeviceStatistics(ctx, deviceName)
-		
+
 		// With mock adapter, this should succeed
 		assert.NoError(t, err, "GetDeviceStatistics should work with mock adapter")
 		assert.NotNil(t, stats, "Statistics should not be nil")

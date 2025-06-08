@@ -445,34 +445,34 @@ func (a *RealNetlinkAdapter) configureU32Matches(filter *netlink.U32, matches []
 				// TCP/UDP header starts at IP header length (variable)
 				// For simplicity, assume standard 20-byte IP header (offset 20)
 				// Destination port is at bytes 22-23 (offset 22)
-				
+
 				port := portMatch.Port()
-				
+
 				// Create U32 selector for destination port
 				// This matches the destination port field in TCP/UDP header
 				sel := &netlink.TcU32Sel{
-					Flags: 0,
+					Flags:    0,
 					Offshift: 0,
-					Nkeys: 1,
-					Offmask: 0,
-					Off: 0,
-					Offoff: 0,
-					Hoff: 0,
-					Hmask: 0,
+					Nkeys:    1,
+					Offmask:  0,
+					Off:      0,
+					Offoff:   0,
+					Hoff:     0,
+					Hmask:    0,
 				}
-				
+
 				// Configure the key to match destination port
 				// Key matches 2 bytes at offset 22 (destination port in TCP/UDP)
 				key := netlink.TcU32Key{
-					Mask: 0x0000ffff,  // Match 2 bytes (port) in lower 16 bits
-					Val:  uint32(port), // Port value
-					Off:  22, // Offset 22 for destination port in TCP/UDP
+					Mask:    0x0000ffff,   // Match 2 bytes (port) in lower 16 bits
+					Val:     uint32(port), // Port value
+					Off:     22,           // Offset 22 for destination port in TCP/UDP
 					OffMask: 0,
 				}
-				
+
 				sel.Keys = []netlink.TcU32Key{key}
 				filter.Sel = sel
-				
+
 				a.logger.Debug("Configured destination port match",
 					logging.Int("port", int(port)),
 					logging.String("mask", fmt.Sprintf("0x%08x", key.Mask)),
@@ -483,28 +483,28 @@ func (a *RealNetlinkAdapter) configureU32Matches(filter *netlink.U32, matches []
 			if portMatch, ok := match.(*entities.PortMatch); ok {
 				// Source port is at offset 20 in TCP/UDP header (after IP header)
 				port := portMatch.Port()
-				
+
 				sel := &netlink.TcU32Sel{
-					Flags: 0,
+					Flags:    0,
 					Offshift: 0,
-					Nkeys: 1,
-					Offmask: 0,
-					Off: 0,
-					Offoff: 0,
-					Hoff: 0,
-					Hmask: 0,
+					Nkeys:    1,
+					Offmask:  0,
+					Off:      0,
+					Offoff:   0,
+					Hoff:     0,
+					Hmask:    0,
 				}
-				
+
 				key := netlink.TcU32Key{
-					Mask: 0xffff0000,  // Match 2 bytes (port) at high bits
-					Val:  uint32(port) << 16, // Port value shifted for high bits
-					Off:  20, // Offset 20 for source port in TCP/UDP
+					Mask:    0xffff0000,         // Match 2 bytes (port) at high bits
+					Val:     uint32(port) << 16, // Port value shifted for high bits
+					Off:     20,                 // Offset 20 for source port in TCP/UDP
 					OffMask: 0,
 				}
-				
+
 				sel.Keys = []netlink.TcU32Key{key}
 				filter.Sel = sel
-				
+
 				a.logger.Debug("Configured source port match",
 					logging.Int("port", int(port)),
 				)
@@ -517,6 +517,6 @@ func (a *RealNetlinkAdapter) configureU32Matches(filter *netlink.U32, matches []
 			)
 		}
 	}
-	
+
 	return nil
 }

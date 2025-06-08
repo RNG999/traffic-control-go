@@ -46,7 +46,7 @@ func TestConfigureU32Matches_PortFiltering(t *testing.T) {
 		// Verify U32 selector was configured
 		require.NotNil(t, filter.Sel, "U32 selector should be configured")
 		assert.Equal(t, uint8(1), filter.Sel.Nkeys, "Should have one key")
-		
+
 		// Verify key configuration
 		key := filter.Sel.Keys[0]
 		assert.Equal(t, uint32(0x0000ffff), key.Mask, "Should match 2 bytes (port)")
@@ -73,7 +73,7 @@ func TestConfigureU32Matches_PortFiltering(t *testing.T) {
 
 		require.NotNil(t, filter.Sel)
 		assert.Equal(t, uint8(1), filter.Sel.Nkeys)
-		
+
 		key := filter.Sel.Keys[0]
 		assert.Equal(t, uint32(0xffff0000), key.Mask, "Should match high 2 bytes")
 		assert.Equal(t, uint32(8080<<16), key.Val, "Should match port 8080 shifted")
@@ -250,7 +250,7 @@ func TestPortMatchValues(t *testing.T) {
 			dstMatch := entities.NewPortDestinationMatch(tc.port)
 			err := adapter.configureU32Matches(filter, []entities.Match{dstMatch})
 			require.NoError(t, err)
-			
+
 			require.NotNil(t, filter.Sel)
 			key := filter.Sel.Keys[0]
 			assert.Equal(t, tc.expected.dstMask, key.Mask, "Destination mask mismatch")
@@ -261,7 +261,7 @@ func TestPortMatchValues(t *testing.T) {
 			srcMatch := entities.NewPortSourceMatch(tc.port)
 			err = adapter.configureU32Matches(filter, []entities.Match{srcMatch})
 			require.NoError(t, err)
-			
+
 			require.NotNil(t, filter.Sel)
 			key = filter.Sel.Keys[0]
 			assert.Equal(t, tc.expected.srcMask, key.Mask, "Source mask mismatch")

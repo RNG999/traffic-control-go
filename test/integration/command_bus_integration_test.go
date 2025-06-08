@@ -191,7 +191,7 @@ func TestEventSourcingIntegration(t *testing.T) {
 
 		// Verify commands executed successfully
 		t.Log("Series of HTB commands processed successfully through type-safe command bus")
-		
+
 		// Note: Event store integration may need further configuration
 		// This test verifies the type-safe command bus can handle sequential operations
 	})
@@ -212,7 +212,7 @@ func TestEventSourcingIntegration(t *testing.T) {
 
 		// Verify complex configuration created successfully
 		t.Log("Complex HTB configuration (qdisc + class + filter) processed successfully through type-safe command bus")
-		
+
 		// Note: Configuration retrieval requires query handlers to be properly registered
 		// This test demonstrates the type-safe command bus can handle complex scenarios
 	})
@@ -248,7 +248,7 @@ func TestPerformanceUnderLoad(t *testing.T) {
 		commandsPerSecond := float64(numCommands) / duration.Seconds()
 
 		t.Logf("Processed %d commands in %v (%.2f commands/sec)", numCommands, duration, commandsPerSecond)
-		
+
 		// Performance assertion - adjust threshold based on requirements
 		assert.Greater(t, commandsPerSecond, 100.0, "Should process at least 100 commands per second")
 	})

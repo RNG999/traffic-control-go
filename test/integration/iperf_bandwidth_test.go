@@ -27,12 +27,10 @@ func TestTrafficControlWithIperf3(t *testing.T) {
 		t.Skip("Skipping iperf3 test in short mode")
 	}
 
-
 	if os.Geteuid() != 0 {
 		t.Skip("Test requires root privileges")
 		return
 	}
-
 
 	// Check if iperf3 is installed
 	if _, err := exec.LookPath("iperf3"); err != nil {
@@ -233,12 +231,10 @@ func TestMultipleClassesConcurrent(t *testing.T) {
 		t.Skip("Skipping concurrent test in short mode")
 	}
 
-
 	if os.Geteuid() != 0 {
 		t.Skip("Test requires root privileges")
 		return
 	}
-
 
 	if _, err := exec.LookPath("iperf3"); err != nil {
 		t.Skip("iperf3 not installed, skipping test")
@@ -247,7 +243,7 @@ func TestMultipleClassesConcurrent(t *testing.T) {
 	// Create veth pair for proper network testing
 	_, cleanup := setupIperfVethPair(t, "concurrent")
 	defer cleanup()
-	
+
 	device := "concurrent"
 
 	// Start iperf3 servers on different ports
@@ -334,7 +330,7 @@ func TestMultipleClassesConcurrent(t *testing.T) {
 	require.Greater(t, highBandwidth, 40.0, "High priority bandwidth too low")
 	require.Less(t, highBandwidth, 100.0, "High priority bandwidth too high")
 
-	// Low priority should be limited (20mbit = 20 Mbps) 
+	// Low priority should be limited (20mbit = 20 Mbps)
 	require.Greater(t, lowBandwidth, 10.0, "Low priority bandwidth too low")
 	require.Less(t, lowBandwidth, 50.0, "Low priority bandwidth too high")
 }
@@ -456,4 +452,3 @@ func parseIperf3Bandwidth(t *testing.T, output string) float64 {
 
 	return bandwidth
 }
-

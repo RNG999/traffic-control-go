@@ -154,12 +154,12 @@ func TestFilterErrorScenarios(t *testing.T) {
 	t.Run("Invalid Match Rules", func(t *testing.T) {
 		// Note: Mock adapter doesn't validate match rule formats
 		// These validations would occur in real netlink adapter
-		
+
 		// Test that valid match rules succeed
 		validMatch := map[string]string{"dst_port": "80"}
 		err := service.CreateFilter(ctx, deviceName, "1:0", 1, "ip", "1:10", validMatch)
 		require.NoError(t, err, "Valid match rules should succeed")
-		
+
 		t.Log("Mock adapter successfully processes filter creation")
 	})
 
@@ -214,10 +214,10 @@ func TestEdgeCaseScenarios(t *testing.T) {
 	t.Run("Special Characters in Device Names", func(t *testing.T) {
 		// Test device name with special characters
 		specialDevices := []string{
-			"eth-0",     // Hyphen
-			"eth_0",     // Underscore
-			"eth.0",     // Dot
-			"eth0:1",    // Colon (VLAN interface)
+			"eth-0",  // Hyphen
+			"eth_0",  // Underscore
+			"eth.0",  // Dot
+			"eth0:1", // Colon (VLAN interface)
 		}
 
 		for _, device := range specialDevices {
@@ -228,10 +228,10 @@ func TestEdgeCaseScenarios(t *testing.T) {
 
 		// Test device names that should definitely fail
 		invalidDevices := []string{
-			"",                    // Empty
-			"eth0 with spaces",    // Spaces
-			"eth0/invalid",        // Forward slash
-			"eth0\\invalid",       // Backslash
+			"",                 // Empty
+			"eth0 with spaces", // Spaces
+			"eth0/invalid",     // Forward slash
+			"eth0\\invalid",    // Backslash
 		}
 
 		for _, device := range invalidDevices {

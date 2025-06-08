@@ -235,7 +235,7 @@ func (s *TrafficControlService) CreateFilter(ctx context.Context, device string,
 
 // GetConfiguration retrieves the current traffic control configuration
 func (s *TrafficControlService) GetConfiguration(ctx context.Context, device string) (*qmodels.ConfigurationView, error) {
-	deviceName, err := valueobjects.NewDevice(device)
+	deviceName, err := tc.NewDevice(device)
 	if err != nil {
 		return nil, fmt.Errorf("invalid device name: %w", err)
 	}

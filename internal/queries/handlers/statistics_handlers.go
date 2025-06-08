@@ -481,7 +481,7 @@ func (h *GetQdiscStatisticsHandler) Handle(ctx context.Context, query interface{
 			}
 
 			// Get detailed statistics through adapter interface
-			detailedResult := h.netlinkAdapter.GetDetailedQdiscStats(query.DeviceName(), query.Handle())
+			detailedResult := h.netlinkAdapter.GetDetailedQdiscStats(qdiscQuery.DeviceName(), qdiscQuery.Handle())
 			if detailedResult.IsSuccess() {
 				detailedStats := detailedResult.Value()
 				view.Backlog = detailedStats.Backlog
@@ -546,7 +546,7 @@ func (h *GetClassStatisticsHandler) Handle(ctx context.Context, query interface{
 			}
 
 			// Get detailed statistics through adapter interface
-			detailedResult := h.netlinkAdapter.GetDetailedClassStats(query.DeviceName(), query.Handle())
+			detailedResult := h.netlinkAdapter.GetDetailedClassStats(classQuery.DeviceName(), classQuery.Handle())
 			if detailedResult.IsSuccess() {
 				detailedStats := detailedResult.Value()
 				if detailedStats.HTBStats != nil {

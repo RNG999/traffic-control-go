@@ -112,7 +112,7 @@ func TestNetlinkAdapterIntegration(t *testing.T) {
 func TestAdapterErrorHandling(t *testing.T) {
 	eventStore := eventstore.NewMemoryEventStoreWithContext()
 	mockAdapter := netlink.NewMockAdapter()
-	logger := logging.WithComponent("error-test")
+	logger := logging.NewSilentLogger() // Use silent logger for error tests
 	service := application.NewTrafficControlService(eventStore, mockAdapter, logger)
 	ctx := context.Background()
 

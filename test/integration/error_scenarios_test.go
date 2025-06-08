@@ -22,7 +22,7 @@ import (
 func TestAdvancedErrorScenarios(t *testing.T) {
 	eventStore := eventstore.NewMemoryEventStoreWithContext()
 	mockAdapter := netlink.NewMockAdapter()
-	logger := logging.WithComponent("error-scenarios")
+	logger := logging.NewSilentLogger() // Use silent logger for error tests
 	service := application.NewTrafficControlService(eventStore, mockAdapter, logger)
 	ctx := context.Background()
 
@@ -122,7 +122,7 @@ func TestAdvancedErrorScenarios(t *testing.T) {
 func TestFilterErrorScenarios(t *testing.T) {
 	eventStore := eventstore.NewMemoryEventStoreWithContext()
 	mockAdapter := netlink.NewMockAdapter()
-	logger := logging.WithComponent("filter-errors")
+	logger := logging.NewSilentLogger() // Use silent logger for error tests
 	service := application.NewTrafficControlService(eventStore, mockAdapter, logger)
 	ctx := context.Background()
 
@@ -181,7 +181,7 @@ func TestFilterErrorScenarios(t *testing.T) {
 func TestEdgeCaseScenarios(t *testing.T) {
 	eventStore := eventstore.NewMemoryEventStoreWithContext()
 	mockAdapter := netlink.NewMockAdapter()
-	logger := logging.WithComponent("edge-cases")
+	logger := logging.NewSilentLogger() // Use silent logger for error tests
 	service := application.NewTrafficControlService(eventStore, mockAdapter, logger)
 	ctx := context.Background()
 
@@ -264,7 +264,7 @@ func TestEdgeCaseScenarios(t *testing.T) {
 func TestRecoveryScenarios(t *testing.T) {
 	eventStore := eventstore.NewMemoryEventStoreWithContext()
 	mockAdapter := netlink.NewMockAdapter()
-	logger := logging.WithComponent("recovery")
+	logger := logging.NewSilentLogger() // Use silent logger for error tests
 	service := application.NewTrafficControlService(eventStore, mockAdapter, logger)
 	ctx := context.Background()
 

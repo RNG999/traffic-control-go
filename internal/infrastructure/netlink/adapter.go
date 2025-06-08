@@ -193,14 +193,55 @@ func (a *RealNetlinkAdapter) AddClass(ctx context.Context, classEntity interface
 		// Set HTB class parameters
 		nlClass.Rate = uint64(class.Rate().BitsPerSecond()) / 8 // Convert to bytes per second
 		nlClass.Ceil = uint64(class.Ceil().BitsPerSecond()) / 8
-		nlClass.Buffer = class.Burst()
-		nlClass.Cbuffer = class.Cburst()
+		
+		// Set burst parameters - use enhanced calculation if available
+		if class.Burst() > 0 {
+			nlClass.Buffer = class.Burst()
+		} else {
+			nlClass.Buffer = class.CalculateEnhancedBurst()
+		}
+		
+		if class.Cburst() > 0 {
+			nlClass.Cbuffer = class.Cburst()  
+		} else {
+			nlClass.Cbuffer = class.CalculateEnhancedCburst()
+		}
+
+		// Set enhanced HTB parameters if available
+		if class.Quantum() > 0 {
+			nlClass.Quantum = class.Quantum()
+		} else {
+			nlClass.Quantum = class.CalculateQuantum()
+		}
+
+		// Set overhead, MPU, and MTU if specified
+		if class.Overhead() > 0 {
+			nlClass.Overhead = uint16(class.Overhead())
+		}
+		
+		if class.MPU() > 0 {
+			nlClass.Mpu = uint16(class.MPU())
+		}
+
+		if class.MTU() > 0 {
+			nlClass.Mtu = uint16(class.MTU())
+		}
+
+		// Set HTB priority if specified
+		if class.HTBPrio() > 0 {
+			nlClass.Prio = class.HTBPrio()
+		}
 
 		a.logger.Debug("HTB class parameters",
 			logging.String("rate", fmt.Sprintf("%d", nlClass.Rate)),
 			logging.String("ceil", fmt.Sprintf("%d", nlClass.Ceil)),
 			logging.String("buffer", fmt.Sprintf("%d", nlClass.Buffer)),
 			logging.String("cbuffer", fmt.Sprintf("%d", nlClass.Cbuffer)),
+			logging.String("quantum", fmt.Sprintf("%d", nlClass.Quantum)),
+			logging.String("overhead", fmt.Sprintf("%d", nlClass.Overhead)),
+			logging.String("mpu", fmt.Sprintf("%d", nlClass.Mpu)),
+			logging.String("mtu", fmt.Sprintf("%d", nlClass.Mtu)),
+			logging.String("prio", fmt.Sprintf("%d", nlClass.Prio)),
 		)
 
 		if err := netlink.ClassAdd(nlClass); err != nil {

@@ -1114,5 +1114,4 @@ func (h *HTBClass) ApplyDefaultParameters() {
 	if h.cburst == 0 {
 		h.cburst = h.CalculateEnhancedCburst()
 	}
->>>>>>> main
 }

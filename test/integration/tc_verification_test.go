@@ -127,10 +127,6 @@ func TestTrafficControlFunctionality(t *testing.T) {
 		t.Skip("iperf3 not installed")
 	}
 	
-	// Skip iperf3 tests in CI environment due to virtualization limitations
-	if os.Getenv("CI") == "true" {
-		t.Skip("Skipping TC functionality tests in CI environment")
-	}
 	
 	t.Run("Port-Based Traffic Shaping", func(t *testing.T) {
 		// Create test interface

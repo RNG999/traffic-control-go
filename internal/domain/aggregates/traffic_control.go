@@ -566,6 +566,36 @@ func (ag *TrafficControlAggregate) ApplyEvent(event events.DomainEvent) {
 		class.SetCeil(e.Ceil)
 		ag.classes[e.Handle] = class.Class
 
+	case *events.HTBClassCreatedEventWithAdvancedParameters:
+		// Create HTB class with advanced parameters
+		class := entities.NewHTBClass(e.DeviceName, e.Handle, e.Parent, e.Name, e.Priority)
+		class.SetRate(e.Rate)
+		class.SetCeil(e.Ceil)
+		
+		// Set advanced parameters
+		if e.Quantum > 0 {
+			class.SetQuantum(e.Quantum)
+		}
+		if e.Overhead > 0 {
+			class.SetOverhead(e.Overhead)
+		}
+		if e.MPU > 0 {
+			class.SetMPU(e.MPU)
+		}
+		if e.MTU > 0 {
+			class.SetMTU(e.MTU)
+		}
+		if e.HTBPrio > 0 {
+			class.SetHTBPrio(e.HTBPrio)
+		}
+		
+		// Apply default parameters if requested
+		if e.UseDefaults {
+			class.ApplyDefaultParameters()
+		}
+		
+		ag.classes[e.Handle] = class.Class
+
 	case *events.FilterCreatedEvent:
 		filter := entities.NewFilter(e.DeviceName, e.Parent, e.Priority, e.Handle)
 		filter.SetFlowID(e.FlowID)

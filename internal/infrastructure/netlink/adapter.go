@@ -214,20 +214,10 @@ func (a *RealNetlinkAdapter) AddClass(ctx context.Context, classEntity interface
 			nlClass.Quantum = class.CalculateQuantum()
 		}
 
-		// Set overhead, MPU, and MTU if specified
-		if class.Overhead() > 0 {
-			nlClass.Overhead = uint16(class.Overhead())
-		}
+		// Note: Advanced parameters (Overhead, MPU, MTU) are not supported by the current netlink library version
+		// These are tracked in the domain model but not applied via netlink for now
 		
-		if class.MPU() > 0 {
-			nlClass.Mpu = uint16(class.MPU())
-		}
-
-		if class.MTU() > 0 {
-			nlClass.Mtu = uint16(class.MTU())
-		}
-
-		// Set HTB priority if specified
+		// Set HTB priority if specified and supported
 		if class.HTBPrio() > 0 {
 			nlClass.Prio = class.HTBPrio()
 		}
@@ -238,11 +228,17 @@ func (a *RealNetlinkAdapter) AddClass(ctx context.Context, classEntity interface
 			logging.String("buffer", fmt.Sprintf("%d", nlClass.Buffer)),
 			logging.String("cbuffer", fmt.Sprintf("%d", nlClass.Cbuffer)),
 			logging.String("quantum", fmt.Sprintf("%d", nlClass.Quantum)),
-			logging.String("overhead", fmt.Sprintf("%d", nlClass.Overhead)),
-			logging.String("mpu", fmt.Sprintf("%d", nlClass.Mpu)),
-			logging.String("mtu", fmt.Sprintf("%d", nlClass.Mtu)),
 			logging.String("prio", fmt.Sprintf("%d", nlClass.Prio)),
 		)
+		
+		// Log advanced parameters for debugging (domain model only)
+		if class.Overhead() > 0 || class.MPU() > 0 || class.MTU() > 0 {
+			a.logger.Debug("Advanced HTB parameters (domain model only)",
+				logging.String("overhead", fmt.Sprintf("%d", class.Overhead())),
+				logging.String("mpu", fmt.Sprintf("%d", class.MPU())),
+				logging.String("mtu", fmt.Sprintf("%d", class.MTU())),
+			)
+		}
 
 		if err := netlink.ClassAdd(nlClass); err != nil {
 			return fmt.Errorf("failed to add HTB class: %w", err)

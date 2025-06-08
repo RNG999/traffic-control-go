@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/exec"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 
@@ -277,7 +278,46 @@ func TestAPIPerformanceWithIperf3(t *testing.T) {
 		return
 	}
 	
-	t.Skip("Performance tests with iperf3 require physical network interfaces for reliable results")
+	t.Run("API Response Time With TC Configuration", func(t *testing.T) {
+		// Create veth pair
+		_, cleanup := setupIperfVethPair(t, "perf-test")
+		defer cleanup()
+		
+		// Measure API response time for TC configuration
+		start := time.Now()
+		
+		controller := api.NetworkInterface("perf-test")
+		controller.WithHardLimitBandwidth("100mbps")
+		
+		// Create multiple traffic classes to test performance
+		for i := 0; i < 5; i++ {
+			controller.CreateTrafficClass(fmt.Sprintf("Performance Test %d", i)).
+				WithGuaranteedBandwidth(fmt.Sprintf("%dmbps", 10+i*5)).
+				WithSoftLimitBandwidth(fmt.Sprintf("%dmbps", 20+i*10)).
+				WithPriority(i % 8)
+		}
+		
+		err := controller.Apply()
+		require.NoError(t, err, "API should handle multiple classes efficiently")
+		
+		elapsed := time.Since(start)
+		
+		t.Logf("API response time for complex configuration: %v", elapsed)
+		
+		// API should respond within reasonable time
+		assert.Less(t, elapsed, 2*time.Second, "API should be responsive for complex configurations")
+		
+		// Verify all classes were created
+		tcOutput, err := exec.Command("tc", "class", "show", "dev", "perf-test").CombinedOutput()
+		require.NoError(t, err, "TC classes should be queryable")
+		
+		// Count the number of classes created
+		classLines := strings.Count(string(tcOutput), "class htb")
+		// Should have 5 traffic classes + 1 default class
+		assert.GreaterOrEqual(t, classLines, 5, "All traffic classes should be created")
+		
+		t.Log("Performance test completed successfully - multiple TC classes configured efficiently")
+	})
 }
 
 // Code commented out since test is skipped

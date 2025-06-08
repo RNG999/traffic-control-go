@@ -133,7 +133,8 @@ func TestAPIWithIperf3BandwidthLimiting(t *testing.T) {
 		controller.CreateTrafficClass("Limited").
 			WithGuaranteedBandwidth("10mbps").
 			WithSoftLimitBandwidth("10mbps").  // Hard limit at 10 Mbps
-			WithPriority(1)
+			WithPriority(1).
+			ForPort(5201) // iperf3 default port
 		
 		err := controller.Apply()
 		require.NoError(t, err, "Failed to apply traffic control")
@@ -222,6 +223,13 @@ func TestAPIWithIperf3BandwidthLimiting(t *testing.T) {
 			WithSoftLimitBandwidth("10mbps").
 			WithPriority(0).
 			ForPort(22)
+			
+		// Add test traffic class for iperf3 on port 5201
+		controller.CreateTrafficClass("Test Traffic").
+			WithGuaranteedBandwidth("20mbps").
+			WithSoftLimitBandwidth("30mbps").
+			WithPriority(2).
+			ForPort(5201)
 		
 		err := controller.Apply()
 		require.NoError(t, err, "Failed to apply README example configuration")
@@ -268,7 +276,8 @@ func TestAPIWithIperf3BandwidthLimiting(t *testing.T) {
 				controller.CreateTrafficClass("Test Format").
 					WithGuaranteedBandwidth(tf.format).
 					WithSoftLimitBandwidth(tf.format). // Hard limit
-					WithPriority(1)
+					WithPriority(1).
+					ForPort(5201) // iperf3 default port
 				
 				err := controller.Apply()
 				require.NoError(t, err, "Failed to apply traffic control for format %s", tf.format)

@@ -10,7 +10,6 @@ import (
 	"github.com/rng999/traffic-control-go/internal/queries/models"
 	"github.com/rng999/traffic-control-go/pkg/logging"
 	"github.com/rng999/traffic-control-go/pkg/tc"
-	"github.com/rng999/traffic-control-go/pkg/types"
 )
 
 // StatisticsQueryService provides TC statistics collection functionality for queries
@@ -107,7 +106,7 @@ func (s *StatisticsQueryService) GetDeviceStatistics(ctx context.Context, device
 
 	// Get qdisc statistics
 	for _, qdisc := range readModel.Qdiscs {
-		handle, err := parseHandle(qdisc.Handle)
+		handle, err := tc.ParseHandle(qdisc.Handle)
 		if err != nil {
 			s.logger.Warn("Invalid qdisc handle",
 				logging.String("handle", qdisc.Handle),
@@ -154,7 +153,7 @@ func (s *StatisticsQueryService) GetDeviceStatistics(ctx context.Context, device
 
 	// Get class statistics
 	for _, class := range readModel.Classes {
-		handle, err := parseHandle(class.Handle)
+		handle, err := tc.ParseHandle(class.Handle)
 		if err != nil {
 			s.logger.Warn("Invalid class handle",
 				logging.String("handle", class.Handle),
@@ -302,15 +301,21 @@ func NewGetDeviceStatisticsHandler(statisticsService *StatisticsQueryService) *G
 }
 
 // Handle processes the query
-func (h *GetDeviceStatisticsHandler) Handle(ctx context.Context, query *models.GetDeviceStatisticsQuery) types.Result[models.DeviceStatisticsView] {
-	stats, err := h.statisticsService.GetDeviceStatistics(ctx, query.DeviceName().String())
+func (h *GetDeviceStatisticsHandler) Handle(ctx context.Context, query interface{}) (interface{}, error) {
+	// Type assert the query
+	deviceQuery, ok := query.(*models.GetDeviceStatisticsQuery)
+	if !ok {
+		return nil, fmt.Errorf("invalid query type: expected *GetDeviceStatisticsQuery, got %T", query)
+	}
+
+	stats, err := h.statisticsService.GetDeviceStatistics(ctx, deviceQuery.DeviceName().String())
 	if err != nil {
-		return types.Failure[models.DeviceStatisticsView](fmt.Errorf("failed to get device statistics: %w", err))
+		return nil, fmt.Errorf("failed to get device statistics: %w", err)
 	}
 
 	// Convert to view model
 	view := convertDeviceStatisticsToView(stats)
-	return types.Success[models.DeviceStatisticsView](view)
+	return view, nil
 }
 
 // GetRealtimeStatisticsHandler handles queries for realtime statistics
@@ -326,15 +331,21 @@ func NewGetRealtimeStatisticsHandler(statisticsService *StatisticsQueryService) 
 }
 
 // Handle processes the query
-func (h *GetRealtimeStatisticsHandler) Handle(ctx context.Context, query *models.GetRealtimeStatisticsQuery) types.Result[models.DeviceStatisticsView] {
-	stats, err := h.statisticsService.GetRealtimeStatistics(ctx, query.DeviceName().String())
+func (h *GetRealtimeStatisticsHandler) Handle(ctx context.Context, query interface{}) (interface{}, error) {
+	// Type assert the query
+	realtimeQuery, ok := query.(*models.GetRealtimeStatisticsQuery)
+	if !ok {
+		return nil, fmt.Errorf("invalid query type: expected *GetRealtimeStatisticsQuery, got %T", query)
+	}
+
+	stats, err := h.statisticsService.GetRealtimeStatistics(ctx, realtimeQuery.DeviceName().String())
 	if err != nil {
-		return types.Failure[models.DeviceStatisticsView](fmt.Errorf("failed to get realtime statistics: %w", err))
+		return nil, fmt.Errorf("failed to get realtime statistics: %w", err)
 	}
 
 	// Convert to view model
 	view := convertDeviceStatisticsToView(stats)
-	return types.Success[models.DeviceStatisticsView](view)
+	return view, nil
 }
 
 // Helper function to convert DeviceStatistics to models.DeviceStatisticsView
@@ -442,16 +453,22 @@ func NewGetQdiscStatisticsHandler(netlinkAdapter netlink.Adapter) *GetQdiscStati
 }
 
 // Handle processes the query
-func (h *GetQdiscStatisticsHandler) Handle(ctx context.Context, query *models.GetQdiscStatisticsQuery) types.Result[models.QdiscStatisticsView] {
+func (h *GetQdiscStatisticsHandler) Handle(ctx context.Context, query interface{}) (interface{}, error) {
+	// Type assert the query
+	qdiscQuery, ok := query.(*models.GetQdiscStatisticsQuery)
+	if !ok {
+		return nil, fmt.Errorf("invalid query type: expected *GetQdiscStatisticsQuery, got %T", query)
+	}
+
 	// Get qdisc information from netlink
-	qdiscs := h.netlinkAdapter.GetQdiscs(query.DeviceName())
+	qdiscs := h.netlinkAdapter.GetQdiscs(qdiscQuery.DeviceName())
 	if !qdiscs.IsSuccess() {
-		return types.Failure[models.QdiscStatisticsView](fmt.Errorf("failed to get qdiscs: %w", qdiscs.Error()))
+		return nil, fmt.Errorf("failed to get qdiscs: %w", qdiscs.Error())
 	}
 
 	// Find the specific qdisc
 	for _, qdisc := range qdiscs.Value() {
-		if qdisc.Handle.String() == query.Handle().String() {
+		if qdisc.Handle.String() == qdiscQuery.Handle().String() {
 			view := models.QdiscStatisticsView{
 				Handle:        qdisc.Handle.String(),
 				Type:          qdisc.Type.String(),
@@ -478,11 +495,11 @@ func (h *GetQdiscStatisticsHandler) Handle(ctx context.Context, query *models.Ge
 				}
 			}
 
-			return types.Success[models.QdiscStatisticsView](view)
+			return view, nil
 		}
 	}
 
-	return types.Failure[models.QdiscStatisticsView](fmt.Errorf("qdisc %s not found on device %s", query.Handle(), query.DeviceName()))
+	return nil, fmt.Errorf("qdisc %s not found on device %s", qdiscQuery.Handle(), qdiscQuery.DeviceName())
 }
 
 // GetClassStatisticsHandler handles queries for class statistics
@@ -498,16 +515,22 @@ func NewGetClassStatisticsHandler(netlinkAdapter netlink.Adapter) *GetClassStati
 }
 
 // Handle processes the query
-func (h *GetClassStatisticsHandler) Handle(ctx context.Context, query *models.GetClassStatisticsQuery) types.Result[models.ClassStatisticsView] {
+func (h *GetClassStatisticsHandler) Handle(ctx context.Context, query interface{}) (interface{}, error) {
+	// Type assert the query
+	classQuery, ok := query.(*models.GetClassStatisticsQuery)
+	if !ok {
+		return nil, fmt.Errorf("invalid query type: expected *GetClassStatisticsQuery, got %T", query)
+	}
+
 	// Get class information from netlink
-	classes := h.netlinkAdapter.GetClasses(query.DeviceName())
+	classes := h.netlinkAdapter.GetClasses(classQuery.DeviceName())
 	if !classes.IsSuccess() {
-		return types.Failure[models.ClassStatisticsView](fmt.Errorf("failed to get classes: %w", classes.Error()))
+		return nil, fmt.Errorf("failed to get classes: %w", classes.Error())
 	}
 
 	// Find the specific class
 	for _, class := range classes.Value() {
-		if class.Handle.String() == query.Handle().String() {
+		if class.Handle.String() == classQuery.Handle().String() {
 			view := models.ClassStatisticsView{
 				Handle:         class.Handle.String(),
 				Parent:         class.Parent.String(),
@@ -538,9 +561,9 @@ func (h *GetClassStatisticsHandler) Handle(ctx context.Context, query *models.Ge
 				}
 			}
 
-			return types.Success[models.ClassStatisticsView](view)
+			return view, nil
 		}
 	}
 
-	return types.Failure[models.ClassStatisticsView](fmt.Errorf("class %s not found on device %s", query.Handle(), query.DeviceName()))
+	return nil, fmt.Errorf("class %s not found on device %s", classQuery.Handle(), classQuery.DeviceName())
 }

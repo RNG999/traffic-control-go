@@ -467,7 +467,7 @@ func (a *RealNetlinkAdapter) configureU32Matches(filter *netlink.U32, matches []
 					Mask: 0x0000ffff,  // Match 2 bytes (port) in lower 16 bits
 					Val:  uint32(port), // Port value
 					Off:  22, // Offset 22 for destination port in TCP/UDP
-					Offmask: 0,
+					OffMask: 0,
 				}
 				
 				sel.Keys = []netlink.TcU32Key{key}
@@ -499,7 +499,7 @@ func (a *RealNetlinkAdapter) configureU32Matches(filter *netlink.U32, matches []
 					Mask: 0xffff0000,  // Match 2 bytes (port) at high bits
 					Val:  uint32(port) << 16, // Port value shifted for high bits
 					Off:  20, // Offset 20 for source port in TCP/UDP
-					Offmask: 0,
+					OffMask: 0,
 				}
 				
 				sel.Keys = []netlink.TcU32Key{key}

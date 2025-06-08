@@ -179,9 +179,19 @@ func (s *TrafficControlService) handleFilterCreated(ctx context.Context, event i
 func convertMatchData(matchData events.MatchData) (entities.Match, error) {
 	switch matchData.Type {
 	case entities.MatchTypeIPSource:
-		return entities.NewIPSourceMatch(matchData.Value)
+		// Parse IP from string representation
+		ip, err := parseIPFromString(matchData.Value, "ip src")
+		if err != nil {
+			return nil, fmt.Errorf("invalid source IP match value: %w", err)
+		}
+		return entities.NewIPSourceMatch(ip)
 	case entities.MatchTypeIPDestination:
-		return entities.NewIPDestinationMatch(matchData.Value)
+		// Parse IP from string representation
+		ip, err := parseIPFromString(matchData.Value, "ip dst")
+		if err != nil {
+			return nil, fmt.Errorf("invalid destination IP match value: %w", err)
+		}
+		return entities.NewIPDestinationMatch(ip)
 	case entities.MatchTypePortSource:
 		// Parse port number from string representation
 		port, err := parsePortFromString(matchData.Value)
@@ -248,6 +258,19 @@ func parseProtocolFromString(value string) (entities.TransportProtocol, error) {
 	}
 	
 	return entities.TransportProtocol(protocol), nil
+}
+
+// parseIPFromString parses IP/CIDR from string representation
+// Expected format: "ip dst 192.168.1.100/32" or "ip src 10.0.0.0/24"
+func parseIPFromString(value, expectedPrefix string) (string, error) {
+	// Use fmt.Sscanf to extract the IP/CIDR part after the prefix
+	var cidr string
+	pattern := expectedPrefix + " %s"
+	if _, err := fmt.Sscanf(value, pattern, &cidr); err != nil {
+		return "", fmt.Errorf("invalid IP match format: %s (expected '%s CIDR')", value, expectedPrefix)
+	}
+	
+	return cidr, nil
 }
 
 // parseMarkFromString parses mark value from string representation

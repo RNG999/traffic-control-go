@@ -9,6 +9,7 @@ import (
 
 	"github.com/rng999/traffic-control-go/internal/commands/models"
 	"github.com/rng999/traffic-control-go/internal/domain/aggregates"
+	"github.com/rng999/traffic-control-go/internal/domain/entities"
 	"github.com/rng999/traffic-control-go/internal/infrastructure/eventstore"
 	"github.com/rng999/traffic-control-go/pkg/tc"
 )
@@ -212,4 +213,204 @@ func TestMultipleOperations_SequentialExecution(t *testing.T) {
 	assert.Len(t, aggregate.GetQdiscs(), 1)
 	assert.Len(t, aggregate.GetClasses(), 2)
 	assert.Equal(t, 3, aggregate.Version()) // qdisc + 2 classes
+}
+
+func TestCreateFilterHandler_PortMatching(t *testing.T) {
+	// Setup
+	store := eventstore.NewMemoryEventStoreWithContext()
+	handler := NewCreateFilterHandler(store)
+	ctx := context.Background()
+
+	// Create initial qdisc and class
+	deviceName, _ := tc.NewDeviceName("eth0")
+	aggregate := aggregates.NewTrafficControlAggregate(deviceName)
+	
+	// Add qdisc first
+	qHandle, _ := tc.ParseHandle("1:0")
+	defaultHandle, _ := tc.ParseHandle("1:30")
+	err := aggregate.AddHTBQdisc(qHandle, defaultHandle)
+	require.NoError(t, err)
+	
+	// Add class
+	classHandle, _ := tc.ParseHandle("1:10")
+	bandwidth := tc.MustParseBandwidth("100Mbps")
+	err = aggregate.AddHTBClass(qHandle, classHandle, "testclass", bandwidth, bandwidth)
+	require.NoError(t, err)
+	
+	// Save initial state
+	err = store.SaveAggregate(ctx, aggregate)
+	require.NoError(t, err)
+
+	t.Run("Destination Port Filter", func(t *testing.T) {
+		// Create filter command with destination port
+		cmd := &models.CreateFilterCommand{
+			DeviceName: "eth0",
+			Parent:     "1:0",
+			Priority:   100,
+			Protocol:   "ip",
+			FlowID:     "1:10",
+			Match: map[string]string{
+				"dst_port": "5201",
+			},
+		}
+
+		err := handler.HandleTyped(ctx, cmd)
+		if err != nil {
+			t.Fatalf("Filter creation failed: %v", err)
+		}
+
+		// Verify filter was created with correct match
+		aggregate := aggregates.NewTrafficControlAggregate(deviceName)
+		err = store.Load(ctx, aggregate.GetID(), aggregate)
+		require.NoError(t, err)
+
+		filters := aggregate.GetFilters()
+		require.Len(t, filters, 1)
+		
+		filter := filters[0]
+		matches := filter.Matches()
+		require.Len(t, matches, 1)
+		
+		// Verify it's a destination port match for port 5201
+		portMatch, ok := matches[0].(*entities.PortMatch)
+		require.True(t, ok, "Match should be a PortMatch")
+		assert.Equal(t, entities.MatchTypePortDestination, portMatch.Type())
+		assert.Equal(t, uint16(5201), portMatch.Port())
+	})
+
+	t.Run("Source Port Filter", func(t *testing.T) {
+		// Create filter command with source port
+		cmd := &models.CreateFilterCommand{
+			DeviceName: "eth0",
+			Parent:     "1:0",
+			Priority:   200,
+			Protocol:   "ip", 
+			FlowID:     "1:10",
+			Match: map[string]string{
+				"src_port": "8080",
+			},
+		}
+
+		err := handler.HandleTyped(ctx, cmd)
+		require.NoError(t, err)
+
+		// Verify filter was created
+		aggregate := aggregates.NewTrafficControlAggregate(deviceName)
+		err = store.Load(ctx, aggregate.GetID(), aggregate)
+		require.NoError(t, err)
+
+		filters := aggregate.GetFilters()
+		require.Len(t, filters, 2) // Previous + this one
+		
+		// Find the source port filter
+		var sourceFilter *entities.Filter
+		for _, f := range filters {
+			if f.ID().Priority() == 200 {
+				sourceFilter = f
+				break
+			}
+		}
+		require.NotNil(t, sourceFilter, "Source port filter should exist")
+		
+		matches := sourceFilter.Matches()
+		require.Len(t, matches, 1)
+		
+		portMatch, ok := matches[0].(*entities.PortMatch)
+		require.True(t, ok)
+		assert.Equal(t, entities.MatchTypePortSource, portMatch.Type())
+		assert.Equal(t, uint16(8080), portMatch.Port())
+	})
+
+	t.Run("Multiple Match Conditions", func(t *testing.T) {
+		// Create filter with both IP and port
+		cmd := &models.CreateFilterCommand{
+			DeviceName: "eth0",
+			Parent:     "1:0",
+			Priority:   300,
+			Protocol:   "ip",
+			FlowID:     "1:10",
+			Match: map[string]string{
+				"dst_port": "443",
+				"dst_ip":   "192.168.1.100",
+			},
+		}
+
+		err := handler.HandleTyped(ctx, cmd)
+		require.NoError(t, err)
+
+		// Verify both matches were created
+		aggregate := aggregates.NewTrafficControlAggregate(deviceName)
+		err = store.Load(ctx, aggregate.GetID(), aggregate)
+		require.NoError(t, err)
+
+		filters := aggregate.GetFilters()
+		require.Len(t, filters, 3)
+		
+		// Find the multi-match filter
+		var multiFilter *entities.Filter
+		for _, f := range filters {
+			if f.ID().Priority() == 300 {
+				multiFilter = f
+				break
+			}
+		}
+		require.NotNil(t, multiFilter)
+		
+		matches := multiFilter.Matches()
+		require.Len(t, matches, 2) // Port + IP match
+		
+		// Verify we have both types
+		var hasPortMatch, hasIPMatch bool
+		for _, match := range matches {
+			switch match.Type() {
+			case entities.MatchTypePortDestination:
+				hasPortMatch = true
+				portMatch := match.(*entities.PortMatch)
+				assert.Equal(t, uint16(443), portMatch.Port())
+			case entities.MatchTypeIPDestination:
+				hasIPMatch = true
+			}
+		}
+		assert.True(t, hasPortMatch, "Should have port match")
+		assert.True(t, hasIPMatch, "Should have IP match")
+	})
+
+	t.Run("Invalid Port Number", func(t *testing.T) {
+		// Create filter with invalid port
+		cmd := &models.CreateFilterCommand{
+			DeviceName: "eth0",
+			Parent:     "1:0",
+			Priority:   400,
+			Protocol:   "ip",
+			FlowID:     "1:10",
+			Match: map[string]string{
+				"dst_port": "99999", // > 65535
+			},
+		}
+
+		err := handler.HandleTyped(ctx, cmd)
+		require.NoError(t, err) // Should not fail, just skip invalid match
+
+		// Verify filter was created but without port match
+		aggregate := aggregates.NewTrafficControlAggregate(deviceName)
+		err = store.Load(ctx, aggregate.GetID(), aggregate)
+		require.NoError(t, err)
+
+		filters := aggregate.GetFilters()
+		require.Len(t, filters, 4)
+		
+		// Find the filter
+		var invalidPortFilter *entities.Filter
+		for _, f := range filters {
+			if f.ID().Priority() == 400 {
+				invalidPortFilter = f
+				break
+			}
+		}
+		require.NotNil(t, invalidPortFilter)
+		
+		// Should have no matches due to invalid port
+		matches := invalidPortFilter.Matches()
+		assert.Len(t, matches, 0)
+	})
 }

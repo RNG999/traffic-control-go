@@ -508,15 +508,41 @@ func (ag *TrafficControlAggregate) ApplyEvent(event events.DomainEvent) {
 
 		// Reconstruct matches from event data
 		for _, matchData := range e.Matches {
-			// This is simplified - in real implementation, we'd deserialize properly
 			switch matchData.Type {
 			case entities.MatchTypeIPDestination:
-				if ipMatch, err := entities.NewIPDestinationMatch(matchData.Value); err == nil {
-					filter.AddMatch(ipMatch)
+				// Parse IP from string representation
+				// Format: "ip dst 192.168.1.100/32"
+				var cidr string
+				if _, err := fmt.Sscanf(matchData.Value, "ip dst %s", &cidr); err == nil {
+					if ipMatch, err := entities.NewIPDestinationMatch(cidr); err == nil {
+						filter.AddMatch(ipMatch)
+					}
+				}
+			case entities.MatchTypeIPSource:
+				// Parse IP from string representation
+				// Format: "ip src 10.0.0.0/24"
+				var cidr string
+				if _, err := fmt.Sscanf(matchData.Value, "ip src %s", &cidr); err == nil {
+					if ipMatch, err := entities.NewIPSourceMatch(cidr); err == nil {
+						filter.AddMatch(ipMatch)
+					}
 				}
 			case entities.MatchTypePortDestination:
-				// Parse port from string - simplified
-				// In real implementation, store structured data in events
+				// Parse port from string representation
+				// Format: "ip dport 5201 0xffff"
+				var port uint16
+				if _, err := fmt.Sscanf(matchData.Value, "ip dport %d 0xffff", &port); err == nil {
+					match := entities.NewPortDestinationMatch(port)
+					filter.AddMatch(match)
+				}
+			case entities.MatchTypePortSource:
+				// Parse port from string representation
+				// Format: "ip sport 8080 0xffff"
+				var port uint16
+				if _, err := fmt.Sscanf(matchData.Value, "ip sport %d 0xffff", &port); err == nil {
+					match := entities.NewPortSourceMatch(port)
+					filter.AddMatch(match)
+				}
 			}
 		}
 

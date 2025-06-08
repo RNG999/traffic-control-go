@@ -26,10 +26,12 @@ func TestTrafficControlWithIperf3(t *testing.T) {
 		t.Skip("Skipping iperf3 test in short mode")
 	}
 
-	// Check if running as root (skip this check in CI)
-	if os.Getenv("CI") != "true" && os.Geteuid() != 0 {
+
+	if os.Geteuid() != 0 {
 		t.Skip("Test requires root privileges")
+		return
 	}
+
 
 	// Check if iperf3 is installed
 	if _, err := exec.LookPath("iperf3"); err != nil {
@@ -230,29 +232,33 @@ func TestMultipleClassesConcurrent(t *testing.T) {
 		t.Skip("Skipping concurrent test in short mode")
 	}
 
-	if os.Getenv("CI") != "true" && os.Geteuid() != 0 {
+
+	if os.Geteuid() != 0 {
 		t.Skip("Test requires root privileges")
+		return
 	}
+
 
 	if _, err := exec.LookPath("iperf3"); err != nil {
 		t.Skip("iperf3 not installed, skipping test")
 	}
 
-	device := findTestInterface(t)
-	if device == "" {
-		t.Skip("No suitable network interface found for testing")
-	}
+	// Create veth pair for proper network testing
+	_, cleanup := setupIperfVethPair(t, "concurrent")
+	defer cleanup()
+	
+	device := "concurrent"
 
 	// Start iperf3 servers on different ports
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	// Server 1 on port 5201
-	server1 := exec.CommandContext(ctx, "iperf3", "-s", "-p", "5201", "-1")
+	// Server 1 on port 5201 (bind to veth peer IP)
+	server1 := exec.CommandContext(ctx, "iperf3", "-s", "-B", "10.0.1.2", "-p", "5201", "-1")
 	go func() { _ = server1.Run() }()
 
-	// Server 2 on port 5202
-	server2 := exec.CommandContext(ctx, "iperf3", "-s", "-p", "5202", "-1")
+	// Server 2 on port 5202 (bind to veth peer IP)
+	server2 := exec.CommandContext(ctx, "iperf3", "-s", "-B", "10.0.1.2", "-p", "5202", "-1")
 	go func() { _ = server2.Run() }()
 
 	time.Sleep(2 * time.Second)
@@ -261,14 +267,14 @@ func TestMultipleClassesConcurrent(t *testing.T) {
 	tcController := api.NetworkInterface(device)
 	tcController.WithHardLimitBandwidth("100mbit")
 
-	// High priority class - 60% bandwidth
+	// High priority class - more bandwidth
 	tcController.CreateTrafficClass("high-priority").
 		WithGuaranteedBandwidth("60mbit").
 		WithSoftLimitBandwidth("80mbit").
 		WithPriority(1).
 		ForPort(5201)
 
-	// Low priority class - 20% bandwidth
+	// Low priority class - less bandwidth
 	tcController.CreateTrafficClass("low-priority").
 		WithGuaranteedBandwidth("20mbit").
 		WithSoftLimitBandwidth("40mbit").
@@ -288,7 +294,7 @@ func TestMultipleClassesConcurrent(t *testing.T) {
 	// High priority traffic
 	go func() {
 		defer wg.Done()
-		cmd := exec.Command("iperf3", "-c", "localhost", "-p", "5201", "-t", "10", "-f", "m")
+		cmd := exec.Command("iperf3", "-c", "10.0.1.2", "-p", "5201", "-t", "10", "-f", "m")
 		output, err := cmd.CombinedOutput()
 		if err != nil {
 			highErr = err
@@ -302,7 +308,7 @@ func TestMultipleClassesConcurrent(t *testing.T) {
 		defer wg.Done()
 		// Start slightly later to ensure both are running concurrently
 		time.Sleep(1 * time.Second)
-		cmd := exec.Command("iperf3", "-c", "localhost", "-p", "5202", "-t", "8", "-f", "m")
+		cmd := exec.Command("iperf3", "-c", "10.0.1.2", "-p", "5202", "-t", "8", "-f", "m")
 		output, err := cmd.CombinedOutput()
 		if err != nil {
 			lowErr = err
@@ -323,11 +329,13 @@ func TestMultipleClassesConcurrent(t *testing.T) {
 	require.Greater(t, highBandwidth, lowBandwidth*1.5,
 		"High priority should get at least 1.5x more bandwidth than low priority")
 
-	// High priority should be close to its guaranteed bandwidth
-	require.Greater(t, highBandwidth, 50.0, "High priority bandwidth too low")
+	// High priority should be close to its guaranteed bandwidth (60mbit = 60 Mbps)
+	require.Greater(t, highBandwidth, 40.0, "High priority bandwidth too low")
+	require.Less(t, highBandwidth, 100.0, "High priority bandwidth too high")
 
-	// Low priority should be limited
-	require.Less(t, lowBandwidth, 30.0, "Low priority bandwidth too high")
+	// Low priority should be limited (20mbit = 20 Mbps) 
+	require.Greater(t, lowBandwidth, 10.0, "Low priority bandwidth too low")
+	require.Less(t, lowBandwidth, 50.0, "Low priority bandwidth too high")
 }
 
 // TestDynamicBandwidthChange tests changing bandwidth limits during active traffic

@@ -126,6 +126,26 @@ func NewLogger(config Config) (Logger, error) {
 	}, nil
 }
 
+// NewSilentLogger creates a logger that only logs fatal errors (for error tests)
+func NewSilentLogger() Logger {
+	config := zap.Config{
+		Level:       zap.NewAtomicLevelAt(zapcore.FatalLevel), // Only fatal errors
+		Development: false,
+		Encoding:    "console",
+		EncoderConfig: zapcore.EncoderConfig{
+			MessageKey: "msg",
+		},
+		OutputPaths:      []string{"stdout"},
+		ErrorOutputPaths: []string{"stderr"},
+	}
+
+	logger, _ := config.Build()
+	return &zapLogger{
+		zap:   logger,
+		sugar: logger.Sugar(),
+	}
+}
+
 // buildZapConfig creates a zap configuration from our Config
 func buildZapConfig(config Config) (zap.Config, error) {
 	var level zapcore.Level

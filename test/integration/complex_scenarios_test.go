@@ -16,6 +16,7 @@ import (
 )
 
 // TestComplexHTBHierarchy tests a multi-level HTB hierarchy using the type-safe command bus
+// NOTE: This test should PASS completely - demonstrates successful complex configurations
 func TestComplexHTBHierarchy(t *testing.T) {
 	// Setup service with type-safe command bus
 	eventStore := eventstore.NewMemoryEventStoreWithContext()

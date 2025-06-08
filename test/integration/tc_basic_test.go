@@ -14,6 +14,7 @@ import (
 )
 
 // TestBasicTCApplication tests if TC rules are actually applied
+// NOTE: This test should PASS completely - any errors indicate real problems
 func TestBasicTCApplication(t *testing.T) {
 	if os.Getenv("CI") != "true" && os.Geteuid() != 0 {
 		t.Skip("Test requires root privileges")

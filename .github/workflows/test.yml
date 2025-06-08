@@ -76,14 +76,6 @@ jobs:
       run: |
         sudo -E env "PATH=$PATH" go test -v -tags=integration ./test/integration/... -count=1 || true
       
-    - name: Upload coverage to Codecov
-      if: matrix.go-version == '1.23'
-      uses: codecov/codecov-action@v4
-      with:
-        file: ./coverage.out
-        flags: unittests
-        name: codecov-umbrella
-        
   lint:
     name: Lint
     runs-on: ubuntu-latest

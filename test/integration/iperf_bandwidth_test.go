@@ -29,7 +29,9 @@ func TestTrafficControlWithIperf3(t *testing.T) {
 
 	if os.Geteuid() != 0 {
 		t.Skip("Test requires root privileges")
+		return
 	}
+
 
 	// Check if iperf3 is installed
 	if _, err := exec.LookPath("iperf3"); err != nil {
@@ -233,7 +235,9 @@ func TestMultipleClassesConcurrent(t *testing.T) {
 
 	if os.Geteuid() != 0 {
 		t.Skip("Test requires root privileges")
+		return
 	}
+
 
 	if _, err := exec.LookPath("iperf3"); err != nil {
 		t.Skip("iperf3 not installed, skipping test")

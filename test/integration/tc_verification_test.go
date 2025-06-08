@@ -34,6 +34,12 @@ type IperfStats struct {
 func setupTCVethPair(t *testing.T, name string) (string, func()) {
 	t.Helper()
 	
+	// Check if running as root first
+	if os.Geteuid() != 0 {
+		t.Skip("Test requires root privileges for veth pair creation")
+		return "", func() {}
+	}
+	
 	peer := name + "-peer"
 	
 	// Clean up any existing interfaces
@@ -121,6 +127,7 @@ func TestTrafficControlFunctionality(t *testing.T) {
 	
 	if os.Geteuid() != 0 {
 		t.Skip("Test requires root privileges")
+		return
 	}
 	
 	if _, err := exec.LookPath("iperf3"); err != nil {
@@ -178,11 +185,11 @@ func TestTrafficControlFunctionality(t *testing.T) {
 	
 	t.Run("Interface-Level Bandwidth Limiting", func(t *testing.T) {
 		// Create test interface
-		_, cleanup := setupTCVethPair(t, "tc-if-test")
+		_, cleanup := setupTCVethPair(t, "tc-if")
 		defer cleanup()
 		
 		// Apply very restrictive interface-level limit
-		controller := api.NetworkInterface("tc-if-test")
+		controller := api.NetworkInterface("tc-if")
 		controller.WithHardLimitBandwidth("10mbps") // Very low interface limit
 		
 		// Create a permissive class to test interface limit
@@ -194,7 +201,7 @@ func TestTrafficControlFunctionality(t *testing.T) {
 		err := controller.Apply()
 		require.NoError(t, err, "Failed to apply interface-level TC")
 		
-		verifyTCConfiguration(t, "tc-if-test")
+		verifyTCConfiguration(t, "tc-if")
 		
 		// Test bandwidth - should be limited by interface limit
 		ctx, cancel := context.WithCancel(context.Background())

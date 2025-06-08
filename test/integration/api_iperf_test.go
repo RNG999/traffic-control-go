@@ -35,12 +35,18 @@ type IperfResult struct {
 func setupIperfVethPair(t *testing.T, vethName string) (string, func()) {
 	t.Helper()
 	
+	// Check if running as root first
+	if os.Geteuid() != 0 {
+		t.Skip("Test requires root privileges for veth pair creation")
+		return "", func() {}
+	}
+	
 	peerName := vethName + "-peer"
 	
 	// Create veth pair
 	cmd := exec.Command("ip", "link", "add", vethName, "type", "veth", "peer", "name", peerName)
 	if output, err := cmd.CombinedOutput(); err != nil {
-		t.Skipf("Failed to create veth pair (requires root): %v, output: %s", err, string(output))
+		t.Skipf("Failed to create veth pair: %v, output: %s", err, string(output))
 		return "", func() {}
 	}
 	
@@ -97,7 +103,9 @@ func TestAPIWithIperf3BandwidthLimiting(t *testing.T) {
 	
 	if os.Geteuid() != 0 {
 		t.Skip("Test requires root privileges for TC operations")
+		return
 	}
+	
 	
 	if _, err := exec.LookPath("iperf3"); err != nil {
 		t.Skip("iperf3 not installed, skipping bandwidth test")
@@ -196,11 +204,11 @@ func TestAPIWithIperf3BandwidthLimiting(t *testing.T) {
 	
 	t.Run("README Example Bandwidth Verification", func(t *testing.T) {
 		// Create veth pair
-		_, cleanup := setupIperfVethPair(t, "readme-test")
+		_, cleanup := setupIperfVethPair(t, "readme")
 		defer cleanup()
 		
 		// Apply exact README.md example
-		controller := api.NetworkInterface("readme-test")
+		controller := api.NetworkInterface("readme")
 		controller.WithHardLimitBandwidth("100mbps")
 		
 		controller.CreateTrafficClass("Web Services").
@@ -248,12 +256,13 @@ func TestAPIWithIperf3BandwidthLimiting(t *testing.T) {
 		
 		for _, tf := range testFormats {
 			t.Run(fmt.Sprintf("Format_%s", tf.format), func(t *testing.T) {
-				// Create veth pair
-				_, cleanup := setupIperfVethPair(t, "fmt"+fmt.Sprintf("%d", int(tf.expected/1000000)))
+				// Create veth pair (keep device name short)
+				deviceName := fmt.Sprintf("f%d", int(tf.expected/1000000))
+				_, cleanup := setupIperfVethPair(t, deviceName)
 				defer cleanup()
 				
 				// Apply traffic control with specific format
-				controller := api.NetworkInterface("fmt"+fmt.Sprintf("%d", int(tf.expected/1000000)))
+				controller := api.NetworkInterface(deviceName)
 				controller.WithHardLimitBandwidth("1gbps") // High interface limit
 				
 				controller.CreateTrafficClass("Test Format").
@@ -301,7 +310,9 @@ func TestAPIPerformanceWithIperf3(t *testing.T) {
 	
 	if os.Geteuid() != 0 {
 		t.Skip("Test requires root privileges")
+		return
 	}
+	
 	
 	if _, err := exec.LookPath("iperf3"); err != nil {
 		t.Skip("iperf3 not installed")

@@ -278,15 +278,6 @@ func (s *StatisticsQueryService) GetRealtimeStatistics(ctx context.Context, devi
 	return stats, nil
 }
 
-// parseHandle converts string handle to valueobject
-func parseHandle(handleStr string) (tc.Handle, error) {
-	var major, minor uint16
-	n, err := fmt.Sscanf(handleStr, "%x:%x", &major, &minor)
-	if err != nil || n != 2 {
-		return tc.Handle{}, fmt.Errorf("invalid handle format: %s", handleStr)
-	}
-	return tc.NewHandle(major, minor), nil
-}
 
 // GetDeviceStatisticsHandler handles queries for device statistics
 type GetDeviceStatisticsHandler struct {

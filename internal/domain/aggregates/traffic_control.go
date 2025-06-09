@@ -693,7 +693,7 @@ func (ag *TrafficControlAggregate) ApplyEvent(event events.DomainEvent) {
 		// Find and remove the filter
 		newFilters := make([]*entities.Filter, 0, len(ag.filters))
 		for _, filter := range ag.filters {
-			if !(filter.Parent() == e.Parent && filter.Priority() == e.Priority && filter.Handle() == e.Handle) {
+			if filter.Parent() != e.Parent || filter.Priority() != e.Priority || filter.Handle() != e.Handle {
 				newFilters = append(newFilters, filter)
 			}
 		}

@@ -165,12 +165,12 @@ func TestWP4StatisticsIntegration(t *testing.T) {
 				require.NoError(t, err)
 
 				// Verify aggregated data exists
-				hourlyData, err := historicalDataService.GetAggregatedData(ctx, deviceName, 
+				hourlyData, err := historicalDataService.GetHistoricalData(ctx, deviceName, 
 					now.Add(-24*time.Hour), now, timeseries.IntervalHour)
 				require.NoError(t, err)
 				assert.Greater(t, len(hourlyData), 0, "Should have hourly aggregated data")
 
-				dailyData, err := historicalDataService.GetAggregatedData(ctx, deviceName, 
+				dailyData, err := historicalDataService.GetHistoricalData(ctx, deviceName, 
 					now.Add(-24*time.Hour), now, timeseries.IntervalDay)
 				require.NoError(t, err)
 				assert.Greater(t, len(dailyData), 0, "Should have daily aggregated data")
@@ -345,7 +345,10 @@ func TestWP4StatisticsIntegration(t *testing.T) {
 			initialCount := initialSummary.TotalDataPoints
 
 			// Cleanup data older than 12 hours
-			err = historicalDataService.CleanupOldData(ctx, deviceName, 12*time.Hour)
+			retentionPolicy := timeseries.RetentionPolicy{
+				RawDataRetention: 12 * time.Hour,
+			}
+			err = historicalDataService.CleanupOldData(ctx, deviceName, retentionPolicy)
 			require.NoError(t, err)
 
 			// Verify cleanup
@@ -470,7 +473,6 @@ func TestWP4MemoryTimeSeriesIntegration(t *testing.T) {
 	defer timeSeriesStore.Close()
 
 	historicalDataService := application.NewHistoricalDataService(timeSeriesStore)
-	performanceMetricsService := application.NewPerformanceMetricsService(historicalDataService)
 	
 	ctx := context.Background()
 	deviceName, _ := tc.NewDeviceName("memory_test")

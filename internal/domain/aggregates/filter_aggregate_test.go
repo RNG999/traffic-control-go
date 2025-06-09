@@ -29,14 +29,14 @@ func TestAddFilter(t *testing.T) {
 				// Add HTB qdisc
 				qHandle, _ := tc.ParseHandle("1:")
 				defaultHandle, _ := tc.ParseHandle("1:10")
-				agg.AddHTBQdisc(qHandle, defaultHandle)
+				require.NoError(t, agg.AddHTBQdisc(qHandle, defaultHandle))
 
 				// Add target class
 				parentHandle, _ := tc.ParseHandle("1:")
 				classHandle, _ := tc.ParseHandle("1:10")
 				rate, _ := tc.ParseBandwidth("10Mbps")
 				ceil, _ := tc.ParseBandwidth("20Mbps")
-				agg.AddHTBClass(parentHandle, classHandle, "default", rate, ceil)
+				require.NoError(t, agg.AddHTBClass(parentHandle, classHandle, "default", rate, ceil))
 			},
 			parent:   "1:",
 			priority: 100,
@@ -67,13 +67,13 @@ func TestAddFilter(t *testing.T) {
 				// Add HTB qdisc and class
 				qHandle, _ := tc.ParseHandle("1:")
 				defaultHandle, _ := tc.ParseHandle("1:10")
-				agg.AddHTBQdisc(qHandle, defaultHandle)
+				require.NoError(t, agg.AddHTBQdisc(qHandle, defaultHandle))
 
 				parentHandle, _ := tc.ParseHandle("1:")
 				classHandle, _ := tc.ParseHandle("1:10")
 				rate, _ := tc.ParseBandwidth("10Mbps")
 				ceil, _ := tc.ParseBandwidth("20Mbps")
-				agg.AddHTBClass(parentHandle, classHandle, "default", rate, ceil)
+				require.NoError(t, agg.AddHTBClass(parentHandle, classHandle, "default", rate, ceil))
 			},
 			parent:   "1:",
 			priority: 200,
@@ -100,13 +100,13 @@ func TestAddFilter(t *testing.T) {
 				// Add HTB qdisc and class
 				qHandle, _ := tc.ParseHandle("1:")
 				defaultHandle, _ := tc.ParseHandle("1:10")
-				agg.AddHTBQdisc(qHandle, defaultHandle)
+				require.NoError(t, agg.AddHTBQdisc(qHandle, defaultHandle))
 
 				parentHandle, _ := tc.ParseHandle("1:")
 				classHandle, _ := tc.ParseHandle("1:10")
 				rate, _ := tc.ParseBandwidth("10Mbps")
 				ceil, _ := tc.ParseBandwidth("20Mbps")
-				agg.AddHTBClass(parentHandle, classHandle, "default", rate, ceil)
+				require.NoError(t, agg.AddHTBClass(parentHandle, classHandle, "default", rate, ceil))
 			},
 			parent:   "1:",
 			priority: 300,
@@ -142,7 +142,7 @@ func TestAddFilter(t *testing.T) {
 				// Add HTB qdisc but no target class
 				qHandle, _ := tc.ParseHandle("1:")
 				defaultHandle, _ := tc.ParseHandle("1:10")
-				agg.AddHTBQdisc(qHandle, defaultHandle)
+				require.NoError(t, agg.AddHTBQdisc(qHandle, defaultHandle))
 			},
 			parent:   "1:",
 			priority: 100,
@@ -158,18 +158,18 @@ func TestAddFilter(t *testing.T) {
 				// Add HTB qdisc
 				qHandle, _ := tc.ParseHandle("1:")
 				defaultHandle, _ := tc.ParseHandle("1:10")
-				agg.AddHTBQdisc(qHandle, defaultHandle)
+				require.NoError(t, agg.AddHTBQdisc(qHandle, defaultHandle))
 
 				// Add parent class
 				parentHandle, _ := tc.ParseHandle("1:")
 				classHandle, _ := tc.ParseHandle("1:10")
 				rate, _ := tc.ParseBandwidth("10Mbps")
 				ceil, _ := tc.ParseBandwidth("20Mbps")
-				agg.AddHTBClass(parentHandle, classHandle, "parent", rate, ceil)
+				require.NoError(t, agg.AddHTBClass(parentHandle, classHandle, "parent", rate, ceil))
 
 				// Add target class
 				targetHandle, _ := tc.ParseHandle("1:20")
-				agg.AddHTBClass(parentHandle, targetHandle, "target", rate, ceil)
+				require.NoError(t, agg.AddHTBClass(parentHandle, targetHandle, "target", rate, ceil))
 			},
 			parent:   "1:10", // parent is a class
 			priority: 100,
@@ -256,19 +256,19 @@ func TestDeleteFilter(t *testing.T) {
 				// Add HTB qdisc
 				qHandle, _ := tc.ParseHandle("1:")
 				defaultHandle, _ := tc.ParseHandle("1:10")
-				agg.AddHTBQdisc(qHandle, defaultHandle)
+				require.NoError(t, agg.AddHTBQdisc(qHandle, defaultHandle))
 
 				// Add class
 				parentHandle, _ := tc.ParseHandle("1:")
 				classHandle, _ := tc.ParseHandle("1:10")
 				rate, _ := tc.ParseBandwidth("10Mbps")
 				ceil, _ := tc.ParseBandwidth("20Mbps")
-				agg.AddHTBClass(parentHandle, classHandle, "default", rate, ceil)
+				require.NoError(t, agg.AddHTBClass(parentHandle, classHandle, "default", rate, ceil))
 
 				// Add filter
 				filterHandle, _ := tc.ParseHandle("800:100")
 				flowID, _ := tc.ParseHandle("1:10")
-				agg.AddFilter(parentHandle, 100, filterHandle, flowID, nil)
+				require.NoError(t, agg.AddFilter(parentHandle, 100, filterHandle, flowID, nil))
 			},
 			parent:   "1:",
 			priority: 100,
@@ -285,7 +285,7 @@ func TestDeleteFilter(t *testing.T) {
 				// Add HTB qdisc but no filter
 				qHandle, _ := tc.ParseHandle("1:")
 				defaultHandle, _ := tc.ParseHandle("1:10")
-				agg.AddHTBQdisc(qHandle, defaultHandle)
+				require.NoError(t, agg.AddHTBQdisc(qHandle, defaultHandle))
 			},
 			parent:   "1:",
 			priority: 100,
@@ -299,21 +299,21 @@ func TestDeleteFilter(t *testing.T) {
 				// Add HTB qdisc
 				qHandle, _ := tc.ParseHandle("1:")
 				defaultHandle, _ := tc.ParseHandle("1:10")
-				agg.AddHTBQdisc(qHandle, defaultHandle)
+				require.NoError(t, agg.AddHTBQdisc(qHandle, defaultHandle))
 
 				// Add class
 				parentHandle, _ := tc.ParseHandle("1:")
 				classHandle, _ := tc.ParseHandle("1:10")
 				rate, _ := tc.ParseBandwidth("10Mbps")
 				ceil, _ := tc.ParseBandwidth("20Mbps")
-				agg.AddHTBClass(parentHandle, classHandle, "default", rate, ceil)
+				require.NoError(t, agg.AddHTBClass(parentHandle, classHandle, "default", rate, ceil))
 
 				// Add multiple filters
 				flowID, _ := tc.ParseHandle("1:10")
 				filterHandle1, _ := tc.ParseHandle("800:100")
 				filterHandle2, _ := tc.ParseHandle("800:200")
-				agg.AddFilter(parentHandle, 100, filterHandle1, flowID, nil)
-				agg.AddFilter(parentHandle, 200, filterHandle2, flowID, nil)
+				require.NoError(t, agg.AddFilter(parentHandle, 100, filterHandle1, flowID, nil))
+				require.NoError(t, agg.AddFilter(parentHandle, 200, filterHandle2, flowID, nil))
 			},
 			parent:   "1:",
 			priority: 100,
@@ -384,7 +384,7 @@ func TestFilterEventReplay(t *testing.T) {
 	// Add HTB qdisc
 	qHandle, _ := tc.ParseHandle("1:")
 	defaultHandle, _ := tc.ParseHandle("1:10")
-	agg1.AddHTBQdisc(qHandle, defaultHandle)
+	require.NoError(t, agg1.AddHTBQdisc(qHandle, defaultHandle))
 
 	// Add classes
 	parentHandle, _ := tc.ParseHandle("1:")
@@ -392,8 +392,8 @@ func TestFilterEventReplay(t *testing.T) {
 	classHandle2, _ := tc.ParseHandle("1:20")
 	rate, _ := tc.ParseBandwidth("10Mbps")
 	ceil, _ := tc.ParseBandwidth("20Mbps")
-	agg1.AddHTBClass(parentHandle, classHandle1, "default", rate, ceil)
-	agg1.AddHTBClass(parentHandle, classHandle2, "priority", rate, ceil)
+	require.NoError(t, agg1.AddHTBClass(parentHandle, classHandle1, "default", rate, ceil))
+	require.NoError(t, agg1.AddHTBClass(parentHandle, classHandle2, "priority", rate, ceil))
 
 	// Add filters
 	filterHandle1, _ := tc.ParseHandle("800:100")
@@ -410,11 +410,11 @@ func TestFilterEventReplay(t *testing.T) {
 		entities.NewProtocolMatch(entities.TransportProtocolTCP),
 	}
 
-	agg1.AddFilter(parentHandle, 100, filterHandle1, flowID1, matches1)
-	agg1.AddFilter(parentHandle, 200, filterHandle2, flowID2, matches2)
+	require.NoError(t, agg1.AddFilter(parentHandle, 100, filterHandle1, flowID1, matches1))
+	require.NoError(t, agg1.AddFilter(parentHandle, 200, filterHandle2, flowID2, matches2))
 
 	// Delete one filter
-	agg1.DeleteFilter(parentHandle, 100, filterHandle1)
+	require.NoError(t, agg1.DeleteFilter(parentHandle, 100, filterHandle1))
 
 	// Get all events
 	events := agg1.GetUncommittedEvents()

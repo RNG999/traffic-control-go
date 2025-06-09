@@ -28,18 +28,18 @@ func TestCreateFilterHandler(t *testing.T) {
 				// Add HTB qdisc
 				qHandle, _ := tc.ParseHandle("1:")
 				defaultHandle, _ := tc.ParseHandle("1:10")
-				agg.AddHTBQdisc(qHandle, defaultHandle)
+				require.NoError(t, agg.AddHTBQdisc(qHandle, defaultHandle))
 
 				// Add parent class
 				parentHandle, _ := tc.ParseHandle("1:")
 				classHandle, _ := tc.ParseHandle("1:10")
 				rate, _ := tc.ParseBandwidth("10Mbps")
 				ceil, _ := tc.ParseBandwidth("20Mbps")
-				agg.AddHTBClass(parentHandle, classHandle, "default", rate, ceil)
+				require.NoError(t, agg.AddHTBClass(parentHandle, classHandle, "default", rate, ceil))
 
 				// Add target class
 				targetHandle, _ := tc.ParseHandle("1:20")
-				agg.AddHTBClass(parentHandle, targetHandle, "priority", rate, ceil)
+				require.NoError(t, agg.AddHTBClass(parentHandle, targetHandle, "priority", rate, ceil))
 			},
 			command: &models.CreateFilterCommand{
 				DeviceName: "eth0",
@@ -69,13 +69,13 @@ func TestCreateFilterHandler(t *testing.T) {
 				// Add HTB qdisc and classes
 				qHandle, _ := tc.ParseHandle("1:")
 				defaultHandle, _ := tc.ParseHandle("1:10")
-				agg.AddHTBQdisc(qHandle, defaultHandle)
+				require.NoError(t, agg.AddHTBQdisc(qHandle, defaultHandle))
 
 				parentHandle, _ := tc.ParseHandle("1:")
 				classHandle, _ := tc.ParseHandle("1:10")
 				rate, _ := tc.ParseBandwidth("10Mbps")
 				ceil, _ := tc.ParseBandwidth("20Mbps")
-				agg.AddHTBClass(parentHandle, classHandle, "default", rate, ceil)
+				require.NoError(t, agg.AddHTBClass(parentHandle, classHandle, "default", rate, ceil))
 			},
 			command: &models.CreateFilterCommand{
 				DeviceName: "eth0",
@@ -122,7 +122,7 @@ func TestCreateFilterHandler(t *testing.T) {
 				// Add HTB qdisc but no target class
 				qHandle, _ := tc.ParseHandle("1:")
 				defaultHandle, _ := tc.ParseHandle("1:10")
-				agg.AddHTBQdisc(qHandle, defaultHandle)
+				require.NoError(t, agg.AddHTBQdisc(qHandle, defaultHandle))
 			},
 			command: &models.CreateFilterCommand{
 				DeviceName: "eth0",
@@ -143,18 +143,18 @@ func TestCreateFilterHandler(t *testing.T) {
 				// Add HTB qdisc
 				qHandle, _ := tc.ParseHandle("1:")
 				defaultHandle, _ := tc.ParseHandle("1:10")
-				agg.AddHTBQdisc(qHandle, defaultHandle)
+				require.NoError(t, agg.AddHTBQdisc(qHandle, defaultHandle))
 
 				// Add parent class
 				parentHandle, _ := tc.ParseHandle("1:")
 				classHandle, _ := tc.ParseHandle("1:10")
 				rate, _ := tc.ParseBandwidth("10Mbps")
 				ceil, _ := tc.ParseBandwidth("20Mbps")
-				agg.AddHTBClass(parentHandle, classHandle, "parent", rate, ceil)
+				require.NoError(t, agg.AddHTBClass(parentHandle, classHandle, "parent", rate, ceil))
 
 				// Add target class
 				targetHandle, _ := tc.ParseHandle("1:20")
-				agg.AddHTBClass(parentHandle, targetHandle, "target", rate, ceil)
+				require.NoError(t, agg.AddHTBClass(parentHandle, targetHandle, "target", rate, ceil))
 			},
 			command: &models.CreateFilterCommand{
 				DeviceName: "eth0",
@@ -235,19 +235,19 @@ func TestDeleteFilterHandler(t *testing.T) {
 				// Add HTB qdisc
 				qHandle, _ := tc.ParseHandle("1:")
 				defaultHandle, _ := tc.ParseHandle("1:10")
-				agg.AddHTBQdisc(qHandle, defaultHandle)
+				require.NoError(t, agg.AddHTBQdisc(qHandle, defaultHandle))
 
 				// Add classes
 				parentHandle, _ := tc.ParseHandle("1:")
 				classHandle, _ := tc.ParseHandle("1:10")
 				rate, _ := tc.ParseBandwidth("10Mbps")
 				ceil, _ := tc.ParseBandwidth("20Mbps")
-				agg.AddHTBClass(parentHandle, classHandle, "default", rate, ceil)
+				require.NoError(t, agg.AddHTBClass(parentHandle, classHandle, "default", rate, ceil))
 
 				// Add filter
 				filterHandle := tc.NewHandle(0x800, 100)
 				flowID, _ := tc.ParseHandle("1:10")
-				agg.AddFilter(parentHandle, 100, filterHandle, flowID, nil)
+				require.NoError(t, agg.AddFilter(parentHandle, 100, filterHandle, flowID, nil))
 			},
 			command: &models.DeleteFilterCommand{
 				DeviceName: mustParseDeviceName("eth0"),
@@ -267,7 +267,7 @@ func TestDeleteFilterHandler(t *testing.T) {
 				// Add HTB qdisc but no filter
 				qHandle, _ := tc.ParseHandle("1:")
 				defaultHandle, _ := tc.ParseHandle("1:10")
-				agg.AddHTBQdisc(qHandle, defaultHandle)
+				require.NoError(t, agg.AddHTBQdisc(qHandle, defaultHandle))
 			},
 			command: &models.DeleteFilterCommand{
 				DeviceName: mustParseDeviceName("eth0"),
@@ -284,19 +284,19 @@ func TestDeleteFilterHandler(t *testing.T) {
 				// Add HTB qdisc
 				qHandle, _ := tc.ParseHandle("1:")
 				defaultHandle, _ := tc.ParseHandle("1:10")
-				agg.AddHTBQdisc(qHandle, defaultHandle)
+				require.NoError(t, agg.AddHTBQdisc(qHandle, defaultHandle))
 
 				// Add classes
 				parentHandle, _ := tc.ParseHandle("1:")
 				classHandle, _ := tc.ParseHandle("1:10")
 				rate, _ := tc.ParseBandwidth("10Mbps")
 				ceil, _ := tc.ParseBandwidth("20Mbps")
-				agg.AddHTBClass(parentHandle, classHandle, "default", rate, ceil)
+				require.NoError(t, agg.AddHTBClass(parentHandle, classHandle, "default", rate, ceil))
 
 				// Add multiple filters
 				flowID, _ := tc.ParseHandle("1:10")
-				agg.AddFilter(parentHandle, 100, tc.NewHandle(0x800, 100), flowID, nil)
-				agg.AddFilter(parentHandle, 200, tc.NewHandle(0x800, 200), flowID, nil)
+				require.NoError(t, agg.AddFilter(parentHandle, 100, tc.NewHandle(0x800, 100), flowID, nil))
+				require.NoError(t, agg.AddFilter(parentHandle, 200, tc.NewHandle(0x800, 200), flowID, nil))
 			},
 			command: &models.DeleteFilterCommand{
 				DeviceName: mustParseDeviceName("eth0"),
@@ -369,14 +369,14 @@ func TestCreateAdvancedFilterHandler(t *testing.T) {
 				// Add HTB qdisc
 				qHandle, _ := tc.ParseHandle("1:")
 				defaultHandle, _ := tc.ParseHandle("1:10")
-				agg.AddHTBQdisc(qHandle, defaultHandle)
+				require.NoError(t, agg.AddHTBQdisc(qHandle, defaultHandle))
 
 				// Add classes
 				parentHandle, _ := tc.ParseHandle("1:")
 				classHandle, _ := tc.ParseHandle("1:10")
 				rate, _ := tc.ParseBandwidth("10Mbps")
 				ceil, _ := tc.ParseBandwidth("20Mbps")
-				agg.AddHTBClass(parentHandle, classHandle, "default", rate, ceil)
+				require.NoError(t, agg.AddHTBClass(parentHandle, classHandle, "default", rate, ceil))
 			},
 			command: &models.CreateAdvancedFilterCommand{
 				DeviceName: "eth0",
@@ -418,14 +418,14 @@ func TestCreateAdvancedFilterHandler(t *testing.T) {
 				// Add HTB qdisc
 				qHandle, _ := tc.ParseHandle("1:")
 				defaultHandle, _ := tc.ParseHandle("1:10")
-				agg.AddHTBQdisc(qHandle, defaultHandle)
+				require.NoError(t, agg.AddHTBQdisc(qHandle, defaultHandle))
 
 				// Add classes
 				parentHandle, _ := tc.ParseHandle("1:")
 				classHandle, _ := tc.ParseHandle("1:10")
 				rate, _ := tc.ParseBandwidth("10Mbps")
 				ceil, _ := tc.ParseBandwidth("20Mbps")
-				agg.AddHTBClass(parentHandle, classHandle, "default", rate, ceil)
+				require.NoError(t, agg.AddHTBClass(parentHandle, classHandle, "default", rate, ceil))
 			},
 			command: &models.CreateAdvancedFilterCommand{
 				DeviceName:        "eth0",

@@ -1,0 +1,131 @@
+{
+  "version": "2.0",
+  "device": "eth0",
+  "total_bandwidth": "1Gbps",
+  "classes": [
+    {
+      "name": "Critical Services",
+      "guaranteed_bandwidth": "400Mbps",
+      "max_bandwidth": "800Mbps",
+      "priority": 0,
+      "filters": [
+        {
+          "priority": 10,
+          "protocol": "ip",
+          "match": {
+            "dst_port": "5060",
+            "protocol": "udp"
+          }
+        },
+        {
+          "priority": 11,
+          "protocol": "ip", 
+          "match": {
+            "dst_port": "5061",
+            "protocol": "tcp"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Database Traffic",
+      "guaranteed_bandwidth": "300Mbps",
+      "max_bandwidth": "600Mbps",
+      "priority": 1,
+      "filters": [
+        {
+          "priority": 20,
+          "protocol": "ip",
+          "match": {
+            "dst_port": "3306",
+            "dst_ip": "10.0.1.10/32"
+          }
+        },
+        {
+          "priority": 21,
+          "protocol": "ip",
+          "match": {
+            "dst_port": "5432",
+            "dst_ip": "10.0.1.11/32"
+          }
+        },
+        {
+          "priority": 22,
+          "protocol": "ip",
+          "match": {
+            "dst_port": "27017",
+            "dst_ip": "10.0.1.12/32"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Web Services",
+      "guaranteed_bandwidth": "200Mbps",
+      "max_bandwidth": "400Mbps",
+      "priority": 2,
+      "filters": [
+        {
+          "priority": 30,
+          "protocol": "ip",
+          "match": {
+            "dst_port": "80"
+          }
+        },
+        {
+          "priority": 31,
+          "protocol": "ip",
+          "match": {
+            "dst_port": "443"
+          }
+        },
+        {
+          "priority": 32,
+          "protocol": "ip",
+          "match": {
+            "dst_port": "8080"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Management",
+      "guaranteed_bandwidth": "50Mbps",
+      "max_bandwidth": "100Mbps",
+      "priority": 3,
+      "filters": [
+        {
+          "priority": 40,
+          "protocol": "ip",
+          "match": {
+            "dst_port": "22",
+            "src_ip": "10.0.100.0/24"
+          }
+        },
+        {
+          "priority": 41,
+          "protocol": "ip",
+          "match": {
+            "dst_port": "161",
+            "src_ip": "10.0.100.0/24"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Guest Network",
+      "guaranteed_bandwidth": "50Mbps",
+      "max_bandwidth": "100Mbps",
+      "priority": 6,
+      "filters": [
+        {
+          "priority": 100,
+          "protocol": "ip",
+          "match": {
+            "src_ip": "192.168.100.0/24"
+          }
+        }
+      ]
+    }
+  ]
+}

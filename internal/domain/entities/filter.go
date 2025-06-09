@@ -81,6 +81,21 @@ func (f *Filter) ID() FilterID {
 	return f.id
 }
 
+// Parent returns the parent handle
+func (f *Filter) Parent() tc.Handle {
+	return f.id.parent
+}
+
+// Priority returns the filter priority
+func (f *Filter) Priority() uint16 {
+	return f.id.priority
+}
+
+// Handle returns the filter handle
+func (f *Filter) Handle() tc.Handle {
+	return f.id.handle
+}
+
 // SetFlowID sets the target class handle
 func (f *Filter) SetFlowID(flowID tc.Handle) {
 	f.flowID = flowID

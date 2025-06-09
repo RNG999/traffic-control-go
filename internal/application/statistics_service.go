@@ -49,6 +49,7 @@ type QdiscStatistics struct {
 type ClassStatistics struct {
 	Handle        string                      `json:"handle"`
 	Parent        string                      `json:"parent"`
+	Type          string                      `json:"type"`
 	Name          string                      `json:"name"`
 	Stats         netlink.ClassStats          `json:"stats"`
 	DetailedStats *netlink.DetailedClassStats `json:"detailed_stats,omitempty"`
@@ -56,10 +57,22 @@ type ClassStatistics struct {
 
 // FilterStatistics represents filter statistics with metadata
 type FilterStatistics struct {
-	Parent     string `json:"parent"`
-	Priority   uint16 `json:"priority"`
-	Protocol   string `json:"protocol"`
-	MatchCount int    `json:"match_count"`
+	Handle     string      `json:"handle"`
+	Parent     string      `json:"parent"`
+	Priority   uint16      `json:"priority"`
+	FlowID     string      `json:"flow_id"`
+	Protocol   string      `json:"protocol"`   // For backward compatibility
+	MatchCount int         `json:"match_count"` // For backward compatibility
+	Stats      FilterStats `json:"stats"`
+}
+
+// FilterStats represents filter performance statistics
+type FilterStats struct {
+	Matches    uint64 `json:"matches"`
+	Bytes      uint64 `json:"bytes"`
+	Packets    uint64 `json:"packets"`
+	Rate       uint64 `json:"rate"`        // bytes/sec
+	PacketRate uint64 `json:"packet_rate"` // packets/sec
 }
 
 // LinkStatistics represents network interface statistics
@@ -72,6 +85,8 @@ type LinkStatistics struct {
 	TxErrors  uint64 `json:"tx_errors"`
 	RxDropped uint64 `json:"rx_dropped"`
 	TxDropped uint64 `json:"tx_dropped"`
+	RxRate    uint64 `json:"rx_rate"`    // Receive rate in bytes/sec
+	TxRate    uint64 `json:"tx_rate"`    // Transmit rate in bytes/sec
 }
 
 // GetDeviceStatistics retrieves complete statistics for a device

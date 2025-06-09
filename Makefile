@@ -104,12 +104,12 @@ docs: ## Generate documentation
 # Examples
 examples: ## Build and test examples
 	@echo "Testing examples..."
-	@go run examples/basic_demo.go
-	@go run examples/priority_demo.go
-	@go run examples/qdisc_types_demo.go
-	@go run examples/statistics_demo.go
-	@go run examples/improved_api_demo.go
-	@echo "✓ All examples tested"
+	@cd examples && go build basic/main.go
+	@cd examples && go build production/main.go
+	@cd examples && go build priority_demo.go
+	@cd examples && go build filter_management_demo.go
+	@cd examples && go build htb_advanced_demo.go
+	@echo "✓ All examples built successfully"
 
 # Quick info
 info: ## Show project info

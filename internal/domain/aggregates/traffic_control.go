@@ -505,6 +505,38 @@ func (ag *TrafficControlAggregate) AddFilter(parent tc.Handle, priority uint16, 
 	return nil
 }
 
+// DeleteFilter removes a filter
+func (ag *TrafficControlAggregate) DeleteFilter(parent tc.Handle, priority uint16, handle tc.Handle) error {
+	// Business rule: Filter must exist
+	filterFound := false
+	for _, filter := range ag.filters {
+		if filter.Parent() == parent && filter.Priority() == priority && filter.Handle() == handle {
+			filterFound = true
+			break
+		}
+	}
+
+	if !filterFound {
+		return fmt.Errorf("filter with parent %s, priority %d, handle %s not found", parent, priority, handle)
+	}
+
+	// Create event
+	event := events.NewFilterDeletedEvent(
+		ag.id,
+		ag.version+1,
+		ag.deviceName,
+		parent,
+		priority,
+		handle,
+	)
+
+	ag.ApplyEvent(event)
+	ag.changes = append(ag.changes, event)
+	ag.version++
+
+	return nil
+}
+
 // GetUncommittedEvents returns uncommitted events
 func (ag *TrafficControlAggregate) GetUncommittedEvents() []events.DomainEvent {
 	return ag.changes
@@ -638,6 +670,14 @@ func (ag *TrafficControlAggregate) ApplyEvent(event events.DomainEvent) {
 					match := entities.NewPortSourceMatch(port)
 					filter.AddMatch(match)
 				}
+			case entities.MatchTypeProtocol:
+				// Parse protocol from string representation
+				// Format: "ip protocol 6 0xff"
+				var protocol uint8
+				if _, err := fmt.Sscanf(matchData.Value, "ip protocol %d 0xff", &protocol); err == nil {
+					match := entities.NewProtocolMatch(entities.TransportProtocol(protocol))
+					filter.AddMatch(match)
+				}
 			}
 		}
 
@@ -648,6 +688,16 @@ func (ag *TrafficControlAggregate) ApplyEvent(event events.DomainEvent) {
 
 	case *events.ClassDeletedEvent:
 		delete(ag.classes, e.Handle)
+
+	case *events.FilterDeletedEvent:
+		// Find and remove the filter
+		newFilters := make([]*entities.Filter, 0, len(ag.filters))
+		for _, filter := range ag.filters {
+			if !(filter.Parent() == e.Parent && filter.Priority() == e.Priority && filter.Handle() == e.Handle) {
+				newFilters = append(newFilters, filter)
+			}
+		}
+		ag.filters = newFilters
 	}
 }
 

@@ -132,3 +132,21 @@ func (c *DeleteQdiscCommand) DeviceName() tc.DeviceName {
 func (c *DeleteQdiscCommand) Handle() tc.Handle {
 	return c.handle
 }
+
+// DeleteFilterCommand deletes a filter
+type DeleteFilterCommand struct {
+	DeviceName tc.DeviceName
+	Parent     tc.Handle
+	Priority   uint16
+	Handle     tc.Handle
+}
+
+// NewDeleteFilterCommand creates a new DeleteFilterCommand
+func NewDeleteFilterCommand(deviceName tc.DeviceName, parent tc.Handle, priority uint16, handle tc.Handle) *DeleteFilterCommand {
+	return &DeleteFilterCommand{
+		DeviceName: deviceName,
+		Parent:     parent,
+		Priority:   priority,
+		Handle:     handle,
+	}
+}

@@ -542,7 +542,11 @@ func TestDashboardDataService_LiveUpdates(t *testing.T) {
 	deviceName, _ := tc.NewDeviceName("eth0")
 
 	t.Run("live updates with callback", func(t *testing.T) {
-		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+		if testing.Short() {
+			t.Skip("Skipping long-running test in short mode")
+		}
+		
+		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 		defer cancel()
 
 		var updateCount int
@@ -561,7 +565,7 @@ func TestDashboardDataService_LiveUpdates(t *testing.T) {
 		}()
 
 		// Wait for some updates then cancel
-		time.Sleep(1500 * time.Millisecond)
+		time.Sleep(500 * time.Millisecond)
 		cancel()
 
 		// Wait for goroutine to complete

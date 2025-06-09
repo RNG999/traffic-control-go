@@ -520,24 +520,29 @@ func TestStatisticsReportingService_ScheduledReports(t *testing.T) {
 
 	// Test scheduled report generation with short interval
 	t.Run("scheduled reports with cancellation", func(t *testing.T) {
+		if testing.Short() {
+			t.Skip("Skipping long-running test in short mode")
+		}
+		
 		// Start scheduled reports with 1 second interval in a goroutine
-		errChan := make(chan error, 1)
+		done := make(chan error, 1)
 		go func() {
 			err := service.GenerateScheduledReports(ctx, deviceNames, 1*time.Second)
-			errChan <- err
+			done <- err
 		}()
 
-		// Let it run for 1.5 seconds then cancel
-		time.Sleep(1500 * time.Millisecond)
+		// Let it run for 1 second then cancel
+		time.Sleep(1000 * time.Millisecond)
 		cancel()
 		
 		// Wait for the goroutine to finish and check error
 		select {
-		case err := <-errChan:
+		case err := <-done:
 			// Should return either DeadlineExceeded or Canceled
-			assert.True(t, err == context.DeadlineExceeded || err == context.Canceled)
-		case <-time.After(1 * time.Second):
-			t.Error("Scheduled reports did not stop in time")
+			require.True(t, err == context.DeadlineExceeded || err == context.Canceled,
+				"Expected context cancellation, got: %v", err)
+		case <-time.After(500 * time.Millisecond):
+			t.Fatal("Timed out waiting for scheduled reports to finish")
 		}
 	})
 }

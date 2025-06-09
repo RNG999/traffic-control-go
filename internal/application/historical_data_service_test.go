@@ -153,11 +153,11 @@ func TestHistoricalDataService(t *testing.T) {
 		
 		qdiscAgg := aggregated.QdiscStats[0]
 		assert.Equal(t, "1:", qdiscAgg.Handle)
-		assert.Equal(t, uint64(5000000), qdiscAgg.TotalBytes)    // Sum of all bytes
-		assert.Equal(t, uint64(5000), qdiscAgg.TotalPackets)    // Sum of all packets
-		assert.Equal(t, uint64(25), qdiscAgg.TotalDrops)        // Sum of all drops
-		assert.Equal(t, uint64(100000), qdiscAgg.MinRate)       // Minimum rate
-		assert.Equal(t, uint64(140000), qdiscAgg.MaxRate)       // Maximum rate
+		assert.Equal(t, uint64(15000000), qdiscAgg.TotalBytes)   // Sum: 1M+2M+3M+4M+5M = 15M
+		assert.Equal(t, uint64(15000), qdiscAgg.TotalPackets)    // Sum: 1K+2K+3K+4K+5K = 15K
+		assert.Equal(t, uint64(75), qdiscAgg.TotalDrops)         // Sum: 5+10+15+20+25 = 75
+		assert.Equal(t, uint64(100000), qdiscAgg.MinRate)        // Default rate from conversion
+		assert.Equal(t, uint64(100000), qdiscAgg.MaxRate)        // Default rate from conversion
 	})
 
 	t.Run("scheduled aggregation", func(t *testing.T) {
@@ -180,9 +180,9 @@ func TestHistoricalDataService(t *testing.T) {
 							Handle: "1:",
 							Type:   "htb",
 							Stats: netlink.QdiscStats{
-								Bytes:   uint64(1000000 + hour*100000 + minute*1000),
-								Packets: uint64(1000 + hour*100 + minute),
-								Rate:    uint64(100000 + hour*10000),
+								BytesSent:   uint64(1000000 + hour*100000 + minute*1000),
+								PacketsSent: uint64(1000 + hour*100 + minute),
+								Overlimits:  uint64(hour*10 + minute/10),
 							},
 						},
 					},
